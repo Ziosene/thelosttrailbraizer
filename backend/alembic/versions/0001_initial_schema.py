@@ -16,15 +16,17 @@ depends_on = None
 
 def upgrade() -> None:
     # --- Enum types (PostgreSQL) ---
+    # NOTE: SQLAlchemy stores enum **names** (not values) for str enums.
+    # Rarity: name=comune, value=Comune → PostgreSQL must accept "comune"
     rarity_enum = sa.Enum(
-        "Comune", "Non comune", "Raro", "Leggendario",
+        "comune", "non_comune", "raro", "leggendario",
         name="rarity",
     )
-    addon_type_enum = sa.Enum("Passivo", "Attivo", name="addontype")
+    addon_type_enum = sa.Enum("passivo", "attivo", name="addontype")
     game_status_enum = sa.Enum("waiting", "in_progress", "finished", name="gamestatus")
     turn_phase_enum = sa.Enum("draw", "action", "combat", "end", name="turnphase")
     seniority_enum = sa.Enum(
-        "Junior", "Experienced", "Senior", "Evangelist",
+        "junior", "experienced", "senior", "evangelist",
         name="seniority",
     )
 
