@@ -263,6 +263,34 @@ Potenziamenti acquistabili con **10 Licenze**. Effetti passivi o attivi:
 - Alla morte: si perde **1 AddOn** — il giocatore che muore sceglie quale
 - Nessun limite di AddOn per giocatore
 
+### 8.1 Tipi di AddOn
+
+| Tipo | Descrizione |
+|---|---|
+| **Passivo** | Effetto sempre attivo, non richiede attivazione |
+| **Attivo** | Deve essere dichiarato e attivato dal giocatore |
+
+### 8.2 Meccanica di Tapping (AddOn Attivi)
+
+Gli AddOn **attivi** seguono la meccanica del **tap/untap**, ispirata a Magic: The Gathering:
+
+```
+UTILIZZO AddOn ATTIVO:
+  └─ Il giocatore dichiara l'utilizzo dell'AddOn
+  └─ L'AddOn si "tappa" (ruotato di 90° / segnato come usato)
+  └─ L'effetto si applica immediatamente
+  └─ L'AddOn tappato NON può essere riutilizzato nello stesso turno
+
+RESET (Untap):
+  └─ All'inizio del turno del giocatore, tutti gli AddOn tappati si "stappano"
+  └─ Sono nuovamente disponibili per l'utilizzo
+```
+
+> Un AddOn attivo può essere usato **una sola volta per turno**, indipendentemente da quante volte si vorrebbe attivarlo.
+> Gli AddOn passivi non hanno questo limite — sono sempre attivi e non si tappano.
+
+**Esempio:** Il giocatore ha l'AddOn "Einstein Boost" (attivo: +2 al dado per un round). Lo usa durante il combattimento → si tappa. Anche se volesse usarlo di nuovo nello stesso round, non può. All'inizio del suo prossimo turno si stappa automaticamente.
+
 ---
 
 ## 9. Sistema Punteggi e Classifica Globale
@@ -314,9 +342,9 @@ VITTORIA
 
 | File | Contenuto | Progresso |
 |---|---|---|
-| [cards/boss_cards.md](cards/boss_cards.md) | 100 boss da creare | 20/100 |
-| [cards/addon_cards.md](cards/addon_cards.md) | 200 AddOn da creare | 30/200 |
-| [cards/action_cards.md](cards/action_cards.md) | 300 carte azione da creare | 40/300 |
+| [cards/boss_cards.md](cards/boss_cards.md) | 100 boss da creare | 100/100 ✅ |
+| [cards/addon_cards.md](cards/addon_cards.md) | 200 AddOn da creare | 200/200 ✅ |
+| [cards/action_cards.md](cards/action_cards.md) | 300 carte azione da creare | 300/300 ✅ |
 
 ## 12. To Do / Da Definire
 
