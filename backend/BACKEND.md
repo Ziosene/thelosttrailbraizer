@@ -57,6 +57,20 @@ alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
+### Avvio con Docker Compose (consigliato)
+
+```bash
+# 1. Copia il file .env
+cp backend/.env.example backend/.env
+# → modifica SECRET_KEY
+
+# 2. Avvia tutto (postgres + backend + migrations + seed automatici)
+docker compose up --build
+```
+
+Il server sarà disponibile su `http://localhost:8000`.
+Le migrazioni Alembic e il seed delle carte vengono eseguiti automaticamente al primo avvio.
+
 ### Variabili d'ambiente (`.env`)
 
 ```
@@ -78,7 +92,8 @@ backend/
 ├── alembic/
 │   ├── env.py                    ✅ configurato
 │   ├── script.py.mako            ✅
-│   └── versions/                 ⬜ nessuna migration ancora generata
+│   └── versions/
+│       └── 0001_initial_schema.py ✅ schema completo + FK circolare risolta
 ├── app/
 │   ├── __init__.py               ✅
 │   ├── main.py                   ✅ FastAPI app + WebSocket endpoint + auth JWT
@@ -408,44 +423,29 @@ FINE TURNO
 - [x] `app/models/__init__.py` — importa tutti i modelli (Alembic autogenerate pronto)
 - [x] `scripts/seed_cards.py` — parser .md → insert DB, idempotente
 - [x] `tests/test_engine.py` — 20+ unit test per tutte le funzioni di engine.py
+- [x] `backend/Dockerfile` — image Python 3.12-slim
+- [x] `docker-compose.yml` — servizi `postgres:16-alpine` + `backend`, volume cards montato in `/cards`
+- [x] `backend/entrypoint.sh` — attende Postgres, esegue `alembic upgrade head`, seed carte, avvia uvicorn
+- [x] `scripts/seed_cards.py` — gestisce path Docker (`/cards`) e path locale automaticamente
 
 ### ⬜ Da fare
-
-- [ ] **Prima migration Alembic** — richiede PostgreSQL attivo:
-  ```bash
-  alembic revision --autogenerate -m "initial schema"
-  alembic upgrade head
-  ```
-- [ ] **`GameSession.winner_id`** FK circolare con `game_players` — potrebbe causare warning in Alembic. Valutare se usare `use_alter=True` o post-commit FK.
 - [ ] **Gestione reconnect migliorata** — attualmente `join_game` invia lo stato se già presente, ma non ripristina la mano privata del giocatore nella risposta separata.
 - [ ] **Rate limiting WS** — un utente non dovrebbe poter inviare messaggi troppo veloci.
-- [ ] **Docker Compose** — backend + PostgreSQL per setup locale semplice.
 
 ---
 
 ## 10. TODO e prossimi passi
 
-### Priorità alta (necessario per avviare il server)
+### Priorità alta
 
-1. **Prima migration Alembic** — richiede PostgreSQL attivo:
-   ```bash
-   cd backend
-   alembic revision --autogenerate -m "initial schema"
-   alembic upgrade head
-   ```
-
-2. **Seed carte** — dopo la migration:
-   ```bash
-   python scripts/seed_cards.py
-   ```
-
-3. **Verifica FK circolare** `GameSession.winner_id → game_players` — potrebbe richiedere `use_alter=True` nella migration generata. Controllare il file generato prima di applicarlo.
+Con `docker compose up --build` il server parte già correttamente:
+- migration `0001_initial_schema.py` applicata automaticamente
+- seed carte eseguito automaticamente
+- FK circolare `winner_id` gestita con `use_alter=True`
 
 ### Priorità media
 
 4. **Gestione reconnect della mano privata** — quando un giocatore si riconnette, riceve il `game_state` pubblico ma non la lista dettagliata delle sue carte in mano. Aggiungere un evento separato `hand_state` inviato solo al giocatore che si riconnette.
-
-5. **Docker Compose** — `docker-compose.yml` con servizi `backend` e `postgres` per setup locale semplice.
 
 ### Priorità bassa (post-MVP)
 
