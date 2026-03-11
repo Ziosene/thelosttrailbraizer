@@ -25,10 +25,13 @@ from app.database import Base
 # Create tables if they don't exist (useful before first Alembic migration)
 Base.metadata.create_all(bind=engine)
 
-CARDS_DIR = os.path.join(
+# Docker mounts cards at /cards; locally they are ../../../cards relative to this script
+_DOCKER_CARDS = "/cards"
+_LOCAL_CARDS = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
     "cards",
 )
+CARDS_DIR = _DOCKER_CARDS if os.path.isdir(_DOCKER_CARDS) else _LOCAL_CARDS
 
 # ---------------------------------------------------------------------------
 # Helpers

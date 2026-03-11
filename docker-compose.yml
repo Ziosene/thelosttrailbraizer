@@ -1,0 +1,29 @@
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: trailbraizer
+      POSTGRES_PASSWORD: trailbraizer
+      POSTGRES_DB: trailbraizer
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - postgres
+    volumes:
+      - ./backend:/app        # hot reload in sviluppo
+      - ./cards:/cards        # seed_cards.py legge i .md da qui
+
+volumes:
+  postgres_data:
