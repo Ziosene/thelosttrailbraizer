@@ -378,6 +378,21 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
     db.commit()
     db.refresh(game)
 
+    # TODO: implementare gli effetti di tutte le 300 carte azione.
+    # Attualmente la carta viene rimossa dalla mano e messa negli scarti,
+    # ma il suo effetto NON viene applicato.
+    # Ogni carta va gestita per nome (card.name) o numero (card.number) in
+    # una funzione dedicata tipo apply_action_card_effect(card, player, game, db).
+    # Categorie da coprire:
+    #   - Economiche: guadagna/trasferisci licenze (condizionali su stato gioco)
+    #   - Offensive: infliggi danno al boss (immediato o persistente)
+    #   - Difensive: recupera HP, blocca danno, crea scudi
+    #   - Manipolazione dado: modifica soglia, ritira dado, forza valore
+    #   - Utilità: pesca carte, riordina mazzi, recupera scarti
+    #   - Interferenza: forza azioni su avversari, ruba carte/licenze
+    #   - Leggendarie: effetti compositi multi-categoria
+    # Vedere cards/action_cards.md per l'effetto completo di ogni carta.
+
     await manager.broadcast(game.code, {
         "type": ServerEvent.CARD_PLAYED,
         "player_id": player.id,
@@ -656,6 +671,15 @@ async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Ses
     pa.is_tapped = True
     db.commit()
     db.refresh(game)
+
+    # TODO: implementare gli effetti di tutti i 200 addon attivi.
+    # Attualmente l'addon viene tappato ma il suo effetto NON viene applicato.
+    # Ogni addon va gestito per nome (addon.name) o numero (addon.number) in
+    # una funzione dedicata tipo apply_addon_effect(addon, player, game, db).
+    # Gli addon Passivi hanno effetti che si attivano automaticamente in
+    # determinati momenti del gioco (roll_dice, acquisto, inizio turno, ecc.)
+    # e vanno anch'essi implementati nei punti giusti del flusso.
+    # Vedere cards/addon_cards.md per l'effetto completo di ogni addon.
 
     await manager.broadcast(game.code, {
         "type": ServerEvent.ADDON_USED,

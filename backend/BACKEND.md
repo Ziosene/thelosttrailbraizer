@@ -431,6 +431,18 @@ FINE TURNO
 - [x] **Reconnect mano privata** — `join_game` durante partita `in_progress` ora invia `game_state` a tutti + evento privato `hand_state` solo al giocatore che si riconnette. `hand_state` inviato anche dopo `start_game`, `draw_card`, `play_card` e penalty di morte.
 
 ### ⬜ Da fare
+
+- [ ] **Effetti carte azione (300 carte)** — `_handle_play_card` rimuove la carta dalla mano ma NON applica nessun effetto. Va creata una funzione `apply_action_card_effect(card, player, game, db)` in `engine.py` con un branch per ognuna delle 300 carte (o per famiglia di effetto). Vedere `cards/action_cards.md`. Categorie:
+  - Economiche: guadagna/trasferisci licenze con condizioni
+  - Offensive: danno immediato o persistente al boss
+  - Difensive: recupero HP, scudi, blocco danno
+  - Manipolazione dado: modifica soglia, ritiro, forza valore
+  - Utilità: pesca carte, riordina/recupera mazzi
+  - Interferenza: azioni forzate su avversari, furti
+  - Leggendarie: effetti compositi multi-categoria
+
+- [ ] **Effetti addon (200 addon)** — `_handle_use_addon` tappa l'addon ma NON applica nessun effetto. Va creata `apply_addon_effect(addon, player, game, db)` per gli addon Attivi (uso manuale) e hook passivi nei punti giusti del flusso (roll_dice, inizio turno, acquisto, ecc.) per gli addon Passivi. Vedere `cards/addon_cards.md`.
+
 - [ ] **Rate limiting WS** — un utente non dovrebbe poter inviare messaggi troppo veloci.
 
 ---
