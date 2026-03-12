@@ -91,7 +91,10 @@ class GamePlayer(Base):
     hp: Mapped[int] = mapped_column(Integer, nullable=False)        # current HP
     max_hp: Mapped[int] = mapped_column(Integer, nullable=False)    # base HP from seniority
     licenze: Mapped[int] = mapped_column(Integer, default=3)
-    certificazioni: Mapped[int] = mapped_column(Integer, default=0)
+    certificazioni: Mapped[int] = mapped_column(Integer, default=0)  # len(trophies), kept as denormalized count
+    # Boss cards earned as trophies (cert bosses defeated). Each entry is a BossCard.id.
+    # Can be stolen/destroyed by other players via card effects.
+    trophies: Mapped[list] = mapped_column(JSON, default=list)
 
     # Cards & state
     cards_played_this_turn: Mapped[int] = mapped_column(Integer, default=0)

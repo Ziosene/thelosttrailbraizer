@@ -206,8 +206,26 @@ Durante il combattimento di un giocatore, gli **altri giocatori** possono giocar
 
 | Tipo boss | Ricompensa |
 |---|---|
-| Boss normale | X Licenze (variabile per boss) |
-| Boss con certificazione | X Licenze + **1 Certificazione** |
+| Boss normale | X Licenze (variabile per boss) → va nel Cimitero Boss |
+| Boss con certificazione | X Licenze + **1 Certificazione** → diventa trofeo fisico del giocatore |
+
+### 5.6 Trofei (boss con certificazione)
+
+Quando un giocatore sconfigge un boss con certificazione, il boss diventa un **trofeo fisico** nel suo possesso — non viene scartato.
+
+```
+TROFEO:
+  └─ Visibile a tutti i giocatori sul tavolo
+  └─ Conteggio trofei = conteggio Certificazioni del giocatore
+  └─ 5 trofei = VITTORIA
+
+  Il trofeo può essere:
+  ├─ RUBATO da un avversario via carta azione
+  │    → passa nelle mani dell'avversario (+1 cert per lui, -1 cert per te)
+  └─ DISTRUTTO da un avversario via carta azione
+       → va nel Cimitero Boss (boss_graveyard)
+       → -1 cert per il giocatore che lo possedeva
+```
 
 ---
 

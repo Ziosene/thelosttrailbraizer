@@ -39,6 +39,7 @@ def _build_game_state(game: GameSession, db: Session) -> dict:
             "addon_count": len(gp.addons),
             "is_in_combat": gp.is_in_combat,
             "bosses_defeated": gp.bosses_defeated,
+            "trophies": gp.trophies or [],  # list of BossCard.id — visible to all players
         })
 
     # Resolve visible market cards to full objects for the client
@@ -453,6 +454,10 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
     #   - Utilità: pesca carte, riordina mazzi, recupera scarti
     #   - Interferenza: forza azioni su avversari, ruba carte/licenze
     #   - Leggendarie: effetti compositi multi-categoria
+    # Furto trofeo: victim.trophies.remove(boss_id) → thief.trophies.append(boss_id)
+    #   aggiorna victim.certificazioni -= 1 e thief.certificazioni += 1
+    # Distruzione trofeo: victim.trophies.remove(boss_id) → game.boss_graveyard.append(boss_id)
+    #   aggiorna victim.certificazioni -= 1
     # Vedere cards/action_cards.md per l'effetto completo di ogni carta.
 
     await manager.broadcast(game.code, {
@@ -651,8 +656,13 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             player.certificazioni += 1
 
         source = player.current_boss_source
-        # Non-cert bosses go to the graveyard; cert bosses are permanently removed from the game
-        if not boss.has_certification:
+        if boss.has_certification:
+            # Cert boss becomes a trophy in the player's possession.
+            # Can be stolen or destroyed by other players via card effects.
+            # Only goes to boss_graveyard if destroyed from a player's trophies.
+            player.trophies = (player.trophies or []) + [boss.id]
+        else:
+            # Non-cert bosses go to the shared graveyard
             game.boss_graveyard = (game.boss_graveyard or []) + [boss.id]
         # Refill market slot if boss was taken from market
         if source == "market_1":

@@ -240,7 +240,8 @@ Client (React)
 | role | VARCHAR(100) | ruolo Salesforce (es. "Platform Developer I") |
 | hp / max_hp | INT | max_hp = f(seniority): J=1, E=2, S=3, Ev=4 |
 | licenze | INT | default 3 |
-| certificazioni | INT | default 0, vince a 5 |
+| certificazioni | INT | default 0, vince a 5 — conteggio denormalizzato di `len(trophies)` |
+| trophies | JSON | lista di BossCard.id guadagnati come trofei (boss con cert sconfitti). Visibili a tutti. Rubabili/distruggibili da carte azione avversarie. Se distrutto → `boss_graveyard`. |
 | cards_played_this_turn | INT | max 2 per turno |
 | is_in_combat | BOOL | |
 | current_boss_id | FK → boss_cards | nullable |
@@ -435,6 +436,7 @@ FINE TURNO
 - [x] **Reconnect mano privata** — `join_game` durante partita `in_progress` ora invia `game_state` a tutti + evento privato `hand_state` solo al giocatore che si riconnette. `hand_state` inviato anche dopo `start_game`, `draw_card`, `play_card` e penalty di morte.
 - [x] **Doppi mazzi + mercato** — `start_game` divide tutti i mazzi in due metà; boss e addon hanno 1 carta visibile per mazzo nel "mercato". `draw_card` accetta `{deck: 1|2}`. `start_combat` e `buy_addon` accettano `{source: market_1|market_2|deck_1|deck_2}`. Logica vittoria/sconfitta rispetta le regole del mercato. Migration `0002_dual_decks.py`.
 - [x] **3 mazzi degli scarti condivisi** — `action_discard` (scarto azione, rimescolato tra i 2 mazzi quando si esauriscono), `boss_graveyard` (boss senza cert), `addon_graveyard` (addon persi/distrutti). Migration `0003_shared_discards.py`.
+- [x] **Trofei boss con certificazione** — boss cert sconfitti diventano trofei fisici del giocatore (`player.trophies`). Possono essere rubati (→ trofei avversario) o distrutti (→ `boss_graveyard`). Visibili a tutti nel `game_state`. Migration `0004_player_trophies.py`.
 
 ### ⬜ Da fare
 
