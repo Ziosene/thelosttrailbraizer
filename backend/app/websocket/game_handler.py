@@ -80,6 +80,46 @@ async def _broadcast_state(game: GameSession, db: Session):
     await manager.broadcast(game.code, state)
 
 
+def _build_hand_state(player: GamePlayer, db: Session) -> dict:
+    """Private payload sent only to the owning player — full hand + addon details."""
+    hand = []
+    for hc in player.hand:
+        card = db.get(ActionCard, hc.action_card_id)
+        if card:
+            hand.append({
+                "hand_card_id": hc.id,
+                "card_id": card.id,
+                "name": card.name,
+                "card_type": card.card_type,
+                "effect": card.effect,
+                "rarity": card.rarity,
+            })
+
+    addons = []
+    for pa in player.addons:
+        addon = db.get(AddonCard, pa.addon_id)
+        if addon:
+            addons.append({
+                "player_addon_id": pa.id,
+                "addon_id": addon.id,
+                "name": addon.name,
+                "addon_type": addon.addon_type,
+                "effect": addon.effect,
+                "is_tapped": pa.is_tapped,
+            })
+
+    return {
+        "type": ServerEvent.HAND_STATE,
+        "hand": hand,
+        "addons": addons,
+    }
+
+
+async def _send_hand_state(game_code: str, player: GamePlayer, db: Session):
+    """Send private hand state to a single player."""
+    await manager.send_to_player(game_code, player.user_id, _build_hand_state(player, db))
+
+
 def _apply_elo(game: GameSession, winner_player_id: int, db: Session) -> None:
     """Update ELO ratings and game stats for all players at game end."""
     players = game.players
@@ -153,13 +193,24 @@ async def handle_message(
 # ---------------------------------------------------------------------------
 
 async def _handle_join(game: GameSession, user_id: int, data: dict, db: Session):
-    if game.status != GameStatus.waiting:
-        await _error(game.code, user_id, "Game already started")
+    existing = _get_player(game, user_id)
+
+    if game.status == GameStatus.finished:
+        await _error(game.code, user_id, "Game already finished")
         return
 
-    existing = _get_player(game, user_id)
+    if game.status == GameStatus.in_progress:
+        if existing:
+            # Reconnect during active game — send public state to all + private hand to this player
+            await _broadcast_state(game, db)
+            await _send_hand_state(game.code, existing, db)
+        else:
+            await _error(game.code, user_id, "Game already started")
+        return
+
+    # status == waiting
     if existing:
-        # Rejoin — send current state
+        # Rejoin lobby — send current state
         await manager.send_to_player(game.code, user_id, _build_game_state(game, db))
         return
 
@@ -257,6 +308,10 @@ async def _handle_start_game(game: GameSession, user_id: int, db: Session):
 
     await manager.broadcast(game.code, {"type": ServerEvent.GAME_STARTED})
     await _broadcast_state(game, db)
+    # Send each player their private starting hand
+    for player in players:
+        db.refresh(player)
+        await _send_hand_state(game.code, player, db)
 
 
 async def _handle_draw_card(game: GameSession, user_id: int, db: Session):
@@ -292,6 +347,7 @@ async def _handle_draw_card(game: GameSession, user_id: int, db: Session):
 
     await manager.broadcast(game.code, {"type": ServerEvent.CARD_DRAWN, "player_id": player.id})
     await _broadcast_state(game, db)
+    await _send_hand_state(game.code, player, db)
 
 
 async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Session):
@@ -328,6 +384,7 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
         "card": {"id": card.id, "name": card.name, "effect": card.effect} if card else {},
     })
     await _broadcast_state(game, db)
+    await _send_hand_state(game.code, player, db)
 
 
 async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Session):
@@ -518,7 +575,9 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         })
         db.commit()
         db.refresh(game)
+        db.refresh(player)
         await _broadcast_state(game, db)
+        await _send_hand_state(game.code, player, db)
         return
 
     db.commit()

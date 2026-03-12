@@ -330,6 +330,7 @@ Tutti i messaggi sono JSON. Il server autentica via JWT al momento della conness
 | `player_died` | `{player_id, lost}` | penalità morte applicata |
 | `turn_ended` | `{player_id, next_player_id}` | fine turno |
 | `game_over` | `{winner_id}` | partita terminata |
+| `hand_state` | `{hand: [...], addons: [...]}` | privato — inviato solo al giocatore dopo draw, play, morte, reconnect |
 | `error` | `{message}` | errore di validazione/stato |
 
 ---
@@ -427,9 +428,9 @@ FINE TURNO
 - [x] `docker-compose.yml` — servizi `postgres:16-alpine` + `backend`, volume cards montato in `/cards`
 - [x] `backend/entrypoint.sh` — attende Postgres, esegue `alembic upgrade head`, seed carte, avvia uvicorn
 - [x] `scripts/seed_cards.py` — gestisce path Docker (`/cards`) e path locale automaticamente
+- [x] **Reconnect mano privata** — `join_game` durante partita `in_progress` ora invia `game_state` a tutti + evento privato `hand_state` solo al giocatore che si riconnette. `hand_state` inviato anche dopo `start_game`, `draw_card`, `play_card` e penalty di morte.
 
 ### ⬜ Da fare
-- [ ] **Gestione reconnect migliorata** — attualmente `join_game` invia lo stato se già presente, ma non ripristina la mano privata del giocatore nella risposta separata.
 - [ ] **Rate limiting WS** — un utente non dovrebbe poter inviare messaggi troppo veloci.
 
 ---
@@ -444,8 +445,6 @@ Con `docker compose up --build` il server parte già correttamente:
 - FK circolare `winner_id` gestita con `use_alter=True`
 
 ### Priorità media
-
-4. **Gestione reconnect della mano privata** — quando un giocatore si riconnette, riceve il `game_state` pubblico ma non la lista dettagliata delle sue carte in mano. Aggiungere un evento separato `hand_state` inviato solo al giocatore che si riconnette.
 
 ### Priorità bassa (post-MVP)
 

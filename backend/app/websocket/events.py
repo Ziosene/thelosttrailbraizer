@@ -35,4 +35,5 @@ class ServerEvent:
     PLAYER_DIED = "player_died"
     TURN_ENDED = "turn_ended"
     GAME_OVER = "game_over"
+    HAND_STATE = "hand_state"
     ERROR = "error"
