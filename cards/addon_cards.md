@@ -894,6 +894,7 @@
 - **Tipo**: Passivo
 - **Effetto**: Gli AddOn che possiedi con Rarità Comune si applicano anche a tutti i giocatori alleati (se giocate in cooperativa) o a te al doppio dell'effetto
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn broadcast antenna sharing signals to multiple player icons in the art style of The Binding of Isaac. A central antenna radiating waves outward to silhouetted players, AddOn card icons flowing along the signal paths. Thick black outlines, flat shading, generous mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -902,6 +903,7 @@
 - **Effetto**: Puoi usare una volta per turno l'abilità passiva di un personaggio con Seniority inferiore alla tua
 - **Sinergia**: Technical Architect (CTA)
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn VIP access card with a custom permission stamp in the art style of The Binding of Isaac. An ornate laminated card with a gold seal and a custom-carved checkmark, unlocking abilities below it on a tier list. Thick black outlines, flat shading, authoritative mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -909,6 +911,7 @@
 - **Tipo**: Passivo
 - **Effetto**: Il tuo personaggio non può essere "derubato" dell'identità — carte che cambiano il tuo ruolo o abilità non hanno effetto su di te
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn identity badge encased in an impenetrable crystal shell in the art style of The Binding of Isaac. A name tag inside a glowing crystal casing, a thief's hand bouncing off it harmlessly. Thick black outlines, flat shading, resolute mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -916,6 +919,7 @@
 - **Tipo**: Attivo
 - **Effetto**: Una volta per partita, dichiara un obiettivo segreto (es. "sconfiggo il prossimo boss senza usare carte") — se ci riesci, guadagni 5 Licenze bonus
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn sealed envelope with a secret challenge written inside in the art style of The Binding of Isaac. A wax-sealed envelope with a glowing challenge scroll peeking out, five license coins waiting beside it. Thick black outlines, flat shading, secretive mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -923,6 +927,7 @@
 - **Tipo**: Passivo
 - **Effetto**: Ogni volta che completi 3 boss consecutivi senza morire, guadagni 1 Certificazione bonus
 - **Rarità**: Leggendario
+- **Image prompt**: `A 2D hand-drawn epic quest scroll unfurling to reveal three boss trophies and a certification medal in the art style of The Binding of Isaac. A grand scroll with three boss defeat marks and a glowing certification badge at the end. Thick black outlines, flat shading, legendary mood. Rich golden background with ornate gold-leaf border. Indie game item card art. Radiant golden aura, the item glows with legendary power.`
 
 ---
 
@@ -930,6 +935,7 @@
 - **Tipo**: Passivo
 - **Effetto**: Ogni boss sconfitto vale +1 Licenza extra per ogni HP del boss (es. boss da 3 HP = +3 Licenze extra)
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn sticky note with story point numbers and a coin multiplier in the art style of The Binding of Isaac. A post-it note with point estimates written on it, coins multiplying below based on the boss HP total. Thick black outlines, flat shading, calculated mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -937,6 +943,7 @@
 - **Tipo**: Passivo
 - **Effetto**: Ogni AddOn che non usi per 3 turni consecutivi genera 1 Licenza automatica (come "interesse passivo")
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn dusty AddOn card accumulating coins like interest in the art style of The Binding of Isaac. An untouched AddOn card gathering cobwebs, a slow trickle of coins dripping from it passively. Thick black outlines, flat shading, neglected mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -944,6 +951,7 @@
 - **Tipo**: Attivo
 - **Effetto**: Una volta per partita, rivedi tutti gli AddOn che possiedi — puoi restituirne fino a 2 al mazzo e recuperare 8 Licenze ciascuno
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn architect's blueprint with AddOn cards being reviewed and returned in the art style of The Binding of Isaac. A large diagram spread on a table with two AddOn cards being crossed out and coins refunded below. Thick black outlines, flat shading, critical mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -951,6 +959,7 @@
 - **Tipo**: Attivo
 - **Effetto**: Una volta per turno, puoi "testare" una carta azione dalla tua mano senza giocarla — guardi l'effetto, decidi, e la rimetti in mano senza consumarla
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn test beaker with a playing card dipped inside it in the art style of The Binding of Isaac. A glass beaker with a card being lowered in for testing, its effect shown as a small preview bubble above. Thick black outlines, flat shading, curious mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -958,6 +967,7 @@
 - **Tipo**: Passivo
 - **Effetto**: Leggendario. Ogni volta che acquisti un AddOn, tutti i giocatori (incluso te) guadagnano 1 Licenza. Se sei il primo ad acquistare in quel turno, tu ne guadagni 3 invece di 1.
 - **Rarità**: Leggendario
+- **Image prompt**: `A 2D hand-drawn party popper exploding with coins and license cards in the art style of The Binding of Isaac. A confetti cannon bursting open, coins and AddOn cards raining down on all player icons gathered below. Thick black outlines, flat shading, festive mood. Rich golden background with ornate gold-leaf border. Indie game item card art. Radiant golden aura, the item glows with legendary power.`
 
 ---
 
@@ -974,6 +984,7 @@
 - **Effetto**: Puoi acquistare un AddOn anche durante il combattimento (normalmente vietato)
 - **Sinergia**: OmniStudio Consultant
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn instant deploy rocket with a shopping cart attached in the art style of The Binding of Isaac. A small rocket mid-launch with a tiny AddOn shopping cart strapped underneath, deploying it mid-flight. Thick black outlines, flat shading, swift mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -981,6 +992,7 @@
 - **Tipo**: Passivo
 - **Effetto**: Una volta per partita, puoi giocare 1 carta azione nel turno di un avversario come se fosse il tuo turno
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn playing card launching out of turn on a separate thread arrow in the art style of The Binding of Isaac. A card breaking out of a turn queue, traveling along a dashed async arrow to land during an opponent's turn. Thick black outlines, flat shading, surprising mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -988,6 +1000,7 @@
 - **Tipo**: Passivo
 - **Effetto**: Puoi "prenotare" 1 carta azione a fine turno — si gioca automaticamente all'inizio del tuo prossimo turno prima di qualsiasi altra azione
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn alarm clock with a pre-loaded playing card attached in the art style of The Binding of Isaac. A wound-up alarm clock with a card clipped to it, set to fire automatically at the next turn's bell ring. Thick black outlines, flat shading, prepared mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -995,6 +1008,7 @@
 - **Tipo**: Passivo
 - **Effetto**: Ogni volta che qualsiasi giocatore pesca un boss, tu pesca 1 carta azione aggiuntiva
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn event bus terminal with messages triggering card draws in the art style of The Binding of Isaac. A small transit hub with boss event signals arriving and a card automatically dispensed at each ping. Thick black outlines, flat shading, reactive mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1002,6 +1016,7 @@
 - **Tipo**: Attivo
 - **Effetto**: Una volta per turno, posponi l'effetto di una carta azione avversaria di 1 turno (l'effetto si applica al loro prossimo turno invece che ora)
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn enemy card being kicked forward in time along a timeline in the art style of The Binding of Isaac. A card with a clock arrow pushing it one step forward along a turn track, delaying its impact. Thick black outlines, flat shading, tactical mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1009,6 +1024,7 @@
 - **Tipo**: Passivo
 - **Effetto**: Ogni volta che un giocatore muore, tu guadagni 2 Licenze automaticamente
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn platform notification bell ringing with coins dropping from it in the art style of The Binding of Isaac. A large event bell triggered by a player death icon, two coins automatically falling into a collection tray below. Thick black outlines, flat shading, opportunistic mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1016,6 +1032,7 @@
 - **Tipo**: Passivo
 - **Effetto**: Ogni volta che le tue Licenze diminuiscono di 5 o più in un singolo turno, ne recuperi 2 al turno successivo automaticamente
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn change detector sensor with a coin recovery pipe in the art style of The Binding of Isaac. A sensor spike detecting a big drop in a license meter, triggering an automatic two-coin refill pipe. Thick black outlines, flat shading, resilient mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1023,6 +1040,7 @@
 - **Tipo**: Passivo
 - **Effetto**: Quando usi un AddOn attivo, gli avversari vengono avvisati ma non possono reagire prima che l'effetto si applichi completamente
 - **Rarità**: Comune
+- **Image prompt**: `A 2D hand-drawn publish megaphone sending a broadcast before opponents can react in the art style of The Binding of Isaac. A megaphone broadcasting a signal while opponent hands are frozen mid-reach, unable to interrupt. Thick black outlines, flat shading, preemptive mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1030,6 +1048,7 @@
 - **Tipo**: Attivo
 - **Effetto**: Una volta per partita, accumula fino a 3 azioni (carte o AddOn) e risolvile tutte nello stesso istante — gli avversari non possono interrompere il burst
 - **Rarità**: Leggendario
+- **Image prompt**: `A 2D hand-drawn job queue with three stacked cards exploding out simultaneously in the art style of The Binding of Isaac. A queue pipe with three cards loaded inside, all three launching at once in an unstoppable burst. Thick black outlines, flat shading, overwhelming mood. Rich golden background with ornate gold-leaf border. Indie game item card art. Radiant golden aura, the item glows with legendary power.`
 
 ---
 
@@ -1037,6 +1056,7 @@
 - **Tipo**: Attivo
 - **Effetto**: Dichiara un numero di turni (da 2 a 4) — quando scadono, guadagni automaticamente 4 Licenze senza dover fare nulla in quel turno
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn countdown timer with four coins waiting to drop in the art style of The Binding of Isaac. A digital countdown clock with four gold coins suspended above a collection slot, falling automatically when the timer hits zero. Thick black outlines, flat shading, patient mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1047,6 +1067,7 @@
 ### 121. Mass Email
 - **Tipo**: Attivo
 - **Effetto**: Una volta per turno, gioca 1 carta azione economica — l'effetto si applica a te e a 1 giocatore alleato a scelta
+- **Image prompt**: `A 2D hand-drawn envelope multiplying mid-send toward two player icons in the art style of The Binding of Isaac. A single envelope splitting into two copies mid-flight, each landing on a different player with a coin attached. Thick black outlines, flat shading, efficient mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 - **Rarità**: Non comune
 
 ---
@@ -1055,6 +1076,7 @@
 - **Tipo**: Attivo
 - **Effetto**: Una volta per partita, forza tutti gli avversari a scartare 1 carta dalla propria mano
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn emergency broadcast tower blasting a signal in the art style of The Binding of Isaac. A tall broadcast antenna sending a powerful wave that forces playing cards to fly out of all surrounding hands. Thick black outlines, flat shading, domineering mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1062,6 +1084,7 @@
 - **Tipo**: Attivo
 - **Effetto**: Una volta per turno, la tua prossima carta azione offensiva colpisce tutti gli avversari invece di uno solo (effetto diviso equamente se applicabile)
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn area-of-effect explosion card hitting multiple player silhouettes in the art style of The Binding of Isaac. A single playing card detonating into a radial shockwave, reaching all opponents at once. Thick black outlines, flat shading, decisive mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1069,6 +1092,7 @@
 - **Tipo**: Attivo
 - **Effetto**: Una volta per partita, acquista fino a 3 AddOn in un unico turno pagando normalmente ciascuno (ignori il limite di 1 acquisto per turno)
 - **Rarità**: Leggendario
+- **Image prompt**: `A 2D hand-drawn bulk shopping cart overflowing with three AddOn cards in the art style of The Binding of Isaac. A massive shopping cart stuffed with three glowing AddOn cards at once, coins pouring out to pay for them all. Thick black outlines, flat shading, ambitious mood. Rich golden background with ornate gold-leaf border. Indie game item card art. Radiant golden aura, the item glows with legendary power.`
 
 ---
 
@@ -1076,6 +1100,7 @@
 - **Tipo**: Passivo
 - **Effetto**: A fine di ogni tuo turno, se hai giocato 2 carte, guadagni 1 Licenza bonus
 - **Rarità**: Comune
+- **Image prompt**: `A 2D hand-drawn query result ticker counting played cards and spitting out a coin in the art style of The Binding of Isaac. A small totaling machine tallying two played cards, then dispensing one bonus coin at the end of the turn. Thick black outlines, flat shading, methodical mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1083,6 +1108,7 @@
 - **Tipo**: Passivo
 - **Effetto**: Scegli 1 giocatore come "territorio" — ogni volta che quel giocatore guadagna Licenze da boss, tu ne guadagni 1 anch'e tu
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn flag planted on a player icon marking it as claimed territory in the art style of The Binding of Isaac. A small flag staked next to a player silhouette, a coin automatically copied over each time they earn from bosses. Thick black outlines, flat shading, parasitic mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1090,6 +1116,7 @@
 - **Tipo**: Attivo
 - **Effetto**: Una volta per partita, redistribuisci le Licenze di tutti i giocatori equamente (somma totale divisa per numero di giocatori, arrotondata per difetto)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn scale balancing coin stacks from all players equally in the art style of The Binding of Isaac. A large balance scale redistributing piles of coins so every side sits at the same level. Thick black outlines, flat shading, equalizing mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1097,6 +1124,7 @@
 - **Tipo**: Passivo
 - **Effetto**: Se possiedi AddOn di 3 categorie diverse, guadagni +1 Licenza extra per ogni boss sconfitto
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn formula linking three different category symbols into one result in the art style of The Binding of Isaac. Three distinct icons connected by a formula arrow converging into a single coin bonus output. Thick black outlines, flat shading, synergetic mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1104,6 +1132,7 @@
 - **Tipo**: Passivo
 - **Effetto**: Puoi collegare 2 tuoi AddOn attivi — quando usi uno, l'altro si attiva automaticamente anche se è tappato
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn junction box wiring two AddOn cards together in the art style of The Binding of Isaac. An electrical junction box with cables running from one AddOn card to another, both lighting up when one is triggered. Thick black outlines, flat shading, interconnected mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1111,6 +1140,7 @@
 - **Tipo**: Attivo
 - **Effetto**: Una volta per partita, scegli un AddOn dal mazzo degli scarti AddOn e prendilo direttamente in tuo possesso pagandone il costo normale
 - **Rarità**: Leggendario
+- **Image prompt**: `A 2D hand-drawn hand reaching into a discard pile and pulling out a glowing AddOn card in the art style of The Binding of Isaac. A gloved hand plucking a specific shining card from the discard heap with surgical precision. Thick black outlines, flat shading, resourceful mood. Rich golden background with ornate gold-leaf border. Indie game item card art. Radiant golden aura, the item glows with legendary power.`
 
 ---
 
@@ -1122,6 +1152,7 @@
 - **Tipo**: Passivo
 - **Effetto**: Ogni 10 turni totali di partita, tutti i tuoi AddOn Comuni diventano Non Comuni per 2 turni
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn spring flower blooming from a common AddOn card upgrading it in the art style of The Binding of Isaac. A plain card with a spring flower blossoming from its corner, its border glow shifting upward in rarity. Thick black outlines, flat shading, renewing mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1129,6 +1160,7 @@
 - **Tipo**: Passivo
 - **Effetto**: Ogni volta che un tuo AddOn va nel mazzo degli scarti (per morte o cessione), pesca 1 carta azione come consolazione
 - **Rarità**: Comune
+- **Image prompt**: `A 2D hand-drawn AddOn card floating into the discard pile while a consolation action card pops up in the art style of The Binding of Isaac. An AddOn sinking away on one side, a bright replacement action card rising up on the other like a summer sunrise. Thick black outlines, flat shading, bittersweet mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1136,6 +1168,7 @@
 - **Tipo**: Passivo
 - **Effetto**: Se possiedi un AddOn senza averlo usato per 3 turni consecutivi, il suo effetto si potenzia permanentemente (+1 dado o +1 Licenza a seconda del tipo)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn AddOn card encrusted in frost growing stronger over time in the art style of The Binding of Isaac. A card covered in ice crystals with a glowing upgrade arrow, its bonus stats visibly increasing with each snowflake. Thick black outlines, flat shading, patient mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1143,6 +1176,7 @@
 - **Tipo**: Attivo
 - **Effetto**: Una volta per partita, "aggiorna" 1 tuo AddOn Non Comune — tira dado: 6–10 diventa Raro con +1 al dado; 1–5 diventa Raro con +1 Licenza per uso
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn upgrade banner dropping onto an AddOn card with a dice roll deciding the bonus in the art style of The Binding of Isaac. A grand release banner falling over an AddOn card, a d10 beside it determining which upgrade it receives. Thick black outlines, flat shading, anticipatory mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1150,6 +1184,7 @@
 - **Tipo**: Attivo
 - **Effetto**: Una volta per turno, annulla un effetto negativo che ti è stato applicato in questo turno (da boss o da avversario)
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn emergency patch being slapped over a negative status effect in the art style of The Binding of Isaac. A glowing hot patch covering a debuff icon mid-application, canceling it with a satisfying click. Thick black outlines, flat shading, urgent mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1157,6 +1192,7 @@
 - **Tipo**: Passivo
 - **Effetto**: Ogni AddOn che possiedi da 3 o più turni conta come se avesse 1 livello di Rarità superiore ai fini delle sinergie
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn AddOn card with an upgrade arrow and a higher rarity glow after aging in the art style of The Binding of Isaac. An older card gaining a brighter border as a rarity-up arrow glows above it after three turn marks. Thick black outlines, flat shading, seasoned mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1164,6 +1200,7 @@
 - **Tipo**: Passivo
 - **Effetto**: Se possiedi 2 o più AddOn dello stesso tipo (entrambi Attivi o entrambi Passivi), guadagni +1 Licenza per ogni boss sconfitto
 - **Rarità**: Comune
+- **Image prompt**: `A 2D hand-drawn partner handshake badge between two matching AddOn type icons in the art style of The Binding of Isaac. Two identical type icons shaking hands inside a partnership badge, a bonus coin unlocking beside them. Thick black outlines, flat shading, synergetic mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1171,6 +1208,7 @@
 - **Tipo**: Passivo
 - **Effetto**: I tuoi AddOn non possono essere rubati, modificati o disattivati dalle carte azione avversarie
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn locked package with a no-touch warning shield in the art style of The Binding of Isaac. A sealed package with a padlock and a red prohibition sign, enemy hands bouncing off an invisible protection field. Thick black outlines, flat shading, fortified mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1178,6 +1216,7 @@
 - **Tipo**: Passivo
 - **Effetto**: Le abilità passive degli avversari sono ridotte di 1 punto (dado o Licenza) finché possiedi questo AddOn
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn open unsealed package leaking a suppression aura at opponents in the art style of The Binding of Isaac. A rough open crate radiating a dampening wave that reduces glowing bonus icons on all opponent cards nearby. Thick black outlines, flat shading, disruptive mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1185,6 +1224,7 @@
 - **Tipo**: Attivo
 - **Effetto**: Una volta per partita, combina 2 carte azione dalla tua mano — entrambi gli effetti si applicano simultaneamente come un'unica azione
 - **Rarità**: Leggendario
+- **Image prompt**: `A 2D hand-drawn two playing cards fusing together into one super card in the art style of The Binding of Isaac. Two cards merging in a flash of energy, their combined effects written on the resulting single glowing card. Thick black outlines, flat shading, powerful mood. Rich golden background with ornate gold-leaf border. Indie game item card art. Radiant golden aura, the item glows with legendary power.`
 
 ---
 
@@ -1196,6 +1236,7 @@
 - **Tipo**: Attivo
 - **Effetto**: Prima di tirare il dado, dichiara la scommessa — se esci ≥ 8, guadagni 5 Licenze; se esci ≤ 3, perdi 2 Licenze
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn dice balanced on a knife-edge above two outcome piles in the art style of The Binding of Isaac. A d10 balanced precariously on a blade, five coins on one side and two lost coins on the other. Thick black outlines, flat shading, daring mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1203,6 +1244,7 @@
 - **Tipo**: Attivo
 - **Effetto**: Una volta per combattimento, salta il tiro di dado per 1 round e "ricarichi" — al round successivo hai +4 al dado
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn power charge gauge filling up over a skipped round in the art style of The Binding of Isaac. An empty energy bar rapidly filling to maximum during a skipped round, ready to unleash a +4 dice burst. Thick black outlines, flat shading, tension-building mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1210,6 +1252,7 @@
 - **Tipo**: Attivo
 - **Effetto**: Una volta per partita, dopo aver sconfitto un boss tira il dado — se esci ≥ 6, raddoppi le Licenze ottenute; se esci ≤ 3, le perdi tutte
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn casino roulette spinning between a x2 jackpot and a zero loss in the art style of The Binding of Isaac. A dramatic coin roulette wheel with a double prize on one side and total loss on the other, the ball mid-spin. Thick black outlines, flat shading, high-stakes mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1217,6 +1260,7 @@
 - **Tipo**: Passivo
 - **Effetto**: Se hai 0 Certificazioni e 0 AddOn, il tuo dado ha +3 permanente (sei il giocatore più svantaggiato)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn underdog figure with a glowing +3 dice bonus emerging from having nothing in the art style of The Binding of Isaac. A bare empty-handed character with a fiery +3 die floating above, compensating for zero certifications and AddOns. Thick black outlines, flat shading, scrappy mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1224,6 +1268,7 @@
 - **Tipo**: Passivo
 - **Effetto**: Prima di ogni combattimento, tira un dado "di rischio" — se esci ≥ 7, guadagni +1 Licenza per ogni HP del boss sconfitto; se esci ≤ 3, perdi 1 Licenza prima di iniziare
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn risk assessment grid with a dice roll determining the outcome quadrant in the art style of The Binding of Isaac. A 2x2 risk matrix with a rolling d10 landing in either the high-reward or high-risk zone. Thick black outlines, flat shading, analytical mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1231,6 +1276,7 @@
 - **Tipo**: Attivo
 - **Effetto**: Una volta per partita, sfida un avversario a un duello dado — entrambi tirate, chi ottiene il risultato più alto ruba 3 Licenze all'altro
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn dice duel between two players with three coins on the line in the art style of The Binding of Isaac. Two d10s clashing mid-air above a pile of three coins, each belonging to the loser. Thick black outlines, flat shading, confrontational mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1238,6 +1284,7 @@
 - **Tipo**: Passivo
 - **Effetto**: Ogni volta che un avversario acquista un AddOn, puoi immediatamente acquistarne uno anche tu (fuori dal tuo turno, pagando normalmente)
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn anxious eye watching an opponent buy an AddOn and instantly copying the purchase in the art style of The Binding of Isaac. A wide-open eye with a FOMO sweat drop, coins flying from a hand to grab an AddOn the instant an opponent does. Thick black outlines, flat shading, impulsive mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1245,6 +1292,7 @@
 - **Tipo**: Passivo
 - **Effetto**: Se sei l'unico giocatore con 0 Certificazioni mentre gli altri ne hanno almeno 1, il tuo dado ha +2 e recuperi 1 HP extra all'inizio di ogni turno
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn lone warrior with a +2 dice bonus standing against a crowd of certified opponents in the art style of The Binding of Isaac. A single battered figure glowing with +2 power and a HP regen heart, surrounded by opponents holding certification badges. Thick black outlines, flat shading, defiant mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1252,6 +1300,7 @@
 - **Tipo**: Passivo
 - **Effetto**: Ogni volta che un avversario raggiunge 4 Certificazioni, tu guadagni 3 Licenze bonus automaticamente
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn underdog spring launching three bonus coins when an opponent hits four certifications in the art style of The Binding of Isaac. A compressed spring releasing three coins the moment a rival's certification counter hits four. Thick black outlines, flat shading, resilient mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
 ---
 
@@ -1259,6 +1308,7 @@
 - **Tipo**: Attivo
 - **Effetto**: Leggendario. Una volta per partita, dichiara "Wildcard" — per 1 intero turno puoi ignorare tutti i limiti di gioco (carte illimitate, AddOn illimitati, AddOn tappati riutilizzabili) purché le Licenze lo permettano.
 - **Rarità**: Leggendario
+- **Image prompt**: `A 2D hand-drawn joker wildcard exploding with unlimited energy and broken rule icons in the art style of The Binding of Isaac. A glowing joker card shattering game rule tablets, cards and AddOns flying freely in all directions. Thick black outlines, flat shading, chaotic mood. Rich golden background with ornate gold-leaf border. Indie game item card art. Radiant golden aura, the item glows with legendary power.`
 
 ---
 
