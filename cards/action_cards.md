@@ -1880,6 +1880,7 @@
 - **Quando**: Automatica — si attiva quando vai sotto 2 HP
 - **Effetto**: Si lancia automaticamente — il boss subisce 1 HP senza consumare il limite di 2 carte per turno
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn autonomous machine launching a flaming arrow in the art style of The Binding of Isaac. A mechanical gear-driven cannon firing by itself with sparks and motion lines, no human hand involved. Thick black outlines, flat shading, urgent automated mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -1888,6 +1889,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Guida passo passo il combattimento — per 1 round scegli se applicare il tiro del dado o sostituirlo con un valore fisso di 7
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn step-by-step wizard screen floating in the air in the art style of The Binding of Isaac. A glowing panel showing numbered arrows guiding a tiny character through combat stages, with a large bold "7" highlighted. Thick black outlines, flat shading, methodical mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -1896,6 +1898,7 @@
 - **Quando**: Fuori dal proprio turno
 - **Effetto**: Presenta 2 opzioni a un avversario — lui sceglie, tu applichi l'effetto opposto (es. sceglie di perdere 1 HP → tu guadagni 2 Licenze)
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn diamond-shaped decision node with two branching paths in the art style of The Binding of Isaac. A confused tiny figure standing at a fork choosing between two options labeled A and B, while a shadowy hand behind pulls strings. Thick black outlines, flat shading, tricky mischievous mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -1904,6 +1907,7 @@
 - **Quando**: In qualsiasi momento
 - **Effetto**: Ridistribuisci le Licenze tra te e 1 avversario — la somma si divide, tu prendi la metà superiore
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn balance scale redistributing gold coins in the art style of The Binding of Isaac. One side of the scale tips lower with more coins sliding toward a grinning figure, the other side lighter and losing. Thick black outlines, flat shading, opportunistic greedy mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -1912,6 +1916,7 @@
 - **Quando**: In qualsiasi momento
 - **Effetto**: Gioca questa carta "dentro" un'altra — aggiunge +1 Licenza a un effetto economico o +1 HP a uno difensivo già giocato in questo turno
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn small card nestled inside a larger glowing card in the art style of The Binding of Isaac. A miniature card slotting perfectly into a bigger card like a puzzle piece, both cards emitting a combined radiant glow. Thick black outlines, flat shading, synergistic clever mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -1920,6 +1925,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Pesca 1 carta e guarda le prime 2 del mazzo boss senza pescarle
 - **Rarità**: Comune
+- **Image prompt**: `A 2D hand-drawn magnifying glass hovering over a stack of monster cards in the art style of The Binding of Isaac. A curious eye peering through the lens at two shadowy boss silhouettes in the deck below. Thick black outlines, flat shading, inquisitive investigative mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -1928,6 +1934,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Crea un record jolly — aggiungi 1 carta con effetto base (guadagna 1 Licenza) alla tua mano
 - **Rarità**: Comune
+- **Image prompt**: `A 2D hand-drawn hand writing on a blank card that materializes from thin air in the art style of The Binding of Isaac. A glowing quill pen inscribing a simple coin symbol onto a freshly conjured floating card. Thick black outlines, flat shading, creative constructive mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -1936,6 +1943,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Il sistema consiglia — pesca 1 AddOn dal mazzo gratis, ma puoi tenerlo solo se è compatibile con il tuo Ruolo (altrimenti torna nel mazzo)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn glowing robot brain floating above a card deck offering a single item in the art style of The Binding of Isaac. A mechanical Einstein-like head with circuit-pattern hair extending a claw arm holding one glowing AddOn card toward the player. Thick black outlines, flat shading, wise algorithmic mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -1944,6 +1952,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Dividi il mazzo azione in 2 pile — scegli da quale pescare per i prossimi 2 turni
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn deck of cards being split down the middle into two separate piles in the art style of The Binding of Isaac. Two hands pulling a card deck apart, each half glowing a different color, a tiny figure standing between them deciding which pile to choose. Thick black outlines, flat shading, strategic decisive mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -1952,6 +1961,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Segmenta il tavolo — 1 gruppo di giocatori a tua scelta pesca 1 carta, l'altro gruppo scarta 1 carta
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn scroll dividing a group of tiny figures into two camps in the art style of The Binding of Isaac. One group of figures receiving a card with a green glow, the other group dropping a card with a red glow, a hand above holding the segmented scroll with authority. Thick black outlines, flat shading, controlling powerful mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 

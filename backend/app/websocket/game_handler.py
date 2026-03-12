@@ -341,6 +341,11 @@ async def _handle_draw_card(game: GameSession, user_id: int, db: Session):
 
     from app.models.game import PlayerHandCard
     db.add(PlayerHandCard(player_id=player.id, action_card_id=drawn[0]))
+
+    # TODO: triggherare gli addon passivi con trigger "inizio turno" o "quando peschi una carta".
+    # Esempi: addons che danno bonus licenze all'inizio del turno, o che permettono di pescare extra.
+    # Va implementata una funzione trigger_passive_addons(event="on_draw", player, game, db).
+
     game.current_phase = TurnPhase.action
     db.commit()
     db.refresh(game)
@@ -363,6 +368,12 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
     if player.cards_played_this_turn >= engine.MAX_CARDS_PER_TURN:
         await _error(game.code, user_id, "Card limit reached this turn")
         return
+
+    # TODO: validare il timing della carta prima di giocarla.
+    # Ogni carta ha un campo "Quando" (es. "Durante combattimento", "Fuori dal combattimento",
+    # "In qualsiasi momento", "Automatica"). Attualmente non viene verificato.
+    # Va implementata una funzione can_play_card(card, game) che confronta
+    # card.timing con game.current_phase e player.is_in_combat.
 
     hand_card_id = data.get("hand_card_id")
     from app.models.game import PlayerHandCard
@@ -431,6 +442,10 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
     game.addon_deck = game.addon_deck[1:]
     from app.models.game import PlayerAddon
     db.add(PlayerAddon(player_id=player.id, addon_id=addon_id))
+
+    # TODO: triggherare gli addon passivi con trigger "quando acquisti un addon" (sia il nuovo che quelli già posseduti).
+    # Alcuni addon esistenti danno bonus al momento dell'acquisto di un nuovo addon.
+    # Va chiamata trigger_passive_addons(event="on_addon_bought", player, game, new_addon=addon, db).
     db.commit()
     db.refresh(game)
 
@@ -498,6 +513,14 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         return
 
     roll = engine.roll_d10()
+
+    # TODO: applicare abilità speciale del boss prima/dopo il tiro.
+    # Ogni boss in boss_cards.md ha un campo "Abilità speciale" con effetto unico
+    # (es. modifica soglia dado, infligge danno extra, protegge HP, ecc.).
+    # Va implementata una funzione apply_boss_ability(boss, player, game, roll, db)
+    # che distingue i trigger: "prima del tiro", "dopo il tiro", "quando sopravvive".
+    # Vedere cards/boss_cards.md per l'abilità completa di ogni boss.
+
     result = engine.resolve_combat_round(roll, boss.dice_threshold)
     player.combat_round += 1
 
@@ -614,6 +637,10 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
     if game.current_phase not in (TurnPhase.action, TurnPhase.draw):
         await _error(game.code, user_id, "Cannot end turn now (in combat?)")
         return
+
+    # TODO: triggherare gli addon passivi con trigger "fine turno" o "inizio turno".
+    # Alcuni addon applicano effetti periodici (es. guadagna 1L ogni turno, recupera 1HP, ecc.).
+    # Va chiamata trigger_passive_addons(event="on_turn_end", player, game, db) prima di avanzare.
 
     # Untap all addons
     for pa in player.addons:

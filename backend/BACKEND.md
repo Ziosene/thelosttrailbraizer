@@ -440,8 +440,16 @@ FINE TURNO
   - Utilità: pesca carte, riordina/recupera mazzi
   - Interferenza: azioni forzate su avversari, furti
   - Leggendarie: effetti compositi multi-categoria
+  - **Validazione timing** — ogni carta ha un campo `Quando` che va verificato prima di giocarla (es. "durante combattimento", "fuori dal combattimento"). Da implementare in `can_play_card(card, game)`.
 
-- [ ] **Effetti addon (200 addon)** — `_handle_use_addon` tappa l'addon ma NON applica nessun effetto. Va creata `apply_addon_effect(addon, player, game, db)` per gli addon Attivi (uso manuale) e hook passivi nei punti giusti del flusso (roll_dice, inizio turno, acquisto, ecc.) per gli addon Passivi. Vedere `cards/addon_cards.md`.
+- [ ] **Effetti addon (200 addon)** — `_handle_use_addon` tappa l'addon ma NON applica nessun effetto. Va creata `apply_addon_effect(addon, player, game, db)` per gli addon Attivi (uso manuale) e hook `trigger_passive_addons(event, player, game, db)` nei seguenti punti del flusso:
+  - `on_draw` — in `_handle_draw_card` dopo aver pescato
+  - `on_turn_end` — in `_handle_end_turn` prima di untappare gli addon
+  - `on_addon_bought` — in `_handle_buy_addon` dopo l'acquisto
+  - `on_roll` — in `_handle_roll_dice` prima/dopo il tiro dado
+  Vedere `cards/addon_cards.md` per l'effetto completo di ogni addon.
+
+- [ ] **Abilità speciali boss (100 boss)** — `_handle_roll_dice` non applica nessuna abilità speciale del boss. Va creata `apply_boss_ability(boss, player, game, roll, trigger, db)` con trigger `"before_roll"` / `"after_roll"` / `"on_survive"`. Vedere `cards/boss_cards.md` per l'abilità di ogni boss.
 
 - [ ] **Rate limiting WS** — un utente non dovrebbe poter inviare messaggi troppo veloci.
 
