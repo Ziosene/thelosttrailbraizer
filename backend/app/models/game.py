@@ -44,13 +44,26 @@ class GameSession(Base):
     current_turn_index: Mapped[int] = mapped_column(Integer, default=0)  # index in turn_order
     turn_number: Mapped[int] = mapped_column(Integer, default=0)
     current_phase: Mapped[TurnPhase] = mapped_column(Enum(TurnPhase), default=TurnPhase.draw)
-    # JSON arrays of card IDs representing the shared decks
-    action_deck: Mapped[list] = mapped_column(JSON, default=list)   # ordered list of ActionCard.id
-    boss_deck: Mapped[list] = mapped_column(JSON, default=list)     # ordered list of BossCard.id
-    addon_deck: Mapped[list] = mapped_column(JSON, default=list)    # ordered list of AddonCard.id
-    action_discard: Mapped[list] = mapped_column(JSON, default=list)
-    boss_discard: Mapped[list] = mapped_column(JSON, default=list)
-    addon_discard: Mapped[list] = mapped_column(JSON, default=list)
+    # JSON arrays of card IDs — dual decks for each type
+    # Action decks (2 decks, player chooses which to draw from)
+    action_deck_1: Mapped[list] = mapped_column(JSON, default=list)
+    action_deck_2: Mapped[list] = mapped_column(JSON, default=list)
+    action_discard_1: Mapped[list] = mapped_column(JSON, default=list)
+    action_discard_2: Mapped[list] = mapped_column(JSON, default=list)
+    # Boss decks (2 decks + 1 face-up market card each)
+    boss_deck_1: Mapped[list] = mapped_column(JSON, default=list)
+    boss_deck_2: Mapped[list] = mapped_column(JSON, default=list)
+    boss_market_1: Mapped[int | None] = mapped_column(Integer, nullable=True)  # BossCard.id visible in market
+    boss_market_2: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    boss_discard_1: Mapped[list] = mapped_column(JSON, default=list)
+    boss_discard_2: Mapped[list] = mapped_column(JSON, default=list)
+    # AddOn decks (2 decks + 1 face-up market card each)
+    addon_deck_1: Mapped[list] = mapped_column(JSON, default=list)
+    addon_deck_2: Mapped[list] = mapped_column(JSON, default=list)
+    addon_market_1: Mapped[int | None] = mapped_column(Integer, nullable=True)  # AddonCard.id visible in market
+    addon_market_2: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    addon_discard_1: Mapped[list] = mapped_column(JSON, default=list)
+    addon_discard_2: Mapped[list] = mapped_column(JSON, default=list)
     turn_order: Mapped[list] = mapped_column(JSON, default=list)    # list of GamePlayer.id in turn order
     winner_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("game_players.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
@@ -85,6 +98,8 @@ class GamePlayer(Base):
     is_in_combat: Mapped[bool] = mapped_column(Boolean, default=False)
     current_boss_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("boss_cards.id"), nullable=True)
     current_boss_hp: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # "market_1" | "market_2" | "deck_1" | "deck_2" — determines what happens on win/loss
+    current_boss_source: Mapped[str | None] = mapped_column(String(10), nullable=True)
     combat_round: Mapped[int] = mapped_column(Integer, default=0)
 
     # Score (for ELO calculation at end)

@@ -218,12 +218,14 @@ Client (React)
 | current_turn_index | INT | indice in `turn_order` |
 | turn_number | INT | |
 | current_phase | ENUM | draw / action / combat / end |
-| action_deck | JSON | lista di ActionCard.id |
-| boss_deck | JSON | lista di BossCard.id |
-| addon_deck | JSON | lista di AddonCard.id |
-| action_discard | JSON | |
-| boss_discard | JSON | |
-| addon_discard | JSON | |
+| action_deck_1 / action_deck_2 | JSON | due metà del mazzo azione (player sceglie da quale pescare) |
+| action_discard_1 / action_discard_2 | JSON | scarti per ciascun mazzo azione |
+| boss_deck_1 / boss_deck_2 | JSON | due metà del mazzo boss |
+| boss_market_1 / boss_market_2 | INT nullable | BossCard.id del boss visibile nel "mercato" |
+| boss_discard_1 / boss_discard_2 | JSON | scarti per ciascun mazzo boss |
+| addon_deck_1 / addon_deck_2 | JSON | due metà del mazzo addon |
+| addon_market_1 / addon_market_2 | INT nullable | AddonCard.id dell'addon visibile nel "mercato" |
+| addon_discard_1 / addon_discard_2 | JSON | scarti per ciascun mazzo addon |
 | turn_order | JSON | lista di GamePlayer.id in ordine di turno |
 | winner_id | FK → game_players | nullable |
 | created_at / finished_at | DATETIME | |
@@ -243,6 +245,7 @@ Client (React)
 | is_in_combat | BOOL | |
 | current_boss_id | FK → boss_cards | nullable |
 | current_boss_hp | INT | HP attuale del boss in combattimento |
+| current_boss_source | VARCHAR(10) | `market_1` / `market_2` / `deck_1` / `deck_2` — determina logica vittoria/sconfitta |
 | combat_round | INT | round corrente di combattimento |
 | score / bosses_defeated | INT | per ELO |
 
@@ -302,11 +305,11 @@ Tutti i messaggi sono JSON. Il server autentica via JWT al momento della conness
 | `join_game` | — | Primo join o reconnect |
 | `select_character` | `{seniority, role}` | In lobby |
 | `start_game` | — | Host con ≥2 giocatori in lobby |
-| `draw_card` | — | Fase `draw`, proprio turno |
+| `draw_card` | `{deck: 1\|2}` | Fase `draw`, proprio turno — sceglie da quale mazzo pescare |
 | `play_card` | `{hand_card_id}` | Fase `action`, proprio turno |
-| `buy_addon` | — | Fase `action`, proprio turno |
+| `buy_addon` | `{source: "market_1"\|"market_2"\|"deck_1"\|"deck_2"}` | Fase `action`, proprio turno |
 | `use_addon` | `{player_addon_id}` | Fase `action`, proprio turno (addon Attivi) |
-| `start_combat` | — | Fase `action`, proprio turno |
+| `start_combat` | `{source: "market_1"\|"market_2"\|"deck_1"\|"deck_2"}` | Fase `action`, proprio turno |
 | `roll_dice` | — | Fase `combat`, proprio turno |
 | `retreat_combat` | — | Fase `combat`, proprio turno |
 | `end_turn` | — | Fase `action` o `draw`, proprio turno |
@@ -315,7 +318,7 @@ Tutti i messaggi sono JSON. Il server autentica via JWT al momento della conness
 
 | `type` | Payload principale | Trigger |
 |---|---|---|
-| `game_state` | snapshot completo | join, reconnect, dopo ogni azione |
+| `game_state` | snapshot completo incl. `boss_market_1/2`, `addon_market_1/2`, conteggi mazzi | join, reconnect, dopo ogni azione |
 | `player_joined` | `{user_id, nickname}` | nuovo giocatore in lobby |
 | `player_left` | `{user_id}` | disconnessione |
 | `game_started` | — | partita avviata |
@@ -347,6 +350,7 @@ File: `app/game/engine.py`
 | `calculate_max_hp(seniority)` | Seniority | int | J=1, E=2, S=3, Ev=4 |
 | `check_victory(certificazioni)` | int | bool | True se ≥ 5 |
 | `shuffle_deck(deck)` | list | list | copia + shuffle |
+| `split_deck(deck)` | list | (list, list) | divide un mazzo shufflato in due metà bilanciate |
 | `build_action_deck(card_ids_by_rarity)` | dict | list | Comune×3, NC×2, Raro×1, Legg×1 |
 | `draw_cards(deck, discard, count)` | list, list, int | (drawn, deck, discard) | reshuffle automatico |
 | `apply_death_penalty(hand, licenze, addons)` | list, int, list | dict | perde 1 carta random, 1 licenza, 1 addon |
@@ -429,6 +433,7 @@ FINE TURNO
 - [x] `backend/entrypoint.sh` — attende Postgres, esegue `alembic upgrade head`, seed carte, avvia uvicorn
 - [x] `scripts/seed_cards.py` — gestisce path Docker (`/cards`) e path locale automaticamente
 - [x] **Reconnect mano privata** — `join_game` durante partita `in_progress` ora invia `game_state` a tutti + evento privato `hand_state` solo al giocatore che si riconnette. `hand_state` inviato anche dopo `start_game`, `draw_card`, `play_card` e penalty di morte.
+- [x] **Doppi mazzi + mercato** — `start_game` divide tutti i mazzi in due metà; boss e addon hanno 1 carta visibile per mazzo nel "mercato". `draw_card` accetta `{deck: 1|2}`. `start_combat` e `buy_addon` accettano `{source: market_1|market_2|deck_1|deck_2}`. Logica vittoria/sconfitta rispetta le regole del mercato. Migration `0002_dual_decks.py`.
 
 ### ⬜ Da fare
 

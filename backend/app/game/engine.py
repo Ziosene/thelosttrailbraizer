@@ -43,6 +43,12 @@ def shuffle_deck(deck: list) -> list:
     return shuffled
 
 
+def split_deck(deck: list) -> tuple[list, list]:
+    """Split a shuffled deck into two halves as evenly as possible."""
+    mid = len(deck) // 2
+    return deck[:mid], deck[mid:]
+
+
 def build_action_deck(card_ids_by_rarity: dict) -> list:
     """
     Build the shared action deck with correct copy counts.

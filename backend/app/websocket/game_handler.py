@@ -41,6 +41,19 @@ def _build_game_state(game: GameSession, db: Session) -> dict:
             "bosses_defeated": gp.bosses_defeated,
         })
 
+    # Resolve visible market cards to full objects for the client
+    def _boss_info(boss_id: int | None) -> dict | None:
+        if boss_id is None:
+            return None
+        b = db.get(BossCard, boss_id)
+        return {"id": b.id, "name": b.name, "hp": b.hp, "threshold": b.dice_threshold} if b else None
+
+    def _addon_info(addon_id: int | None) -> dict | None:
+        if addon_id is None:
+            return None
+        a = db.get(AddonCard, addon_id)
+        return {"id": a.id, "name": a.name, "cost": a.cost, "effect": a.effect, "rarity": a.rarity} if a else None
+
     return {
         "type": ServerEvent.GAME_STATE,
         "game": {
@@ -50,9 +63,16 @@ def _build_game_state(game: GameSession, db: Session) -> dict:
             "current_phase": game.current_phase,
             "turn_number": game.turn_number,
             "current_player_id": current_player_id,
-            "action_deck_count": len(game.action_deck),
-            "boss_deck_count": len(game.boss_deck),
-            "addon_deck_count": len(game.addon_deck),
+            "action_deck_1_count": len(game.action_deck_1 or []),
+            "action_deck_2_count": len(game.action_deck_2 or []),
+            "boss_deck_1_count": len(game.boss_deck_1 or []),
+            "boss_deck_2_count": len(game.boss_deck_2 or []),
+            "boss_market_1": _boss_info(game.boss_market_1),
+            "boss_market_2": _boss_info(game.boss_market_2),
+            "addon_deck_1_count": len(game.addon_deck_1 or []),
+            "addon_deck_2_count": len(game.addon_deck_2 or []),
+            "addon_market_1": _addon_info(game.addon_market_1),
+            "addon_market_2": _addon_info(game.addon_market_2),
             "players": players,
         },
     }
@@ -169,7 +189,7 @@ async def handle_message(
     elif action == ClientAction.START_GAME:
         await _handle_start_game(game, user_id, db)
     elif action == ClientAction.DRAW_CARD:
-        await _handle_draw_card(game, user_id, db)
+        await _handle_draw_card(game, user_id, data, db)
     elif action == ClientAction.PLAY_CARD:
         await _handle_play_card(game, user_id, data, db)
     elif action == ClientAction.BUY_ADDON:
@@ -177,7 +197,7 @@ async def handle_message(
     elif action == ClientAction.USE_ADDON:
         await _handle_use_addon(game, user_id, data, db)
     elif action == ClientAction.START_COMBAT:
-        await _handle_start_combat(game, user_id, db)
+        await _handle_start_combat(game, user_id, data, db)
     elif action == ClientAction.ROLL_DICE:
         await _handle_roll_dice(game, user_id, db)
     elif action == ClientAction.END_TURN:
@@ -285,9 +305,23 @@ async def _handle_start_game(game: GameSession, user_id: int, db: Session):
     for ac in action_cards:
         by_rarity.setdefault(ac.rarity, []).append(ac.id)
 
-    game.action_deck = engine.build_action_deck(by_rarity)
-    game.boss_deck = engine.shuffle_deck([bc.id for bc in boss_cards])
-    game.addon_deck = engine.shuffle_deck([ac.id for ac in addon_cards])
+    full_action_deck = engine.build_action_deck(by_rarity)
+    game.action_deck_1, game.action_deck_2 = engine.split_deck(full_action_deck)
+    game.action_discard_1, game.action_discard_2 = [], []
+
+    full_boss_deck = engine.shuffle_deck([bc.id for bc in boss_cards])
+    game.boss_deck_1, game.boss_deck_2 = engine.split_deck(full_boss_deck)
+    game.boss_discard_1, game.boss_discard_2 = [], []
+    # Reveal first market card from each boss deck
+    game.boss_market_1 = game.boss_deck_1.pop(0) if game.boss_deck_1 else None
+    game.boss_market_2 = game.boss_deck_2.pop(0) if game.boss_deck_2 else None
+
+    full_addon_deck = engine.shuffle_deck([ac.id for ac in addon_cards])
+    game.addon_deck_1, game.addon_deck_2 = engine.split_deck(full_addon_deck)
+    game.addon_discard_1, game.addon_discard_2 = [], []
+    # Reveal first market card from each addon deck
+    game.addon_market_1 = game.addon_deck_1.pop(0) if game.addon_deck_1 else None
+    game.addon_market_2 = game.addon_deck_2.pop(0) if game.addon_deck_2 else None
     game.turn_order = [p.id for p in players]
     game.status = GameStatus.in_progress
     game.current_turn_index = 0
@@ -314,7 +348,7 @@ async def _handle_start_game(game: GameSession, user_id: int, db: Session):
         await _send_hand_state(game.code, player, db)
 
 
-async def _handle_draw_card(game: GameSession, user_id: int, db: Session):
+async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Session):
     if game.status != GameStatus.in_progress:
         await _error(game.code, user_id, "Game not in progress")
         return
@@ -332,11 +366,21 @@ async def _handle_draw_card(game: GameSession, user_id: int, db: Session):
         await _error(game.code, user_id, "Hand is full")
         return
 
-    drawn, game.action_deck, game.action_discard = engine.draw_cards(
-        game.action_deck, game.action_discard, 1
-    )
+    deck_num = data.get("deck", 1)  # client sends 1 or 2
+    if deck_num not in (1, 2):
+        await _error(game.code, user_id, "Invalid deck number (must be 1 or 2)")
+        return
+
+    if deck_num == 1:
+        drawn, game.action_deck_1, game.action_discard_1 = engine.draw_cards(
+            game.action_deck_1, game.action_discard_1, 1
+        )
+    else:
+        drawn, game.action_deck_2, game.action_discard_2 = engine.draw_cards(
+            game.action_deck_2, game.action_discard_2, 1
+        )
     if not drawn:
-        await _error(game.code, user_id, "No cards left")
+        await _error(game.code, user_id, f"No cards left in deck {deck_num}")
         return
 
     from app.models.game import PlayerHandCard
@@ -423,11 +467,33 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
         await _error(game.code, user_id, "Not your turn")
         return
 
-    if not game.addon_deck:
-        await _error(game.code, user_id, "No addons available")
+    # source: "market_1" | "market_2" | "deck_1" | "deck_2"
+    source = data.get("source", "market_1")
+    if source not in ("market_1", "market_2", "deck_1", "deck_2"):
+        await _error(game.code, user_id, "Invalid source (market_1/market_2/deck_1/deck_2)")
         return
 
-    addon_id = game.addon_deck[0]
+    if source == "market_1":
+        if not game.addon_market_1:
+            await _error(game.code, user_id, "No addon in market slot 1")
+            return
+        addon_id = game.addon_market_1
+    elif source == "market_2":
+        if not game.addon_market_2:
+            await _error(game.code, user_id, "No addon in market slot 2")
+            return
+        addon_id = game.addon_market_2
+    elif source == "deck_1":
+        if not game.addon_deck_1:
+            await _error(game.code, user_id, "Addon deck 1 is empty")
+            return
+        addon_id = game.addon_deck_1.pop(0)
+    else:  # deck_2
+        if not game.addon_deck_2:
+            await _error(game.code, user_id, "Addon deck 2 is empty")
+            return
+        addon_id = game.addon_deck_2.pop(0)
+
     addon = db.get(AddonCard, addon_id)
     if not addon:
         await _error(game.code, user_id, "Addon not found")
@@ -439,7 +505,19 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
         return
 
     player.licenze -= cost
-    game.addon_deck = game.addon_deck[1:]
+
+    # If buying from market, replace with top of that deck
+    if source == "market_1":
+        game.addon_discard_1 = (game.addon_discard_1 or []) + [addon_id]
+        game.addon_market_1 = game.addon_deck_1.pop(0) if game.addon_deck_1 else None
+    elif source == "market_2":
+        game.addon_discard_2 = (game.addon_discard_2 or []) + [addon_id]
+        game.addon_market_2 = game.addon_deck_2.pop(0) if game.addon_deck_2 else None
+    elif source == "deck_1":
+        game.addon_discard_1 = (game.addon_discard_1 or []) + [addon_id]
+    else:  # deck_2
+        game.addon_discard_2 = (game.addon_discard_2 or []) + [addon_id]
+
     from app.models.game import PlayerAddon
     db.add(PlayerAddon(player_id=player.id, addon_id=addon_id))
 
@@ -457,7 +535,7 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
     await _broadcast_state(game, db)
 
 
-async def _handle_start_combat(game: GameSession, user_id: int, db: Session):
+async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: Session):
     if game.status != GameStatus.in_progress or game.current_phase != TurnPhase.action:
         await _error(game.code, user_id, "Cannot start combat now")
         return
@@ -471,11 +549,33 @@ async def _handle_start_combat(game: GameSession, user_id: int, db: Session):
         await _error(game.code, user_id, "Already in combat")
         return
 
-    if not game.boss_deck:
-        await _error(game.code, user_id, "No bosses left")
+    # source: "market_1" | "market_2" | "deck_1" | "deck_2"
+    source = data.get("source", "market_1")
+    if source not in ("market_1", "market_2", "deck_1", "deck_2"):
+        await _error(game.code, user_id, "Invalid source (market_1/market_2/deck_1/deck_2)")
         return
 
-    boss_id = game.boss_deck.pop(0)
+    if source == "market_1":
+        if not game.boss_market_1:
+            await _error(game.code, user_id, "No boss in market slot 1")
+            return
+        boss_id = game.boss_market_1
+    elif source == "market_2":
+        if not game.boss_market_2:
+            await _error(game.code, user_id, "No boss in market slot 2")
+            return
+        boss_id = game.boss_market_2
+    elif source == "deck_1":
+        if not game.boss_deck_1:
+            await _error(game.code, user_id, "Boss deck 1 is empty")
+            return
+        boss_id = game.boss_deck_1.pop(0)
+    else:  # deck_2
+        if not game.boss_deck_2:
+            await _error(game.code, user_id, "Boss deck 2 is empty")
+            return
+        boss_id = game.boss_deck_2.pop(0)
+
     boss = db.get(BossCard, boss_id)
     if not boss:
         await _error(game.code, user_id, "Boss not found")
@@ -483,6 +583,7 @@ async def _handle_start_combat(game: GameSession, user_id: int, db: Session):
 
     player.is_in_combat = True
     player.current_boss_id = boss_id
+    player.current_boss_source = source
     player.current_boss_hp = boss.hp
     player.combat_round = 0
     game.current_phase = TurnPhase.combat
@@ -546,10 +647,24 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         player.licenze += boss.reward_licenze
         if boss.has_certification:
             player.certificazioni += 1
-        game.boss_discard.append(player.current_boss_id)
+
+        source = player.current_boss_source
+        if source == "market_1":
+            # Remove from market, replace with top of deck_1
+            game.boss_discard_1 = (game.boss_discard_1 or []) + [boss.id]
+            game.boss_market_1 = game.boss_deck_1.pop(0) if game.boss_deck_1 else None
+        elif source == "market_2":
+            game.boss_discard_2 = (game.boss_discard_2 or []) + [boss.id]
+            game.boss_market_2 = game.boss_deck_2.pop(0) if game.boss_deck_2 else None
+        elif source == "deck_1":
+            game.boss_discard_1 = (game.boss_discard_1 or []) + [boss.id]
+        else:  # deck_2
+            game.boss_discard_2 = (game.boss_discard_2 or []) + [boss.id]
+
         player.is_in_combat = False
         player.current_boss_id = None
         player.current_boss_hp = None
+        player.current_boss_source = None
         game.current_phase = TurnPhase.action
 
         event["combat_ended"] = True
@@ -577,12 +692,12 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         addon_ids = [pa.addon_id for pa in player.addons]
         penalty = engine.apply_death_penalty(hand_ids, player.licenze, addon_ids)
 
-        # Remove lost card from hand
+        # Remove lost card from hand (goes to discard 1 by default)
         if "card" in penalty["lost"]:
             lost_card_id = penalty["lost"]["card"]
             hc_to_remove = next((hc for hc in player.hand if hc.action_card_id == lost_card_id), None)
             if hc_to_remove:
-                game.action_discard.append(lost_card_id)
+                game.action_discard_1 = (game.action_discard_1 or []) + [lost_card_id]
                 db.delete(hc_to_remove)
 
         # Remove lost addon
@@ -590,7 +705,7 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             lost_addon_id = penalty["lost"]["addon"]
             pa_to_remove = next((pa for pa in player.addons if pa.addon_id == lost_addon_id), None)
             if pa_to_remove:
-                game.addon_discard.append(lost_addon_id)
+                game.addon_discard_1 = (game.addon_discard_1 or []) + [lost_addon_id]
                 db.delete(pa_to_remove)
 
         player.licenze = penalty["licenze"]
@@ -598,7 +713,14 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         player.is_in_combat = False
         player.current_boss_id = None
         player.current_boss_hp = None
-        game.boss_deck.insert(0, boss.id)  # boss goes back to top
+        # Boss goes back to top of the deck it came from (market bosses stay in market)
+        source = player.current_boss_source
+        if source == "deck_1":
+            game.boss_deck_1 = [boss.id] + (game.boss_deck_1 or [])
+        elif source == "deck_2":
+            game.boss_deck_2 = [boss.id] + (game.boss_deck_2 or [])
+        # market_1 / market_2: boss stays in market, nothing to do
+        player.current_boss_source = None
         game.current_phase = TurnPhase.action
 
         event["combat_ended"] = True
@@ -727,10 +849,20 @@ async def _handle_retreat(game: GameSession, user_id: int, db: Session):
         return
 
     boss_id = player.current_boss_id
-    game.boss_deck.insert(0, boss_id)  # boss goes back
+    source = player.current_boss_source
+    # Boss goes back to its origin: deck → top of that deck; market → back to its market slot
+    if source == "deck_1":
+        game.boss_deck_1 = [boss_id] + (game.boss_deck_1 or [])
+    elif source == "deck_2":
+        game.boss_deck_2 = [boss_id] + (game.boss_deck_2 or [])
+    elif source == "market_1":
+        game.boss_market_1 = boss_id
+    elif source == "market_2":
+        game.boss_market_2 = boss_id
     player.is_in_combat = False
     player.current_boss_id = None
     player.current_boss_hp = None
+    player.current_boss_source = None
     game.current_phase = TurnPhase.action
     db.commit()
     db.refresh(game)
