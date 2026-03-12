@@ -134,7 +134,7 @@ FASE AZIONE
   └─ Pesca obbligatoria di 1 carta dal mazzo Azione
 
 FASE DECISIONALE (scelta esclusiva)
-  ├─ A) COMBATTI: pesca 1 carta dal mazzo Boss (irrevocabile*)
+  ├─ A) COMBATTI: scegli quale boss affrontare (mercato A/B o pesca dal mazzo A/B)
   └─ B) PASSA: termina il turno senza combattere
 
 FASE CARTE
@@ -159,7 +159,10 @@ FINE TURNO
 
 ### 5.1 Inizio combattimento
 
-Il giocatore decide di combattere e pesca **1 carta Boss** dal mazzo condiviso.
+Il giocatore decide di combattere e **sceglie quale boss affrontare**:
+- Boss visibile nel **mercato A** o **mercato B** (carta scoperta, caratteristiche note)
+- Pesca **blind** dal **mazzo A** o **mazzo B** (senza vedere la carta prima)
+
 La carta Boss riporta:
 - Nome del boss
 - HP del boss
@@ -228,8 +231,10 @@ L'HP si resetta all'inizio del prossimo turno del giocatore.
 ## 7. I Mazzi
 
 Tutti e tre i mazzi sono **condivisi** tra tutti i giocatori della stessa partita.
+Ogni tipologia di mazzo è **divisa in due metà** (Mazzo A e Mazzo B), mescolate separatamente.
 
-### 7.1 Mazzo Azione
+### 7.1 Mazzo Azione (A e B)
+
 Carte giocabili durante il turno. Tipologie:
 - **Offensiva** – danni al boss o ad altri giocatori
 - **Difensiva** – recupero HP, scudi
@@ -238,19 +243,44 @@ Carte giocabili durante il turno. Tipologie:
 - **Utilità** – pesca carte extra, ritirata dal boss, ecc.
 - **Combo** – effetti potenziati se si hanno certi AddOn o carte
 
-### 7.2 Mazzo Boss
-Carte nemico pescate all'inizio di un combattimento. Ogni carta riporta:
-- HP
-- Soglia dado
-- Abilità speciale
-- Ricompensa (Licenze + eventuale Certificazione)
+Quando peschi, **scegli da quale dei due mazzi pescare** (A o B).
+Le carte giocate vanno in un **unico mazzo degli scarti condiviso**.
+Quando un mazzo si esaurisce, il mazzo degli scarti viene rimescolato e ridistribuito tra A e B.
 
-### 7.3 Mazzo AddOn
-Potenziamenti acquistabili con **10 Licenze**. Effetti passivi o attivi:
-- Bonus permanenti al dado
-- HP aggiuntivi
-- Effetti speciali a trigger
-- Sinergie con carte azione
+### 7.2 Mazzo Boss (A e B) + Mercato
+
+I boss sono suddivisi in **due mazzi** (A e B).
+Davanti a ciascun mazzo è sempre presente **1 carta boss scoperta** ("mercato").
+
+Quando vuoi combattere, scegli tra 4 opzioni:
+- **Attacca il boss del mercato A** — se perdi rimane lì; se vinci viene sostituito dalla cima del mazzo A
+- **Attacca il boss del mercato B** — stessa logica del mercato A
+- **Pesca dal mazzo A** (blind) — se perdi torna in cima al mazzo A; se vinci va nel cimitero
+- **Pesca dal mazzo B** (blind) — stessa logica del mazzo A
+
+Boss sconfitti: i boss **senza certificazione** vanno nel **Cimitero Boss**.
+Boss con certificazione: rimossi permanentemente dal gioco dopo la sconfitta.
+
+### 7.3 Mazzo AddOn (A e B) + Mercato
+
+Gli AddOn sono suddivisi in **due mazzi** (A e B).
+Davanti a ciascun mazzo è sempre presente **1 carta AddOn scoperta** ("mercato").
+
+Quando vuoi acquistare, scegli tra 4 opzioni:
+- **Acquista l'AddOn del mercato A** — sostituito dalla cima del mazzo A
+- **Acquista l'AddOn del mercato B** — sostituito dalla cima del mazzo B
+- **Pesca random dal mazzo A** (blind) — acquisti la carta in cima al mazzo A
+- **Pesca random dal mazzo B** (blind) — acquisti la carta in cima al mazzo B
+
+AddOn persi (morte del giocatore) o distrutti da carte azione vanno nel **Cimitero AddOn**.
+
+### 7.4 Mazzi degli Scarti
+
+| Mazzo | Cosa contiene | Riciclabile? |
+|---|---|---|
+| **Scarto Azione** | Carte azione giocate | ✅ — si rimescola nei mazzi A/B quando si esauriscono |
+| **Cimitero Boss** | Boss sconfitti senza certificazione | Da definire (post-bilanciamento) |
+| **Cimitero AddOn** | AddOn persi o distrutti | Da definire (post-bilanciamento) |
 
 ---
 

@@ -219,13 +219,13 @@ Client (React)
 | turn_number | INT | |
 | current_phase | ENUM | draw / action / combat / end |
 | action_deck_1 / action_deck_2 | JSON | due metà del mazzo azione (player sceglie da quale pescare) |
-| action_discard_1 / action_discard_2 | JSON | scarti per ciascun mazzo azione |
+| action_discard | JSON | scarto condiviso — tutte le carte azione giocate; rimescolato e ridistribuito tra i due mazzi quando uno si esaurisce |
 | boss_deck_1 / boss_deck_2 | JSON | due metà del mazzo boss |
 | boss_market_1 / boss_market_2 | INT nullable | BossCard.id del boss visibile nel "mercato" |
-| boss_discard_1 / boss_discard_2 | JSON | scarti per ciascun mazzo boss |
+| boss_graveyard | JSON | boss sconfitti senza certificazione (boss con cert rimossi permanentemente) |
 | addon_deck_1 / addon_deck_2 | JSON | due metà del mazzo addon |
 | addon_market_1 / addon_market_2 | INT nullable | AddonCard.id dell'addon visibile nel "mercato" |
-| addon_discard_1 / addon_discard_2 | JSON | scarti per ciascun mazzo addon |
+| addon_graveyard | JSON | addon persi dai giocatori alla morte o distrutti da effetti carta |
 | turn_order | JSON | lista di GamePlayer.id in ordine di turno |
 | winner_id | FK → game_players | nullable |
 | created_at / finished_at | DATETIME | |
@@ -434,6 +434,7 @@ FINE TURNO
 - [x] `scripts/seed_cards.py` — gestisce path Docker (`/cards`) e path locale automaticamente
 - [x] **Reconnect mano privata** — `join_game` durante partita `in_progress` ora invia `game_state` a tutti + evento privato `hand_state` solo al giocatore che si riconnette. `hand_state` inviato anche dopo `start_game`, `draw_card`, `play_card` e penalty di morte.
 - [x] **Doppi mazzi + mercato** — `start_game` divide tutti i mazzi in due metà; boss e addon hanno 1 carta visibile per mazzo nel "mercato". `draw_card` accetta `{deck: 1|2}`. `start_combat` e `buy_addon` accettano `{source: market_1|market_2|deck_1|deck_2}`. Logica vittoria/sconfitta rispetta le regole del mercato. Migration `0002_dual_decks.py`.
+- [x] **3 mazzi degli scarti condivisi** — `action_discard` (scarto azione, rimescolato tra i 2 mazzi quando si esauriscono), `boss_graveyard` (boss senza cert), `addon_graveyard` (addon persi/distrutti). Migration `0003_shared_discards.py`.
 
 ### ⬜ Da fare
 

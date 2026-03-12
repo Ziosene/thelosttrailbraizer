@@ -48,22 +48,22 @@ class GameSession(Base):
     # Action decks (2 decks, player chooses which to draw from)
     action_deck_1: Mapped[list] = mapped_column(JSON, default=list)
     action_deck_2: Mapped[list] = mapped_column(JSON, default=list)
-    action_discard_1: Mapped[list] = mapped_column(JSON, default=list)
-    action_discard_2: Mapped[list] = mapped_column(JSON, default=list)
+    # Shared action discard — all played cards end here; reshuffled & split when both decks run low
+    action_discard: Mapped[list] = mapped_column(JSON, default=list)
     # Boss decks (2 decks + 1 face-up market card each)
     boss_deck_1: Mapped[list] = mapped_column(JSON, default=list)
     boss_deck_2: Mapped[list] = mapped_column(JSON, default=list)
     boss_market_1: Mapped[int | None] = mapped_column(Integer, nullable=True)  # BossCard.id visible in market
     boss_market_2: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    boss_discard_1: Mapped[list] = mapped_column(JSON, default=list)
-    boss_discard_2: Mapped[list] = mapped_column(JSON, default=list)
+    # Boss graveyard — only non-cert bosses (cert bosses are permanently removed from game)
+    boss_graveyard: Mapped[list] = mapped_column(JSON, default=list)
     # AddOn decks (2 decks + 1 face-up market card each)
     addon_deck_1: Mapped[list] = mapped_column(JSON, default=list)
     addon_deck_2: Mapped[list] = mapped_column(JSON, default=list)
     addon_market_1: Mapped[int | None] = mapped_column(Integer, nullable=True)  # AddonCard.id visible in market
     addon_market_2: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    addon_discard_1: Mapped[list] = mapped_column(JSON, default=list)
-    addon_discard_2: Mapped[list] = mapped_column(JSON, default=list)
+    # Addon graveyard — addons lost by players on death or destroyed by card effects
+    addon_graveyard: Mapped[list] = mapped_column(JSON, default=list)
     turn_order: Mapped[list] = mapped_column(JSON, default=list)    # list of GamePlayer.id in turn order
     winner_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("game_players.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

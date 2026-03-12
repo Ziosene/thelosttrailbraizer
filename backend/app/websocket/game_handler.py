@@ -307,18 +307,18 @@ async def _handle_start_game(game: GameSession, user_id: int, db: Session):
 
     full_action_deck = engine.build_action_deck(by_rarity)
     game.action_deck_1, game.action_deck_2 = engine.split_deck(full_action_deck)
-    game.action_discard_1, game.action_discard_2 = [], []
+    game.action_discard = []
 
     full_boss_deck = engine.shuffle_deck([bc.id for bc in boss_cards])
     game.boss_deck_1, game.boss_deck_2 = engine.split_deck(full_boss_deck)
-    game.boss_discard_1, game.boss_discard_2 = [], []
+    game.boss_graveyard = []
     # Reveal first market card from each boss deck
     game.boss_market_1 = game.boss_deck_1.pop(0) if game.boss_deck_1 else None
     game.boss_market_2 = game.boss_deck_2.pop(0) if game.boss_deck_2 else None
 
     full_addon_deck = engine.shuffle_deck([ac.id for ac in addon_cards])
     game.addon_deck_1, game.addon_deck_2 = engine.split_deck(full_addon_deck)
-    game.addon_discard_1, game.addon_discard_2 = [], []
+    game.addon_graveyard = []
     # Reveal first market card from each addon deck
     game.addon_market_1 = game.addon_deck_1.pop(0) if game.addon_deck_1 else None
     game.addon_market_2 = game.addon_deck_2.pop(0) if game.addon_deck_2 else None
@@ -328,14 +328,16 @@ async def _handle_start_game(game: GameSession, user_id: int, db: Session):
     game.turn_number = 1
     game.current_phase = TurnPhase.draw
 
-    # Deal starting hands
-    for player in players:
-        drawn, game.action_deck, game.action_discard = engine.draw_cards(
-            game.action_deck, game.action_discard, engine.STARTING_HAND_SIZE
-        )
-        from app.models.game import PlayerHandCard
-        for card_id in drawn:
-            db.add(PlayerHandCard(player_id=player.id, action_card_id=card_id))
+    # Deal starting hands (alternate draws between deck_1 and deck_2 for balance)
+    from app.models.game import PlayerHandCard
+    for i, player in enumerate(players):
+        for j in range(engine.STARTING_HAND_SIZE):
+            if (i + j) % 2 == 0:
+                drawn = [game.action_deck_1.pop(0)] if game.action_deck_1 else []
+            else:
+                drawn = [game.action_deck_2.pop(0)] if game.action_deck_2 else []
+            for card_id in drawn:
+                db.add(PlayerHandCard(player_id=player.id, action_card_id=card_id))
 
     db.commit()
     db.refresh(game)
@@ -371,14 +373,19 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
         await _error(game.code, user_id, "Invalid deck number (must be 1 or 2)")
         return
 
+    # Try to draw from the requested deck; if empty, reshuffle shared discard into both decks
     if deck_num == 1:
-        drawn, game.action_deck_1, game.action_discard_1 = engine.draw_cards(
-            game.action_deck_1, game.action_discard_1, 1
-        )
+        if not game.action_deck_1 and game.action_discard:
+            new_deck = engine.shuffle_deck(game.action_discard)
+            game.action_deck_1, game.action_deck_2 = engine.split_deck(new_deck)
+            game.action_discard = []
+        drawn = [game.action_deck_1.pop(0)] if game.action_deck_1 else []
     else:
-        drawn, game.action_deck_2, game.action_discard_2 = engine.draw_cards(
-            game.action_deck_2, game.action_discard_2, 1
-        )
+        if not game.action_deck_2 and game.action_discard:
+            new_deck = engine.shuffle_deck(game.action_discard)
+            game.action_deck_1, game.action_deck_2 = engine.split_deck(new_deck)
+            game.action_discard = []
+        drawn = [game.action_deck_2.pop(0)] if game.action_deck_2 else []
     if not drawn:
         await _error(game.code, user_id, f"No cards left in deck {deck_num}")
         return
@@ -506,17 +513,12 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
 
     player.licenze -= cost
 
-    # If buying from market, replace with top of that deck
+    # Bought addons are tracked as owned by player; market slot gets refilled
     if source == "market_1":
-        game.addon_discard_1 = (game.addon_discard_1 or []) + [addon_id]
         game.addon_market_1 = game.addon_deck_1.pop(0) if game.addon_deck_1 else None
     elif source == "market_2":
-        game.addon_discard_2 = (game.addon_discard_2 or []) + [addon_id]
         game.addon_market_2 = game.addon_deck_2.pop(0) if game.addon_deck_2 else None
-    elif source == "deck_1":
-        game.addon_discard_1 = (game.addon_discard_1 or []) + [addon_id]
-    else:  # deck_2
-        game.addon_discard_2 = (game.addon_discard_2 or []) + [addon_id]
+    # deck_1 / deck_2: card already popped above, nothing else to do
 
     from app.models.game import PlayerAddon
     db.add(PlayerAddon(player_id=player.id, addon_id=addon_id))
@@ -649,17 +651,14 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             player.certificazioni += 1
 
         source = player.current_boss_source
+        # Non-cert bosses go to the graveyard; cert bosses are permanently removed from the game
+        if not boss.has_certification:
+            game.boss_graveyard = (game.boss_graveyard or []) + [boss.id]
+        # Refill market slot if boss was taken from market
         if source == "market_1":
-            # Remove from market, replace with top of deck_1
-            game.boss_discard_1 = (game.boss_discard_1 or []) + [boss.id]
             game.boss_market_1 = game.boss_deck_1.pop(0) if game.boss_deck_1 else None
         elif source == "market_2":
-            game.boss_discard_2 = (game.boss_discard_2 or []) + [boss.id]
             game.boss_market_2 = game.boss_deck_2.pop(0) if game.boss_deck_2 else None
-        elif source == "deck_1":
-            game.boss_discard_1 = (game.boss_discard_1 or []) + [boss.id]
-        else:  # deck_2
-            game.boss_discard_2 = (game.boss_discard_2 or []) + [boss.id]
 
         player.is_in_combat = False
         player.current_boss_id = None
@@ -697,7 +696,7 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             lost_card_id = penalty["lost"]["card"]
             hc_to_remove = next((hc for hc in player.hand if hc.action_card_id == lost_card_id), None)
             if hc_to_remove:
-                game.action_discard_1 = (game.action_discard_1 or []) + [lost_card_id]
+                game.action_discard = (game.action_discard or []) + [lost_card_id]
                 db.delete(hc_to_remove)
 
         # Remove lost addon
@@ -705,7 +704,7 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             lost_addon_id = penalty["lost"]["addon"]
             pa_to_remove = next((pa for pa in player.addons if pa.addon_id == lost_addon_id), None)
             if pa_to_remove:
-                game.addon_discard_1 = (game.addon_discard_1 or []) + [lost_addon_id]
+                game.addon_graveyard = (game.addon_graveyard or []) + [lost_addon_id]
                 db.delete(pa_to_remove)
 
         player.licenze = penalty["licenze"]
