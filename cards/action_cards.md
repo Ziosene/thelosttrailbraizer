@@ -1193,6 +1193,206 @@
 
 ---
 
+### ECONOMICHE
+
+---
+
+### 121. Lead Score
+- **Tipo**: Economica
+- **Quando**: Fuori dal combattimento
+- **Effetto**: Guadagna 1 Licenza per ogni carta nella tua mano corrente (max 5)
+- **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn lead scoring meter in the art style of The Binding of Isaac. A gauge filling with one coin per card held in a hand, capped at five glowing coins total. Thick black outlines, flat shading, analytical mood. Plain off-white parchment background. Indie game card art.`
+
+---
+
+### 122. Engagement Studio
+- **Tipo**: Economica
+- **Quando**: Fuori dal combattimento
+- **Effetto**: Per 2 turni, ogni carta azione che giochi ti dà 1 Licenza aggiuntiva
+- **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn engagement studio console in the art style of The Binding of Isaac. A broadcasting panel tracking every played card, automatically minting one bonus coin each time for two turns. Thick black outlines, flat shading, productive mood. Plain off-white parchment background. Indie game card art.`
+
+---
+
+### 123. Product Catalog
+- **Tipo**: Economica
+- **Quando**: Fuori dal combattimento
+- **Effetto**: Guadagna 3 Licenze. Se possiedi già almeno 2 AddOn, guadagna 5 invece
+- **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn product catalog in the art style of The Binding of Isaac. An open catalog with many addon items listed, three coins raining down but upgraded to five when a pair of owned addons glow beside it. Thick black outlines, flat shading, commercial mood. Plain off-white parchment background. Indie game card art.`
+
+---
+
+### 124. Price Book
+- **Tipo**: Economica
+- **Quando**: Fuori dal combattimento
+- **Effetto**: Il prossimo AddOn che acquisti costa la metà (arrotondato per difetto, min 5 Licenze)
+- **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn price book in the art style of The Binding of Isaac. A thick ledger halving a price tag, a scissors icon cutting the cost in half with a floor of five coins still required. Thick black outlines, flat shading, deal-making mood. Plain off-white parchment background. Indie game card art.`
+
+---
+
+### 125. Approval Process
+- **Tipo**: Economica
+- **Quando**: Fuori dal combattimento
+- **Effetto**: Se hai già almeno 10 Licenze, guadagna 4 Licenze extra
+- **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn approval stamp in the art style of The Binding of Isaac. A green APPROVED seal smashing down on a fat coin-bag containing ten or more coins, releasing four bonus coins as a reward. Thick black outlines, flat shading, bureaucratic windfall mood. Plain off-white parchment background. Indie game card art.`
+
+---
+
+### OFFENSIVE
+
+---
+
+### 126. Case Assignment Rule
+- **Tipo**: Offensiva
+- **Quando**: Durante combattimento
+- **Effetto**: Assegna il boss a un altro giocatore: lui combatte al posto tuo ma tu tieni la ricompensa in Licenze
+- **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn case assignment scene in the art style of The Binding of Isaac. A case file stamped with an opponent's name being shoved across a desk, the boss monster following the reassignment while a coin reward stays behind. Thick black outlines, flat shading, scheming mood. Plain off-white parchment background. Indie game card art.`
+
+---
+
+### 127. Omni-Channel
+- **Tipo**: Offensiva
+- **Quando**: Durante combattimento
+- **Effetto**: Per questo round, ogni volta che superi la soglia dado infliggi 1 HP aggiuntivo (max 2 volte)
+- **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn omni-channel assault in the art style of The Binding of Isaac. Multiple attack channels converging on a boss each time a die clears the threshold, doubling up the strikes up to twice. Thick black outlines, flat shading, multi-vector mood. Plain off-white parchment background. Indie game card art.`
+
+---
+
+### 128. Einstein Case Classification
+- **Tipo**: Offensiva
+- **Quando**: Durante combattimento
+- **Effetto**: Classifica il boss come "critico" — la soglia dado per infliggere danno si riduce di 2 per 3 round
+- **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn AI classification tag in the art style of The Binding of Isaac. An Einstein brain stamping a boss monster CRITICAL, the dice threshold bar dropping by two notches for three rounds. Thick black outlines, flat shading, analytical offensive mood. Plain off-white parchment background. Indie game card art.`
+
+---
+
+### 129. Knowledge Article
+- **Tipo**: Offensiva
+- **Quando**: Durante combattimento
+- **Effetto**: Studia il boss: guarda la sua abilità speciale, poi infliggi 1 HP
+- **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn knowledge base scene in the art style of The Binding of Isaac. A figure reading a boss monster profile article on a scroll, then striking it for 1 HP with informed precision. Thick black outlines, flat shading, studious mood. Plain off-white parchment background. Indie game card art.`
+
+---
+
+### 130. Queue-Based Routing
+- **Tipo**: Offensiva
+- **Quando**: Durante combattimento
+- **Effetto**: Metti il boss in coda: salta il suo attacco questo round, lui attacca doppio nel prossimo
+- **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn queue delay in the art style of The Binding of Isaac. A boss monster placed in a waiting-room queue marked NEXT ROUND, its attack arrow blocked now but doubled and ominous for the following turn. Thick black outlines, flat shading, risky gamble mood. Plain off-white parchment background. Indie game card art.`
+
+---
+
+### DIFENSIVE
+
+---
+
+### 131. SLA Policy
+- **Tipo**: Difensiva
+- **Quando**: Durante combattimento
+- **Effetto**: Per 3 round il boss deve rispettare un SLA: non può infliggerti più di 1 HP per round
+- **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn SLA contract in the art style of The Binding of Isaac. A legal document slapped on a boss monster capping its damage to one heart per round for three turns, a compliance meter ticking down. Thick black outlines, flat shading, contractual protection mood. Plain off-white parchment background. Indie game card art.`
+
+---
+
+### 132. Escalation Rule
+- **Tipo**: Difensiva
+- **Quando**: Durante combattimento
+- **Effetto**: Quando subisci 2 o più HP di danno in un round, la metà (arrotondato per difetto) viene assorbita
+- **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn damage escalation absorber in the art style of The Binding of Isaac. A large damage burst being caught by an escalation filter, half the hearts bouncing off and disappearing before reaching the player. Thick black outlines, flat shading, absorptive mood. Plain off-white parchment background. Indie game card art.`
+
+---
+
+### 133. Contact Center Integration
+- **Tipo**: Difensiva
+- **Quando**: Durante combattimento
+- **Effetto**: Per 2 round, ogni HP che perdi ti fa pescare 1 carta come compensazione
+- **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn support center hotline in the art style of The Binding of Isaac. Every time a heart is lost a headset agent immediately slides a compensation card across, the pain turned into a draw for two rounds. Thick black outlines, flat shading, compensatory mood. Plain off-white parchment background. Indie game card art.`
+
+---
+
+### 134. Macro Builder
+- **Tipo**: Difensiva
+- **Quando**: Durante combattimento
+- **Effetto**: Crea una macro: il tuo prossimo tiro dado si esegue automaticamente all'inizio del round senza azioni aggiuntive
+- **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn automation macro in the art style of The Binding of Isaac. A recorded sequence strip auto-triggering a die roll at the start of a round, a robot hand executing it without manual input. Thick black outlines, flat shading, efficient mood. Plain off-white parchment background. Indie game card art.`
+
+---
+
+### 135. Omni Supervisor
+- **Tipo**: Difensiva
+- **Quando**: Durante combattimento
+- **Effetto**: Supervisiona il combattimento — impedisci al boss di usare la propria abilità speciale per 2 round
+- **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn supervisor desk in the art style of The Binding of Isaac. A stern supervisor figure watching a boss monster from above, silencing its special-ability icon with a NO sign for two rounds. Thick black outlines, flat shading, authoritative mood. Plain off-white parchment background. Indie game card art.`
+
+---
+
+### MANIPOLAZIONE DADO
+
+---
+
+### 136. Service Forecast
+- **Tipo**: Manipolazione dado
+- **Quando**: Durante combattimento
+- **Effetto**: Prima di tirare, puoi scegliere di usare il valore medio della soglia attuale invece di tirare il dado
+- **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn forecast chart in the art style of The Binding of Isaac. A prediction graph showing the average threshold value highlighted as a safe guaranteed result, skipping the random die roll. Thick black outlines, flat shading, cautious analytical mood. Plain off-white parchment background. Indie game card art.`
+
+---
+
+### 137. CPQ Rules Engine
+- **Tipo**: Utilità
+- **Quando**: Fuori dal combattimento
+- **Effetto**: Cerca le prime 5 carte del mazzo azione e aggiungine 1 alla mano; rimetti le altre nell'ordine originale
+- **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn rules engine search in the art style of The Binding of Isaac. Five cards spread from a deck, one being cherry-picked by a mechanical claw while the rest are returned in exact order. Thick black outlines, flat shading, precise mood. Plain off-white parchment background. Indie game card art.`
+
+---
+
+### 138. Pardot Form Handler
+- **Tipo**: Utilità
+- **Quando**: Fuori dal combattimento
+- **Effetto**: Ogni volta che un avversario pesca una carta in questo turno, pesca 1 carta anche tu (max 2)
+- **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn form submission relay in the art style of The Binding of Isaac. A form handler intercepting each opponent card draw and spawning a copy draw for the player, capped at two mirrored cards. Thick black outlines, flat shading, reactive mood. Plain off-white parchment background. Indie game card art.`
+
+---
+
+### INTERFERENZA
+
+---
+
+### 139. Prospect Lifecycle
+- **Tipo**: Interferenza
+- **Quando**: Fuori dal proprio turno
+- **Effetto**: Imponi un lifecycle a un avversario: non può acquistare AddOn finché non sconfigge il prossimo boss
+- **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn lifecycle gate in the art style of The Binding of Isaac. A progress funnel blocking an opponent's addon shop until a boss skull checkpoint is cleared, a padlock on the purchase counter. Thick black outlines, flat shading, restrictive mood. Plain off-white parchment background. Indie game card art.`
+
+---
+
+### 140. Campaign Influence
+- **Tipo**: Interferenza
+- **Quando**: Fuori dal proprio turno
+- **Effetto**: Ogni Licenza guadagnata da qualsiasi giocatore in questo round ti dà 1 Licenza (max 3 totali)
+- **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn campaign influence web in the art style of The Binding of Isaac. A central figure connected by glowing threads to all other players, siphoning one coin each time anyone earns, capped at three. Thick black outlines, flat shading, influential parasitic mood. Plain off-white parchment background. Indie game card art.`
+
+---
+
 ## Batch 4 — Field Service, Data Cloud, Heroku, Commerce (141–200)
 
 ### OFFENSIVE
