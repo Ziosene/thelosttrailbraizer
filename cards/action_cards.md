@@ -40,6 +40,7 @@
 - **Quando**: In qualsiasi momento (fuori da combattimento)
 - **Effetto**: Guadagna 2 Licenze
 - **Rarità**: Comune
+- **Image prompt**: `A 2D hand-drawn fist punching two gold coins into existence in the art style of The Binding of Isaac. A triumphant hand slamming down as two gold coins bounce into the air. Thick black outlines, flat shading, victorious mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -48,6 +49,7 @@
 - **Quando**: In qualsiasi momento (fuori da combattimento)
 - **Effetto**: Guadagna 4 Licenze
 - **Rarità**: Comune
+- **Image prompt**: `A 2D hand-drawn handshake sealing a deal with four coins cascading down in the art style of The Binding of Isaac. Two hands clasped over a signed contract, four gold coins spilling from the agreement. Thick black outlines, flat shading, triumphant mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -56,6 +58,7 @@
 - **Quando**: In qualsiasi momento (fuori da combattimento)
 - **Effetto**: Guadagna 3 Licenze. Se è il tuo primo turno senza combattere, guadagna 5 invece
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn crystal ball displaying an ascending revenue chart in the art style of The Binding of Isaac. A glowing forecast orb showing a steep upward trend, coins multiplying around it from 3 to 5. Thick black outlines, flat shading, optimistic mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -64,6 +67,7 @@
 - **Quando**: In qualsiasi momento
 - **Effetto**: Ruba 2 Licenze a un avversario a tua scelta
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn stern auditor with a clipboard snatching two coins from a surprised opponent in the art style of The Binding of Isaac. A suited inspector wielding a clipboard, two gold coins pinched from a panicked rival. Thick black outlines, flat shading, ruthless mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -72,6 +76,7 @@
 - **Quando**: Fuori dal proprio turno (interferenza)
 - **Effetto**: Quando un avversario sconfigge un boss, gioca questa carta per rubargli 3 Licenze della sua ricompensa
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn contract swooping in to intercept three reward coins mid-air in the art style of The Binding of Isaac. A legal contract document diving like a hawk to redirect three flying coins away from their intended recipient. Thick black outlines, flat shading, cunning mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -80,6 +85,7 @@
 - **Quando**: In qualsiasi momento
 - **Effetto**: Ruba 1 Certificazione a un avversario. L'avversario guadagna 3 Licenze come compensazione
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn masked thief snatching a certification badge while tossing three coins as hush money in the art style of The Binding of Isaac. A gloved hand grabbing a cert badge mid-air, three coins thrown back to the victim as compensation. Thick black outlines, flat shading, heist mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -88,6 +94,7 @@
 - **Quando**: Fuori dal proprio turno (interferenza)
 - **Effetto**: Quando qualcuno ti ruba Licenze, gioca questa carta per recuperarle e guadagnarne 1 in più
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn financial boomerang labeled CHARGEBACK returning stolen coins plus one extra in the art style of The Binding of Isaac. A boomerang intercepting a theft mid-flight and sailing back with the stolen coins plus a bonus one. Thick black outlines, flat shading, retaliatory mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -96,6 +103,7 @@
 - **Quando**: In qualsiasi momento (fuori da combattimento)
 - **Effetto**: Guadagna 1 Licenza per ogni AddOn che possiedi (max 5)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn revenue cloud raining one coin per AddOn icon arranged below it in the art style of The Binding of Isaac. A smiling cloud dispensing exactly one coin for each AddOn badge lined up underneath, up to five. Thick black outlines, flat shading, prosperous mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -108,6 +116,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Il boss subisce 2 HP di danno immediato (indipendentemente dal dado)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn oversized APEX-branded hammer crashing down for a -2 HP impact in the art style of The Binding of Isaac. A massive code hammer with APEX stamped on the head slamming down with a thunderous impact burst. Thick black outlines, flat shading, powerful mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -116,6 +125,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Il boss subisce 1 HP di danno immediato. Se il boss ha l'abilità attiva, viene disabilitata per 2 round
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn SELECT query beam blasting a boss and shorting out its ability icon in the art style of The Binding of Isaac. A SOQL query string firing as a laser beam, hitting a boss for -1 HP while its special ability sparks and goes dark. Thick black outlines, flat shading, technical mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -124,6 +134,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Il boss subisce 3 HP di danno immediato. Non puoi giocare altre carte questo turno.
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn Force.com cloud unleashing a triple lightning bolt for 3 HP in the art style of The Binding of Isaac. A Salesforce cloud crackling with three merged lightning strikes, -3 blazing on impact, cards frozen in the player's hand. Thick black outlines, flat shading, devastating mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -132,6 +143,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Per 3 round, ogni tiro di dado che colpisce il boss infligge 2 HP invece di 1
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn figure slipping past a LIMIT EXCEEDED barrier to double all damage output in the art style of The Binding of Isaac. A hacker bypassing a governor limit gate, damage numbers doubling on the other side for three rounds. Thick black outlines, flat shading, exploitative mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -140,6 +152,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Abbassa la soglia dado del boss di 2 per il resto del combattimento
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn debugger tool turning a boss's difficulty dial down by 2 in the art style of The Binding of Isaac. A debugging wrench manually cranking a threshold dial from 7 to 5, the boss visibly easier to hit. Thick black outlines, flat shading, analytical mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -148,6 +161,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Il boss subisce 1 HP. Il giocatore recupera 1 HP.
 - **Rarità**: Comune
+- **Image prompt**: `A 2D hand-drawn hotfix patch flying in two directions at once in the art style of The Binding of Isaac. A band-aid splitting mid-air, one half hitting a boss for -1 HP and the other landing on the player for +1 HP simultaneously. Thick black outlines, flat shading, balanced mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -160,6 +174,7 @@
 - **Quando**: Fuori dal proprio turno (interferenza)
 - **Effetto**: Durante il combattimento di un avversario, aumenta la soglia dado del boss di 2 per 1 round
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn avalanche of extra requirement documents crashing into a combat scene raising the difficulty in the art style of The Binding of Isaac. A mountain of scope-creep papers burying a combat arena, the boss's threshold climbing by +2. Thick black outlines, flat shading, sabotage mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -168,6 +183,7 @@
 - **Quando**: Fuori dal proprio turno (interferenza)
 - **Effetto**: Durante il combattimento di un avversario, il boss recupera 1 HP
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn bureaucratic CR form swooping in to restore one heart on a boss's HP bar in the art style of The Binding of Isaac. A change request document stamped APPROVED flying into combat to refill one boss heart. Thick black outlines, flat shading, frustrating mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -176,6 +192,7 @@
 - **Quando**: In qualsiasi momento
 - **Effetto**: Un avversario a scelta perde 1 HP. Se è il suo turno, perde anche 1 carta
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn TNT bomb labeled TECH DEBT detonating on a rival player in the art style of The Binding of Isaac. A debt bomb exploding on an opponent, -1 HP flying off and a card blasted from their hand on their turn. Thick black outlines, flat shading, destructive mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -184,6 +201,7 @@
 - **Quando**: In qualsiasi momento
 - **Effetto**: Un avversario a scelta non può acquistare AddOn nel suo prossimo turno
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn hostile takeover notice slamming a CLOSED sign on an opponent's AddOn shop in the art style of The Binding of Isaac. A corporate takeover stamp pressing down on a rival's marketplace, a red CLOSED barrier blocking the entrance. Thick black outlines, flat shading, corporate mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -196,6 +214,7 @@
 - **Quando**: In qualsiasi momento (anche fuori dal proprio turno)
 - **Effetto**: Recupera tutti gli HP al valore base del personaggio
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn healing cloud raining hearts to fully refill the HP bar in the art style of The Binding of Isaac. A medical cloud pouring a cascade of heart icons, the HP bar filling completely back to maximum. Thick black outlines, flat shading, restorative mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -204,6 +223,7 @@
 - **Quando**: Fuori dal proprio turno (interferenza)
 - **Effetto**: Annulla una carta azione giocata contro di te
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn Salesforce shield materializing to shatter an incoming enemy card in the art style of The Binding of Isaac. A platform shield erupting from nowhere to intercept and crack an opponent's action card mid-flight. Thick black outlines, flat shading, protective mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -212,6 +232,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Annulla l'abilità del boss per il resto del combattimento
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn deployment rollback reverting a boss's ability to a disabled state in the art style of The Binding of Isaac. A bold rewind arrow rolling back a boss's special ability icon to zero, locked shut with a padlock. Thick black outlines, flat shading, decisive mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -220,6 +241,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Termina immediatamente il combattimento senza vincitori. Il boss torna in fondo al mazzo. Il giocatore non subisce conseguenze.
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn emergency exit door opening mid-combat to let the player escape in the art style of The Binding of Isaac. A glowing EXIT sign springing open as a trapdoor, the player slipping through while the boss tumbles harmlessly to the bottom of the deck. Thick black outlines, flat shading, clever mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -228,6 +250,7 @@
 - **Quando**: Fuori dal proprio turno (interferenza)
 - **Effetto**: Quando stai per morire, gioca questa carta per sopravvivere con 1 HP. Non perdi nulla.
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn disaster recovery safety net catching a player at death's door with exactly 1 HP in the art style of The Binding of Isaac. A DR-labeled net springing from nowhere beneath a falling player, leaving exactly one heart. Thick black outlines, flat shading, desperate mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -236,6 +259,7 @@
 - **Quando**: In qualsiasi momento (fuori da combattimento)
 - **Effetto**: Recupera 1 HP
 - **Rarità**: Comune
+- **Image prompt**: `A 2D hand-drawn Tuesday calendar page with a healing patch peeling off to restore one heart in the art style of The Binding of Isaac. A calendar showing TUESDAY with a medical band-aid detaching itself and floating to heal one HP. Thick black outlines, flat shading, routine mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -244,6 +268,7 @@
 - **Quando**: In qualsiasi momento
 - **Effetto**: Recupera 1 carta, 1 Licenza e 1 HP persi nell'ultimo turno in cui sei morto
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn backup drive beaming back a card, a coin, and a heart simultaneously in the art style of The Binding of Isaac. A glowing external drive projecting three recovered items upward — one action card, one license coin, one HP heart. Thick black outlines, flat shading, miraculous mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -256,6 +281,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Il tuo prossimo tiro di dado vale automaticamente 8
 - **Rarità**: Comune
+- **Image prompt**: `A 2D hand-drawn mechanical clamp locking a d10 to show exactly 8 in the art style of The Binding of Isaac. An optimizer clamp bolted around a die, forcing its face to display 8 and preventing any other result. Thick black outlines, flat shading, precise mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -264,6 +290,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Ritira il dado una volta (prendi il nuovo risultato, non puoi ritirare ancora)
 - **Rarità**: Comune
+- **Image prompt**: `A 2D hand-drawn four-leaf clover giving a die a lucky second bounce in the art style of The Binding of Isaac. A clover bouncing a d10 for a reroll, the first result fading as a new number tumbles into view. Thick black outlines, flat shading, lucky mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -272,6 +299,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Per 2 round, ogni tiro da 10 infligge 3 HP al boss invece di 1
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn d10 landing on 10 with triple damage lightning bolts erupting from it in the art style of The Binding of Isaac. A die showing a perfect 10, three lightning bolts exploding outward with a x3 damage counter blazing above. Thick black outlines, flat shading, critical mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -280,6 +308,7 @@
 - **Quando**: Durante combattimento (interferenza — giocabile da avversari)
 - **Effetto**: Il prossimo tiro di dado del combattente vale il risultato opposto (es. 7 diventa 4, con soglia 5+: 7 colpisce, 4 no)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn mischievous hand flipping a d10 upside-down so its result reverses in the art style of The Binding of Isaac. A chaotic hand spinning a die so 7 flips to become 4, the number mirroring itself in mid-air. Thick black outlines, flat shading, chaotic mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -288,6 +317,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Per 1 round, il tiro di dado del boss non ti può danneggiare (round neutro se fallisce)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn energy force field bubble absorbing a boss attack harmlessly for one round in the art style of The Binding of Isaac. A transparent energy sphere surrounding a player, a boss's damage splashing off its surface with zero effect. Thick black outlines, flat shading, invulnerable mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -300,6 +330,7 @@
 - **Quando**: In qualsiasi momento (fuori da combattimento)
 - **Effetto**: Pesca 2 carte extra
 - **Rarità**: Comune
+- **Image prompt**: `A 2D hand-drawn Trailhead badge dispenser machine printing out two fresh action cards in the art style of The Binding of Isaac. A vending-style Trailhead module with two cards ejecting from its slot. Thick black outlines, flat shading, educational mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -308,6 +339,7 @@
 - **Quando**: In qualsiasi momento
 - **Effetto**: Guarda le prime 3 carte del mazzo azione e rimettile nell'ordine che preferisci
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn knowledge base scroll revealing the top 3 deck cards for reordering in the art style of The Binding of Isaac. A parchment scroll listing three upcoming card names with an arranging hand moving them into the preferred order. Thick black outlines, flat shading, informed mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -316,6 +348,7 @@
 - **Quando**: In qualsiasi momento
 - **Effetto**: Questa carta non conta come una delle 2 carte giocabili per turno
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn card with a speed flash bypassing the play counter tally in the art style of The Binding of Isaac. A card zipping past a turn-counter tally mark without incrementing it, leaving the limit untouched. Thick black outlines, flat shading, swift mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -324,6 +357,7 @@
 - **Quando**: In qualsiasi momento (fuori da combattimento)
 - **Effetto**: Recupera fino a 2 carte dal tuo mazzo degli scarti
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn recycle bin with two old action cards being pulled back out refreshed in the art style of The Binding of Isaac. A green recycle bin fishing two previously discarded cards back into play. Thick black outlines, flat shading, resourceful mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -332,6 +366,7 @@
 - **Quando**: In qualsiasi momento (fuori da combattimento)
 - **Effetto**: Rimescola la tua mano nel mazzo e pesca 4 nuove carte
 - **Rarità**: Comune
+- **Image prompt**: `A 2D hand-drawn sandbox container sweeping old cards back in and ejecting four fresh ones in the art style of The Binding of Isaac. A sandbox environment resetting, old cards sucked in, four new cards sliding out clean. Thick black outlines, flat shading, refreshing mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -340,6 +375,7 @@
 - **Quando**: In qualsiasi momento (fuori da combattimento)
 - **Effetto**: Guarda le prime 2 carte del mazzo boss senza pescarle
 - **Rarità**: Comune
+- **Image prompt**: `A 2D hand-drawn sprint planning board revealing the next two boss cards face-up in the art style of The Binding of Isaac. A kanban-style board with two upcoming boss cards pinned to the NEXT SPRINT column for advance scouting. Thick black outlines, flat shading, strategic mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -348,6 +384,7 @@
 - **Quando**: In qualsiasi momento
 - **Effetto**: Pesca 1 carta dal mazzo AddOn e guardala. Puoi tenerla senza pagare le Licenze, ma vale solo per questo turno. A fine turno viene scartata.
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn AddOn card with a FREE TRIAL sticker and a countdown hourglass in the art style of The Binding of Isaac. A borrowed AddOn card stamped FREE TRIAL, an hourglass ticking beside it fading to nothing at turn end. Thick black outlines, flat shading, temporary mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -360,6 +397,7 @@
 - **Quando**: Fuori dal proprio turno — durante il combattimento di un alleato
 - **Effetto**: Abbassa la soglia dado del boss di 2 per 2 round
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn consultant whispering advice to an ally mid-combat lowering the boss difficulty in the art style of The Binding of Isaac. A suited advisor leaning in to an ally's ear, the boss's threshold dial dropping by 2 in the background. Thick black outlines, flat shading, helpful mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -368,6 +406,7 @@
 - **Quando**: Fuori dal proprio turno — durante il combattimento di un avversario
 - **Effetto**: Il boss guadagna 1 HP (può superare il massimo originale)
 - **Rarità**: Comune
+- **Image prompt**: `A 2D hand-drawn shadowy war room of rival figures plotting to give a boss extra HP in the art style of The Binding of Isaac. A dimly lit strategy room with opponents huddled over a map, a boss icon gaining a bonus heart on the battlefield. Thick black outlines, flat shading, scheming mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -376,6 +415,7 @@
 - **Quando**: In qualsiasi momento
 - **Effetto**: Tutti i giocatori (incluso te) guadagnano 3 Licenze. Pesca 1 carta. Se hai 4 o più Certificazioni, guadagni 5 Licenze invece di 3.
 - **Rarità**: Leggendario
+- **Image prompt**: `A 2D hand-drawn legendary CEO at a Dreamforce stage showering all players with coins in the art style of The Binding of Isaac. A charismatic presenter on a massive stage, three coins raining on every player simultaneously as a bonus card floats down. Thick black outlines, flat shading, epic mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -392,6 +432,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Guadagna 1 Licenza per ogni boss sconfitto durante questa partita (max 6)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn customer journey map with boss skull checkpoints each earning one coin in the art style of The Binding of Isaac. A winding journey path with defeated boss markers as milestones, a coin dropping per completed step up to six. Thick black outlines, flat shading, methodical mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -400,6 +441,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Guadagna 3 Licenze se non hai combattuto in questo turno
 - **Rarità**: Comune
+- **Image prompt**: `A 2D hand-drawn marketing dashboard glowing with three bonus coins for a peaceful turn in the art style of The Binding of Isaac. A calm engagement studio interface with no combat alerts active, dispensing three coins as a peace dividend. Thick black outlines, flat shading, peaceful mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -408,6 +450,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Guadagna 1 Licenza ora, 1 all'inizio del prossimo turno e 1 in quello successivo (effetto a rilascio lento)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn slow-drip faucet releasing one coin per turn across three turns in the art style of The Binding of Isaac. A drip tap with three coins labeled T1, T2, T3 dropping one at a time in slow sequence. Thick black outlines, flat shading, patient mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -416,6 +459,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: "Deposita" fino a 3 Licenze fuori dal conteggio normale — non possono essere rubate. Recuperale quando vuoi.
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn padlocked secure storage box holding up to three coins safe from theft in the art style of The Binding of Isaac. A fortified object store with three coins locked inside, a thief's hand bouncing off the impenetrable lock. Thick black outlines, flat shading, secure mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -424,6 +468,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Guadagna Licenze pari al numero di boss già sconfitti in questa partita (max 5)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn prospect scoring meter converting boss skull trophies into coins one-to-one in the art style of The Binding of Isaac. A scoring gauge with defeated boss icons on one side converting directly into coins on the other, capped at five. Thick black outlines, flat shading, analytical mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -432,6 +477,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Guadagna 2 Licenze per ogni AddOn Attivo che possiedi (max 6)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn bundle deal scene in the art style of The Binding of Isaac. Several glowing addon items stacked together with coin stacks multiplying beside them, capped at six coins total. Thick black outlines, flat shading, mercantile mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -440,6 +486,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Fissa il costo del tuo prossimo AddOn a 5 Licenze (invece di 10)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn contract signing scene in the art style of The Binding of Isaac. A quill pen signing a price tag stamped with the number 5, slashing through a crossed-out 10. Thick black outlines, flat shading, businesslike mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -448,6 +495,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Il prossimo AddOn che acquisti costa 3 Licenze in meno
 - **Rarità**: Comune
+- **Image prompt**: `A 2D hand-drawn discount tag in the art style of The Binding of Isaac. A price tag with three coins struck through by a red diagonal slash, indicating a reduction of three. Thick black outlines, flat shading, frugal mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -460,6 +508,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Il boss subisce 2 HP di danno immediato
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn data transformation attack in the art style of The Binding of Isaac. A stream of data symbols weaving together into two sharp energy bolts striking a grimacing monster. Thick black outlines, flat shading, aggressive mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -468,6 +517,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Il boss subisce 1 HP. Tira il dado: se esci ≥ 6, il boss subisce altri 1 HP
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn scatter-gather attack in the art style of The Binding of Isaac. Multiple small projectiles scattering outward and converging on a boss, with a die showing a six in the corner hinting at a bonus hit. Thick black outlines, flat shading, chaotic mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -476,6 +526,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Il boss subisce 1 HP per ogni AddOn che possiedi (max 3)
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn cloud worker attack in the art style of The Binding of Isaac. A cluster of floating worker drones launched from cloud servers each striking a grimacing monster, capped at three hits. Thick black outlines, flat shading, industrious mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -484,6 +535,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Il boss subisce 1 HP. Se il boss ha più di 3 HP rimasti, subisce 2 HP invece
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn product rule diagram in the art style of The Binding of Isaac. A rulebook open to a page showing a single punch upgrading to a double strike when a health bar shows more than three segments remaining. Thick black outlines, flat shading, calculating mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -492,6 +544,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Inietta codice nel boss — la sua abilità speciale si attiva contro se stesso per 1 round (se l'abilità danneggia il giocatore, danneggia il boss)
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn code injection scene in the art style of The Binding of Isaac. A syringe filled with glowing script injecting into a confused boss monster whose own attack arrow curves back and strikes itself. Thick black outlines, flat shading, subversive mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -500,6 +553,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Il boss subisce 1 HP e la sua abilità speciale "propaga" — colpisce anche il giocatore alla tua sinistra (1 HP)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn error propagation scene in the art style of The Binding of Isaac. An error burst hitting a boss and sending a chain reaction ripple sideways toward another small figure. Thick black outlines, flat shading, chaotic collateral mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -512,6 +566,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Per il prossimo round di combattimento, se fallisci il tiro dado non perdi HP (l'errore viene "catturato")
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn try-catch shield in the art style of The Binding of Isaac. A protective bubble labeled TRY surrounding a small figure, absorbing an incoming error explosion harmlessly. Thick black outlines, flat shading, cautious mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -520,6 +575,7 @@
 - **Quando**: In qualsiasi momento (anche fuori turno)
 - **Effetto**: Invece di morire, converti la morte in perdita di 3 Licenze e sopravvivi con 1 HP
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn error recovery scene in the art style of The Binding of Isaac. A barely-conscious figure with a single heart remaining while three coins tumble away, an error log scrolling behind them showing CONTINUE. Thick black outlines, flat shading, desperate resilience mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -528,6 +584,7 @@
 - **Quando**: Fuori dal proprio turno
 - **Effetto**: La prossima carta offensiva avversaria contro di te perde 1 punto di effetto (es. -2HP diventa -1HP, -3L diventa -2L)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn proxy shield in the art style of The Binding of Isaac. A translucent wall labeled API PROXY intercepting an incoming attack arrow and shrinking it before it reaches the figure behind. Thick black outlines, flat shading, protective mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -536,6 +593,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Per 3 round, il boss non può infliggerti più di 1 danno per round
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn entitlement wall in the art style of The Binding of Isaac. A bureaucratic barrier stamped ENTITLED blocking a raging monster whose strikes are all reduced to tiny single-point impacts. A counter showing 3 rounds ticks down. Thick black outlines, flat shading, procedural mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -548,6 +606,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Dopo aver visto il risultato del dado, puoi scegliere di ritirarlo una volta (prendi il secondo risultato)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn dynamic reroll scene in the art style of The Binding of Isaac. A die mid-air showing a low number, with a ghostly second die appearing beside it showing a higher value ready to replace it. Thick black outlines, flat shading, opportunistic mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -556,6 +615,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Scegli se tirare il dado all'inizio o alla fine del round (ottimizza il timing)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn Einstein brain with a clock and a die in the art style of The Binding of Isaac. A brainy figure with wild hair holding a timeline arrow, choosing the perfect moment to drop a die marked with a star. Thick black outlines, flat shading, strategic mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -564,6 +624,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Dichiara il risultato prima di tirare. Se indovini esattamente, il boss subisce 2 HP invece di 1
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn prediction scene in the art style of The Binding of Isaac. A crystal ball showing a die face, a figure pointing confidently at it before rolling, with a double-damage burst icon glowing above. Thick black outlines, flat shading, prophetic mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -572,6 +633,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Converti qualsiasi risultato dado in 7 (fisso, non modificabile ulteriormente questo round)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn data transformation in the art style of The Binding of Isaac. A script icon turning any die face into a glowing number 7 locked in place with a padlock, immovable and final. Thick black outlines, flat shading, deterministic mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -584,6 +646,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Pesca 2 carte extra
 - **Rarità**: Comune
+- **Image prompt**: `A 2D hand-drawn automation studio workspace in the art style of The Binding of Isaac. A conveyor belt automatically delivering two glowing cards to an outstretched hand. Thick black outlines, flat shading, efficient mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -592,6 +655,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Guarda la mano completa di un avversario a scelta
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn spying scene in the art style of The Binding of Isaac. A magnifying glass revealing the full fanned-out hand of cards held by a shadowy opponent figure. Thick black outlines, flat shading, snooping mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -600,6 +664,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Guarda le prime 3 carte del mazzo boss senza pescarle
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn scouting scene in the art style of The Binding of Isaac. A pair of eyes peering over the top of a face-down boss deck, catching a glimpse of three monster silhouettes in order. Thick black outlines, flat shading, anticipatory mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -608,6 +673,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Rimescola il mazzo degli scarti azione nel mazzo principale
 - **Rarità**: Comune
+- **Image prompt**: `A 2D hand-drawn deck recycling scene in the art style of The Binding of Isaac. A pile of discarded cards swirling up into a funnel and flowing back into a full deck, a recycling arrow looping around them. Thick black outlines, flat shading, restorative mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -616,6 +682,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Guarda e riordina le prime 3 carte del mazzo boss come vuoi
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn pipeline inspection scene in the art style of The Binding of Isaac. A technician with a wrench reordering three monster cards in a queue on a conveyor belt, placing the most convenient one last. Thick black outlines, flat shading, methodical mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -624,6 +691,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Pesca 4 carte e scartane 2 a scelta
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn card selection scene in the art style of The Binding of Isaac. Four cards fanned out in a hand, two of them being tossed aside into a discard pile while two are kept clutched close. Thick black outlines, flat shading, selective mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -632,6 +700,7 @@
 - **Quando**: In qualsiasi momento
 - **Effetto**: Cerca tra gli ultimi 10 scarti azione e recupera 1 carta specifica a scelta
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn archive search scene in the art style of The Binding of Isaac. A figure rifling through a discard pile spread out on a table, pulling out a single glowing card from among ten others. Thick black outlines, flat shading, resourceful mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -644,6 +713,7 @@
 - **Quando**: Fuori dal proprio turno
 - **Effetto**: Un avversario non può pescare carte nella sua prossima fase azione
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn suppression list in the art style of The Binding of Isaac. A large scroll with an opponent's name crossed out, a red seal blocking a card deck from being touched. Thick black outlines, flat shading, restrictive mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -652,6 +722,7 @@
 - **Quando**: Fuori dal proprio turno
 - **Effetto**: Metti 1 carta dalla tua mano nella "coda" di un avversario — lui la pesca per forza come prima carta al suo prossimo turno
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn message queue scene in the art style of The Binding of Isaac. A hand slipping a glowing card into a queue tube leading into an unsuspecting opponent's hand, locking it as first draw. Thick black outlines, flat shading, sneaky mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -660,6 +731,7 @@
 - **Quando**: Fuori dal proprio turno — durante il combattimento di un avversario
 - **Effetto**: Forza l'avversario a ritirare il suo prossimo dado (deve usare il secondo risultato)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn dice interference in the art style of The Binding of Isaac. A mischievous hand splitting an opponent's die roll in two, forcing a reroll arrow to spin the die again. Thick black outlines, flat shading, disruptive mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -668,6 +740,7 @@
 - **Quando**: Fuori dal proprio turno
 - **Effetto**: Dopo che un avversario gioca una carta economica, copia l'effetto su di te (guadagni le stesse Licenze che ha guadagnato lui)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn copy action in the art style of The Binding of Isaac. A mirror reflecting an opponent's coin-gain action, the same number of coins simultaneously flowing into the copier's purse. Thick black outlines, flat shading, opportunistic mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -676,6 +749,7 @@
 - **Quando**: Fuori dal proprio turno
 - **Effetto**: "Assegna" il prossimo boss nel mazzo a un avversario — lui deve combatterlo al suo prossimo turno o perdere 2 Licenze
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn routing assignment in the art style of The Binding of Isaac. A traffic-control sign with a boss monster's silhouette on an arrow pointing directly at a panicked opponent figure. Thick black outlines, flat shading, forceful mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -684,6 +758,7 @@
 - **Quando**: Fuori dal proprio turno — quando un avversario pesca un boss
 - **Effetto**: Ruba 2 Licenze dalla ricompensa del boss appena pescato dall'avversario (prima che lui combatta)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn ambush theft in the art style of The Binding of Isaac. A quick hand snatching two coins from a reward chest before an opponent can open it, triggered by a boss card appearing. Thick black outlines, flat shading, swift mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -692,6 +767,7 @@
 - **Quando**: Fuori dal proprio turno
 - **Effetto**: Ogni volta che un avversario sopravvive a un round di combattimento, guadagni 1 Licenza (max 4 per combattimento altrui)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn milestone tracker in the art style of The Binding of Isaac. A scoreboard ticking up a coin each time a combatant survives a round, capped at four. Thick black outlines, flat shading, parasitic profit mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -700,6 +776,7 @@
 - **Quando**: Fuori dal proprio turno
 - **Effetto**: Per 2 turni, ogni volta che qualsiasi giocatore gioca una carta azione, guadagni 1 Licenza
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn data stream tap in the art style of The Binding of Isaac. A connector pipe linking into a flowing stream of cards played by all players, siphoning one coin per card into a separate pouch. A counter shows 2 turns. Thick black outlines, flat shading, passive-income mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -708,6 +785,7 @@
 - **Quando**: Fuori dal proprio turno
 - **Effetto**: "Reindirizza" una carta azione avversaria diretta a te verso un altro avversario a tua scelta
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn redirect arrow in the art style of The Binding of Isaac. An incoming attack arrow curving mid-flight away from one figure and steering toward a third surprised figure in the corner. Thick black outlines, flat shading, evasive mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -716,6 +794,7 @@
 - **Quando**: Fuori dal proprio turno
 - **Effetto**: Invia un messaggio urgente — un avversario perde 1 HP immediatamente
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn urgent message delivery in the art style of The Binding of Isaac. A glowing SMS bubble with an exclamation mark flying from a phone and striking an opponent figure causing a single damage flash. Thick black outlines, flat shading, urgent mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -724,6 +803,7 @@
 - **Quando**: In qualsiasi momento
 - **Effetto**: Scegli tra 2 opzioni: (A) pesca 2 carte oppure (B) guadagna 2 Licenze
 - **Rarità**: Comune
+- **Image prompt**: `A 2D hand-drawn fork in the road in the art style of The Binding of Isaac. A signpost splitting into two paths: one pointing toward two glowing cards and the other toward two shining coins, a figure deciding which way to go. Thick black outlines, flat shading, decisive mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -738,6 +818,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Guadagna 2 Licenze. Se la tua mano ha meno di 3 carte, guadagna 4 invece
 - **Rarità**: Comune
+- **Image prompt**: `A 2D hand-drawn automation trigger in the art style of The Binding of Isaac. A gear-driven mechanism dropping two coins into a bowl, with a bonus chute pouring four coins instead when a nearly-empty hand appears nearby. Thick black outlines, flat shading, automated mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -746,6 +827,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Guadagna 1 Licenza per ogni giocatore che ha meno Licenze di te
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn wealth comparison chart in the art style of The Binding of Isaac. A scoreboard showing the player at top with coins raining down for each smaller-purse figure below. Thick black outlines, flat shading, smug wealthy mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -754,6 +836,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Guadagna 4 Licenze. Se hai già 10 o più Licenze, guadagni solo 2
 - **Rarità**: Comune
+- **Image prompt**: `A 2D hand-drawn discount schedule in the art style of The Binding of Isaac. A price list showing 4 coins available but a clamp reducing it to 2 when a fat coin-bag exceeds ten. Thick black outlines, flat shading, calculated mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -762,6 +845,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Se stai per perdere un AddOn per morte, gioca questa carta per pagare 5 Licenze e mantenerlo invece di perderlo
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn renewal contract scene in the art style of The Binding of Isaac. An addon item teetering on the edge of a cliff being saved by a signed renewal scroll, five coins sliding across as payment. Thick black outlines, flat shading, desperate rescue mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -770,6 +854,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Conta il totale di Licenze in gioco tra tutti i giocatori — guadagni 1 Licenza ogni 10 Licenze totali (max 4)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn ledger summary in the art style of The Binding of Isaac. A large book tallying all players' coins with a formula at the bottom showing one coin rewarded per ten total, capped at four. Thick black outlines, flat shading, analytical mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -778,6 +863,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Guadagna Licenze pari al 30% delle Licenze del giocatore più ricco in partita (arrotondato per difetto, min 1)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn percentage slice in the art style of The Binding of Isaac. A pie chart showing 30% highlighted, coins flowing from a fat richest-player purse into a smaller bowl labeled min 1. Thick black outlines, flat shading, parasitic mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -786,6 +872,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Guadagna 2 Licenze per ogni blocco di 5 Licenze già spese in AddOn durante questa partita (max 6)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn tiered price block in the art style of The Binding of Isaac. Stacked blocks of five spent coins each yielding two new coins in return, the tower capped at six total coins. Thick black outlines, flat shading, investment mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -794,6 +881,7 @@
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Il giocatore con meno Licenze in partita pesca 1 carta; tu guadagni 3 Licenze
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn calculator quote scene in the art style of The Binding of Isaac. A charitable calculator handing one card to the poorest figure while simultaneously spitting out three coins toward the user. Thick black outlines, flat shading, shrewd generosity mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -806,6 +894,7 @@
 - **Quando**: In qualsiasi momento
 - **Effetto**: Imponi un vincolo al boss — la sua soglia dado sale di 2 per il resto del combattimento (a tuo vantaggio)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn constraint cage in the art style of The Binding of Isaac. A rulebook slamming down and locking shackles around a snarling boss monster, a dice threshold bar rising by two notches. Thick black outlines, flat shading, restrictive mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -814,6 +903,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Modifica la configurazione del boss — riduci i suoi HP massimi di 1 per il resto del combattimento
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn config panel in the art style of The Binding of Isaac. A settings slider on a monster profile screen being dragged down by one, reducing the max health bar by one segment permanently. Thick black outlines, flat shading, technical mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -822,6 +912,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Guida il combattimento — per 2 round la soglia dado si riduce di 1 per te
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn guided path in the art style of The Binding of Isaac. A salesman figure steering dice rolls along a marked lane with the threshold bar lowered by one pip for two rounds marked on a timer. Thick black outlines, flat shading, strategic guidance mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -830,6 +921,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Il boss subisce 1 HP. Se il boss ti ha già colpito almeno una volta, subisce 2 HP e perde la sua abilità per 1 round
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn escalation scene in the art style of The Binding of Isaac. A support ticket stamped ESCALATED fired at a boss dealing double damage when the boss already bears a prior-hit scar, silencing its special attack for one round. Thick black outlines, flat shading, retaliatory mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -838,6 +930,7 @@
 - **Quando**: In qualsiasi momento
 - **Effetto**: Un avversario perde 2 Licenze. Se le vuole recuperare, deve cedere 1 carta dalla sua mano
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn live message extortion in the art style of The Binding of Isaac. An urgent glowing message demanding two coins from a sweating opponent figure, who reluctantly hands over a card to get them back. Thick black outlines, flat shading, pressuring mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -846,6 +939,7 @@
 - **Quando**: Fuori dal proprio turno
 - **Effetto**: Assegna il prossimo boss nel mazzo a un avversario — deve combatterlo subito o perdere 2 Licenze
 - **Rarità**: Raro
+- **Image prompt**: `A 2D hand-drawn territory stamp in the art style of The Binding of Isaac. A red territory seal stamped onto a boss monster card and shoved toward a panicking opponent figure holding a lose-2-coins alternative. Thick black outlines, flat shading, imperious mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -854,6 +948,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Esegui i test automatici — se il boss ha HP ≤ 2 rimasti, viene sconfitto automaticamente con il prossimo tiro ≥ soglia (anziché aspettare HP = 0)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn CI pipeline in the art style of The Binding of Isaac. A green build pipeline running automated tests, a nearly-defeated boss with two HP left getting auto-finished by a passing test result. Thick black outlines, flat shading, efficient mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -866,6 +961,7 @@
 - **Quando**: All'inizio del combattimento (prima del primo round)
 - **Effetto**: Testa il boss in ambiente sicuro — per il primo round il boss ha la soglia dato ridotta di 2
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn sandbox test scene in the art style of The Binding of Isaac. A boss monster enclosed in a glass review environment, its threat level dial dialed down by two notches for the first round preview. Thick black outlines, flat shading, cautious testing mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -874,6 +970,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Quando fallisci un tiro dado, invece di perdere HP guadagni 1 Licenza (per questo combattimento)
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn error monetization in the art style of The Binding of Isaac. A failed dice roll shown with a miss symbol, but instead of losing a heart a single coin drops into a purse with a silver lining. Thick black outlines, flat shading, resilient mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -882,6 +979,7 @@
 - **Quando**: Durante combattimento
 - **Effetto**: Metti in pausa il combattimento per 1 round — né tu né il boss perdete HP in quel round
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn pause button in the art style of The Binding of Isaac. A giant pause symbol frozen in mid-combat between a player and a boss, both locked in place with clocks stopped and health bars unchanged. Thick black outlines, flat shading, tense standoff mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -890,6 +988,7 @@
 - **Quando**: Fuori dal proprio turno
 - **Effetto**: Apri un caso: la prossima azione offensiva contro di te viene sospesa di 1 turno anziché applicarsi subito
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn support ticket in the art style of The Binding of Isaac. An incoming attack arrow halted by a support ticket stamped CASE OPEN, suspended in mid-air for one turn while a clock counts down. Thick black outlines, flat shading, bureaucratic shield mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -898,6 +997,7 @@
 - **Quando**: Fuori dal proprio turno
 - **Effetto**: Scegli 1 tipo di carta (offensiva/economica/manipolazione) — quel tipo non può colpirti per questo turno
 - **Rarità**: Non comune
+- **Image prompt**: `A 2D hand-drawn preference panel in the art style of The Binding of Isaac. A settings screen with three card type toggles, one switched OFF forming an immunity shield around the player for that turn. Thick black outlines, flat shading, selective protection mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
