@@ -357,6 +357,12 @@ File: `app/game/engine.py`
 | `apply_death_penalty(hand, licenze, addons)` | list, int, list | dict | perde 1 carta random, 1 licenza, 1 addon |
 | `expected_score(rating_a, rating_b)` | int, int | float | formula ELO standard |
 | `update_elo(ratings, winner_index)` | list[int], int | list[int] | ELO multiplayer, floor a 100 |
+| `boss_roll_mode(boss_id, combat_round)` | int, int | `str \| None` | Override del tiro dado: `"worst_of_2"` o None. combat_round 1-indexed. |
+| `boss_addons_disabled(boss_id, combat_round)` | int, int | bool | True se gli addon del giocatore sono bloccati questo round. |
+| `boss_offensive_cards_blocked(boss_id)` | int | bool | True se le carte offensive sono vietate durante questo combattimento. |
+| `boss_interference_doubled(boss_id)` | int | bool | True se l'interferenza degli avversari ha efficacia doppia. |
+| `boss_threshold(boss_id, base_threshold, current_hp)` | int, int, int | int | Soglia dado effettiva (può cambiare per fasi o condizioni). |
+| `apply_boss_ability(boss_id, trigger, *, dice_result, combat_round)` | int, str, ... | dict | Effetti collaterali del boss per il trigger dato. Chiavi: `extra_damage`, `boss_heal`, `discard_cards`, `steal_licenze`, `opponent_gains_licenza`. |
 
 ### Costanti
 
@@ -437,6 +443,7 @@ FINE TURNO
 - [x] **Doppi mazzi + mercato** — `start_game` divide tutti i mazzi in due metà; boss e addon hanno 1 carta visibile per mazzo nel "mercato". `draw_card` accetta `{deck: 1|2}`. `start_combat` e `buy_addon` accettano `{source: market_1|market_2|deck_1|deck_2}`. Logica vittoria/sconfitta rispetta le regole del mercato. Migration `0002_dual_decks.py`.
 - [x] **3 mazzi degli scarti condivisi** — `action_discard` (scarto azione, rimescolato tra i 2 mazzi quando si esauriscono), `boss_graveyard` (boss senza cert), `addon_graveyard` (addon persi/distrutti). Migration `0003_shared_discards.py`.
 - [x] **Trofei boss con certificazione** — boss cert sconfitti diventano trofei fisici del giocatore (`player.trophies`). Possono essere rubati (→ trofei avversario) o distrutti (→ `boss_graveyard`). Visibili a tutti nel `game_state`. Migration `0004_player_trophies.py`.
+- [x] **Boss ability system (boss 1–20)** — architettura a due livelli in `engine.py`: query helpers e `apply_boss_ability(boss_id, trigger)` con dict di mutazioni. Trigger disponibili: `on_combat_start`, `on_round_start`, `after_miss`, `after_hit`, `on_player_damage`, `on_round_end`, `on_boss_defeated`. Query helpers: `boss_roll_mode`, `boss_addons_disabled`, `boss_offensive_cards_blocked`, `boss_interference_doubled`, `boss_interference_blocked`, `boss_disables_all_addons`, `boss_threshold` (con `hand_count`), `boss_death_licenze_penalty`, `boss_max_cards_per_turn`, `boss_dice_modifiers_blocked`, `boss_free_interference`. Cablato nei punti chiave di `game_handler.py`. Boss 21–100 da implementare.
 
 ### ⬜ Da fare
 
@@ -457,7 +464,9 @@ FINE TURNO
   - `on_roll` — in `_handle_roll_dice` prima/dopo il tiro dado
   Vedere `cards/addon_cards.md` per l'effetto completo di ogni addon.
 
-- [ ] **Abilità speciali boss (100 boss)** — `_handle_roll_dice` non applica nessuna abilità speciale del boss. Va creata `apply_boss_ability(boss, player, game, roll, trigger, db)` con trigger `"before_roll"` / `"after_roll"` / `"on_survive"`. Vedere `cards/boss_cards.md` per l'abilità di ogni boss.
+- [ ] **Abilità speciali boss (31–100)** — Boss 1–30 implementati. Restano 70 boss. Stessa architettura: aggiungere `case (N, trigger):` in `apply_boss_ability` e nei query helpers dove necessario. Vedere `cards/boss_cards.md`.
+  - Nuovi campi effetto aggiunti per boss 21–30: `aoe_all_hp_damage`, `reveal_hand`, `boss_revive`, `next_addon_cost_penalty`, `absorb_cards`, `return_absorbed_cards`.
+  - Handler da aggiornare: gestire `boss_revive` (flag `boss_resurrection_used`), `absorb_cards` (lista `combat_absorbed_cards` nel game state), `next_addon_cost_penalty` (campo `pending_addon_cost_penalty` su player), `aoe_all_hp_damage` (danno a tutti gli avversari).
 
 - [ ] **Rate limiting WS** — un utente non dovrebbe poter inviare messaggi troppo veloci.
 
