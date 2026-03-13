@@ -134,7 +134,8 @@ backend/
 │   └── game/
 │       ├── __init__.py           ✅
 │       ├── engine.py             ✅ funzioni pure core (~165 righe): roll, combat, deck, death, ELO + re-export engine_boss
-│       └── engine_boss.py        ✅ boss ability system (~1000 righe): tutti i 100 boss, query helper, apply_boss_ability
+│       ├── engine_boss.py        ✅ boss ability system (~1000 righe): tutti i 100 boss, query helper, apply_boss_ability
+│       └── engine_cards.py       ✅ effetti carte azione (10/300 implementate): apply_action_card_effect
 ├── scripts/
 │   └── seed_cards.py             ✅ parser .md → insert DB (idempotente, safe re-run)
 └── tests/
@@ -166,6 +167,7 @@ Client (React)
 - **WebSocket** gestisce: tutto il gameplay in tempo reale (ogni messaggio è un JSON `{action: "...", ...}`).
 - **engine.py** (core, ~165 righe): funzioni pure testabili (roll, combat, deck, death, ELO). Re-esporta tutto da `engine_boss`.
 - **engine_boss.py** (~1000 righe): sistema boss completo — tutti i 100 boss, query helper, `apply_boss_ability`. Separato per leggibilità; nessuna modifica al callee.
+- **engine_cards.py**: effetti carte azione. `apply_action_card_effect(card, player, game, db, *, target_player_id)` — dispatcher per numero carta; attualmente carte 1–10 implementate. Trigger `_disabled` in `apply_boss_ability` usato da carta 10 per disabilitare abilità boss.
 - **game_handler.py** (thin router, 65 righe): routing WS. Tutta la logica è in `handlers/` e `game_helpers.py`.
 - **handlers/lobby.py**: join, select_character, start_game.
 - **handlers/turn.py**: draw_card, play_card, buy_addon, use_addon, end_turn.
@@ -471,6 +473,7 @@ FINE TURNO
 - [x] **Migration `0005_combat_state.py`** — aggiunge `GamePlayer.combat_state` (JSON), `GamePlayer.pending_addon_cost_penalty` (INT), `GameSession.last_defeated_boss_id` (INT), `GameSession.last_defeated_legendary_boss_id` (INT), `GameSession.banned_card_ids` (JSON).
 - [x] **Wiring boss residui (25, 26, 31, 34, 55, 56, 74, 82, 84, 91, 94, 100)** — sfruttano i nuovi DB fields. One-shot revive (25), one-shot necromancer (34), addon cost penalty (26), lock/unlock addon (31), steal/return addon (91), petrify cards (82), doomsayer prediction cap (84), loyalty shield (94), mimic routing (55), shape-shifter routing (74), omega routing (100), permanent card ban (56).
 - [x] **Refactoring moduli** — `engine.py` (1154 righe) → `engine.py` (core, 165 righe) + `engine_boss.py` (boss system, 1001 righe). `game_handler.py` (1887 righe) → thin router (65 righe) + `game_helpers.py` (156 righe) + `handlers/lobby.py` (151 righe) + `handlers/turn.py` (480 righe) + `handlers/combat.py` (1079 righe). Nessuna logica modificata. Backward-compatible tramite `from app.game.engine_boss import *` in engine.py.
+- [x] **Effetti carte azione — carte 1–10 implementate** — Creato `engine_cards.py` con `apply_action_card_effect(card, player, game, db, *, target_player_id)`. Cablato in `_handle_play_card` (rispetta il flag boss 69 approval). Carte 1–10: Quick Win (+2L), Pipeline Closed Won (+4L), Forecasting Boost (+3/5L), License Audit (ruba 2L), Contract Renewal (ruba 3L, interferenza), Certification Heist (ruba 1 trophy), Chargeback (interferenza +2L), Revenue Cloud (+1L per addon), Apex Hammer (boss -2HP), SOQL Blast (boss -1HP + disable ability). Carta 10: boss ability disabilitata via `combat_state["boss_ability_disabled_until_round"]`; combat.py lo controlla prima di chiamare `apply_boss_ability("on_round_start")`.
 - [x] **Boss 33, 45, 63, 83, 86 — TUTTI I 100 BOSS COMPLETAMENTE CABLATI**
   - Boss 33 (Experience Cloud Illusion): nuova action `declare_card` — il player dichiara la carta prima del tiro. Se miss, la carta viene consumata. Handler: `_handle_declare_card` + guard in `_handle_roll_dice`.
   - Boss 45 (Agentforce Rebellion): ogni round hijack di 1 addon random untapped (tappato); broadcast `addon_hijacked_by_boss`. Effetto invertito deferred a `apply_addon_effect`.

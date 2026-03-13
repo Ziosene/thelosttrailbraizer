@@ -12,6 +12,7 @@ from app.websocket.game_helpers import (
 from app.models.game import GameSession, GameStatus, TurnPhase
 from app.models.card import ActionCard, BossCard, AddonCard
 from app.game import engine
+from app.game.engine_cards import apply_action_card_effect
 
 
 async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Session):
@@ -209,13 +210,13 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
     game.action_discard.append(hc.action_card_id)
     db.delete(hc)
     player.cards_played_this_turn += 1
+    card_approved = True  # may be set to False by boss 69 below
 
     if player.is_in_combat and player.current_boss_id and card:
         current_round_post = (player.combat_round or 0) + 1
 
         # Boss 69 (Approval Process Bureaucrat): every card must pass an approval roll
         # d10 ≤ 4 → card consumed but has no effect
-        card_approved = True
         if engine.boss_requires_approval_roll(player.current_boss_id):
             approval_roll = engine.roll_d10()
             if approval_roll <= 4:
@@ -248,32 +249,22 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
             extra_compliance_dmg = compliance_penalty  # 1 HP per extra card (not cumulative — fires each play)
             player.hp = max(0, player.hp - extra_compliance_dmg)
 
+    # Apply card effect (if implemented for this card number)
+    card_effect_result: dict = {}
+    if card and card_approved:
+        card_effect_result = apply_action_card_effect(
+            card, player, game, db,
+            target_player_id=data.get("target_player_id"),
+        )
+
     db.commit()
     db.refresh(game)
-
-    # TODO: implementare gli effetti di tutte le 300 carte azione.
-    # Attualmente la carta viene rimossa dalla mano e messa negli scarti,
-    # ma il suo effetto NON viene applicato.
-    # Ogni carta va gestita per nome (card.name) o numero (card.number) in
-    # una funzione dedicata tipo apply_action_card_effect(card, player, game, db).
-    # Categorie da coprire:
-    #   - Economiche: guadagna/trasferisci licenze (condizionali su stato gioco)
-    #   - Offensive: infliggi danno al boss (immediato o persistente)
-    #   - Difensive: recupera HP, blocca danno, crea scudi
-    #   - Manipolazione dado: modifica soglia, ritira dado, forza valore
-    #   - Utilità: pesca carte, riordina mazzi, recupera scarti
-    #   - Interferenza: forza azioni su avversari, ruba carte/licenze
-    #   - Leggendarie: effetti compositi multi-categoria
-    # Furto trofeo: victim.trophies.remove(boss_id) → thief.trophies.append(boss_id)
-    #   aggiorna victim.certificazioni -= 1 e thief.certificazioni += 1
-    # Distruzione trofeo: victim.trophies.remove(boss_id) → game.boss_graveyard.append(boss_id)
-    #   aggiorna victim.certificazioni -= 1
-    # Vedere cards/action_cards.md per l'effetto completo di ogni carta.
 
     await manager.broadcast(game.code, {
         "type": ServerEvent.CARD_PLAYED,
         "player_id": player.id,
         "card": {"id": card.id, "name": card.name, "effect": card.effect} if card else {},
+        "effect_result": card_effect_result,
     })
     await _broadcast_state(game, db)
     await _send_hand_state(game.code, player, db)

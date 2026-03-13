@@ -339,8 +339,12 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             copy_boss_id = game.last_defeated_boss_id
 
     # ── on_round_start effects (before rolling) ──────────────────────────
+    # Card 10 (SOQL Blast) can disable the boss ability for N rounds.
+    _boss_ability_disabled = (
+        (player.combat_state or {}).get("boss_ability_disabled_until_round", 0) >= current_round
+    )
     round_start = engine.apply_boss_ability(
-        boss.id, "on_round_start",
+        boss.id, "on_round_start" if not _boss_ability_disabled else "_disabled",
         combat_round=current_round,
         cards_played=player.cards_played_this_turn,
     )
