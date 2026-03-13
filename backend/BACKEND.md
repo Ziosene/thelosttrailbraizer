@@ -464,7 +464,11 @@ FINE TURNO
   - `on_roll` — in `_handle_roll_dice` prima/dopo il tiro dado
   Vedere `cards/addon_cards.md` per l'effetto completo di ogni addon.
 
-- [ ] **Abilità speciali boss (71–100)** — Boss 1–70 implementati. Restano 30 boss.
+- [ ] **Abilità speciali boss (81–100)** — Boss 1–80 implementati. Restano 20 boss.
+  - Nuovi campi effetto aggiunti per boss 71–80: `aoe_discard_all_hands`, `opponent_draws_card`, `reveal_all_licenze`, `refresh_hand`, `certification_exam_rolls`.
+  - Nuovi query helper: `boss_heals_on_defensive_card()` (72), `boss_is_shape_shifter()` (74), `boss_immune_to_dice()` (78).
+  - Aggiornati: `boss_addons_disabled()` + case 77, `boss_immune_to_card_damage()` + `combat_round` param + case 78, `boss_disables_all_addons()` + `combat_round` param + case 79, `boss_interference_blocked()` + case 79.
+  - Handler da aggiornare: `aoe_discard_all_hands` (scarta N carte da ogni giocatore), `opponent_draws_card` (avversario random pesca), `reveal_all_licenze` (broadcast + free card al più ricco), `refresh_hand` (scarta mano + pesca N), `certification_exam_rolls` (5 × d10 → HP/licenze), `boss_immune_to_dice` (skip boss HP decrement), `boss_is_shape_shifter` (ogni 2 round route trigger a boss casuale da defeated_boss_ids), `boss_heals_on_defensive_card` (check in _handle_play_card se carta difensiva).
   - Nuovi campi effetto aggiunti per boss 61–70: `exam_roll`, `deal_offer`, `bonus_hp_per_player_addon`, `boss_splits_on_heavy_hit`.
   - Nuovi query helper: `boss_forces_top_card_play()` (64), `boss_cancels_offensive_if_revealed()` (65), `boss_blocks_retreat()` (66), `boss_death_addon_penalty()` (66), `boss_nullifies_round_on_low_roll()` (67), `boss_requires_approval_roll()` (69).
   - Handler da aggiornare: `exam_roll` (d10 → ±HP pre-combat), `deal_offer` (evento WS accept/reject → licenza + threshold +1), `bonus_hp_per_player_addon` (boss.hp += len(player.addons) all'inizio), `boss_splits_on_heavy_hit` (spawn boss duplicate con 3 HP), `boss_blocks_retreat` (blocca qualsiasi carta retreat), `boss_death_addon_penalty` (affianca `boss_death_licenze_penalty`), `boss_nullifies_round_on_low_roll` (skip danno se roll ≤ 2), `boss_requires_approval_roll` (d10 extra per carta → ≤4 carta consumata senza effetto).

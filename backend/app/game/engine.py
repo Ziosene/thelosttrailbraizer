@@ -159,7 +159,7 @@ def update_elo(ratings: list[int], winner_index: int) -> list[int]:
 
 
 # ---------------------------------------------------------------------------
-# Boss ability system (bosses 1–70 implemented)
+# Boss ability system (bosses 1–80 implemented)
 # ---------------------------------------------------------------------------
 # All functions are pure — no DB access.  game_handler reads the returned
 # values and applies the actual mutations to DB objects.
@@ -212,6 +212,11 @@ _EMPTY_EFFECT: dict = {
     "deal_offer": False,            # boss offers 1 free licenza; if accepted, threshold +1 this round (player chooses)
     "bonus_hp_per_player_addon": False,  # boss starts combat with +1 HP for each addon the combatant owns
     "boss_splits_on_heavy_hit": False,   # if boss takes 2+ damage this round, spawn a 3-HP no-ability duplicate
+    "aoe_discard_all_hands": 0,     # remove N random cards from EVERY player's hand (including combatant)
+    "opponent_draws_card": 0,       # a random opponent draws N extra cards
+    "reveal_all_licenze": False,    # reveal all players' licenze counts; richest non-combatant plays 1 free card
+    "refresh_hand": 0,              # combatant discards entire hand and draws N new cards
+    "certification_exam_rolls": 0,  # roll N dice before combat: each ≥8 → +1 HP +2 licenze; each ≤4 → -1 HP
 }
 
 
@@ -237,12 +242,14 @@ def boss_roll_mode(boss_id: int, combat_round: int) -> str | None:
 
 
 def boss_addons_disabled(boss_id: int, combat_round: int) -> bool:
-    """Returns True if the player's addons are disabled for the current round."""
+    """Returns True if the COMBATANT's addons are disabled for the current round."""
     match boss_id:
         case 4:   # The Cursed Friday Deployment — addons locked rounds 1 and 2
             return combat_round <= 2
         case 30:  # The Release Update Scourge — addons locked rounds 1, 2, and 3
             return combat_round <= 3
+        case 77:  # The SFDX Imp — addons disabled for the entire combat
+            return True
     return False
 
 
@@ -303,14 +310,19 @@ def boss_death_licenze_penalty(boss_id: int) -> int:
     return DEATH_LOSE_LICENZE
 
 
-def boss_disables_all_addons(boss_id: int) -> bool:
+def boss_disables_all_addons(boss_id: int, combat_round: int = 1) -> bool:
     """
-    Returns True if ALL players' addons are disabled while fighting this boss.
+    Returns True if ALL players' addons are disabled this round.
     Checked in _handle_use_addon for any player in the game, not just the combatant.
+
+    Args:
+        combat_round: 1-indexed round number (used by boss 79 which only disables for 3 rounds).
     """
     match boss_id:
-        case 15:  # trust.salesforce.DOOM
+        case 15:  # trust.salesforce.DOOM — disables all addons for the entire combat
             return True
+        case 79:  # The ISVForce Overlord — disables all addons only for rounds 1–3
+            return combat_round <= 3
     return False
 
 
@@ -318,6 +330,8 @@ def boss_interference_blocked(boss_id: int) -> bool:
     """Returns True if opponents cannot play interference cards against this boss."""
     match boss_id:
         case 15:  # trust.salesforce.DOOM
+            return True
+        case 79:  # The ISVForce Overlord (Legendary)
             return True
     return False
 
@@ -398,11 +412,18 @@ def boss_hand_visible_to_opponents(boss_id: int) -> bool:
     return False
 
 
-def boss_immune_to_card_damage(boss_id: int) -> bool:
-    """Returns True if action-card damage effects deal 0 HP to this boss."""
+def boss_immune_to_card_damage(boss_id: int, combat_round: int = 0) -> bool:
+    """
+    Returns True if action-card damage effects deal 0 HP to this boss this round.
+
+    Args:
+        combat_round: 1-indexed round number (used by boss 78 alternating immunity).
+    """
     match boss_id:
-        case 43:  # The Shield Golem — only dice rolls can wound it
+        case 43:  # The Shield Golem — always immune to card damage
             return True
+        case 78:  # The Known Issues Ghost — immune to cards on even rounds
+            return combat_round % 2 == 0
     return False
 
 
@@ -540,6 +561,41 @@ def boss_nullifies_round_on_low_roll(boss_id: int) -> bool:
     match boss_id:
         case 67:  # The Developer Console Glitch
             return True
+    return False
+
+
+def boss_heals_on_defensive_card(boss_id: int) -> int:
+    """
+    Returns the HP the boss recovers each time the combatant plays a defensive action card.
+    Returns 0 if the boss has no such ability.
+    """
+    match boss_id:
+        case 72:  # The DevOps Center Saboteur — +1 HP per defensive card played
+            return 1
+    return 0
+
+
+def boss_is_shape_shifter(boss_id: int) -> bool:
+    """
+    Returns True if this boss changes its active ability every 2 rounds by copying
+    a randomly selected previously-defeated boss.
+    Handler: on every even round, pick a random id from game.defeated_boss_ids and
+    call apply_boss_ability(that_id, trigger, ...) for the rest of that round.
+    """
+    match boss_id:
+        case 74:  # The Org Shape Shifter
+            return True
+    return False
+
+
+def boss_immune_to_dice(boss_id: int, combat_round: int) -> bool:
+    """
+    Returns True if the boss cannot take damage from dice rolls this round.
+    Handler should skip boss HP decrement when this returns True.
+    """
+    match boss_id:
+        case 78:  # The Known Issues Ghost — immune to dice on odd rounds
+            return combat_round % 2 == 1
     return False
 
 
@@ -840,5 +896,34 @@ def apply_boss_ability(
         # target on player.current_boss_duplicate_hp = 3 (flag once per combat).
         case (70, "after_hit"):
             return _boss_effect(boss_splits_on_heavy_hit=True)
+
+        # ── Boss 71 — The Data Loader Annihilator ────────────────────────────
+        # At combat start: removes 2 random cards from EVERY player's hand.
+        case (71, "on_combat_start"):
+            return _boss_effect(aoe_discard_all_hands=2)
+
+        # ── Boss 73 — The Streaming API Storm ────────────────────────────────
+        # Every round: a random opponent (not combatant) draws 1 extra card.
+        case (73, "on_round_end"):
+            return _boss_effect(opponent_draws_card=1)
+
+        # ── Boss 75 — The Einstein Opportunity Harbinger ──────────────────────
+        # At combat start: reveals all players' licenze counts to everyone.
+        # The opponent with the most licenze then plays 1 action card for free.
+        case (75, "on_combat_start"):
+            return _boss_effect(reveal_all_licenze=True)
+
+        # ── Boss 76 — The Sandbox Refresh Catastrophe ────────────────────────
+        # At combat start: combatant discards entire hand and draws 4 new cards.
+        case (76, "on_combat_start"):
+            return _boss_effect(refresh_hand=4)
+
+        # ── Boss 80 — The Certification Exam Executioner (Legendary) ─────────
+        # Before combat: roll 5 exam dice.
+        #   Each result ≥ 8 → combatant gains +1 HP and +2 Licenze
+        #   Each result ≤ 4 → combatant starts with -1 HP
+        # Handler: roll 5 × d10, apply cumulative HP/licenze adjustments.
+        case (80, "on_combat_start"):
+            return _boss_effect(certification_exam_rolls=5)
 
     return _boss_effect()
