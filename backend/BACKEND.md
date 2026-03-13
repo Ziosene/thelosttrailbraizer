@@ -124,10 +124,17 @@ backend/
 │   │   ├── __init__.py           ✅
 │   │   ├── events.py             ✅ ClientAction / ServerEvent (classi con costanti)
 │   │   ├── manager.py            ✅ ConnectionManager (rooms per game_code)
-│   │   └── game_handler.py       ✅ routing completo incluso use_addon + ELO end-game
+│   │   ├── game_helpers.py       ✅ helper condivisi (_build_game_state, _error, _broadcast_state, _apply_elo, …)
+│   │   ├── game_handler.py       ✅ thin router WS (65 righe) — importa da handlers/
+│   │   └── handlers/
+│   │       ├── __init__.py       ✅
+│   │       ├── lobby.py          ✅ _handle_join, _handle_select_character, _handle_start_game
+│   │       ├── turn.py           ✅ _handle_draw_card, _handle_play_card, _handle_buy_addon, _handle_use_addon, _handle_end_turn
+│   │       └── combat.py         ✅ _handle_start_combat, _handle_roll_dice, _handle_retreat, _handle_declare_card, _handle_declare_card_type
 │   └── game/
 │       ├── __init__.py           ✅
-│       └── engine.py             ✅ funzioni pure + ELO (update_elo, expected_score)
+│       ├── engine.py             ✅ funzioni pure core (~165 righe): roll, combat, deck, death, ELO + re-export engine_boss
+│       └── engine_boss.py        ✅ boss ability system (~1000 righe): tutti i 100 boss, query helper, apply_boss_ability
 ├── scripts/
 │   └── seed_cards.py             ✅ parser .md → insert DB (idempotente, safe re-run)
 └── tests/
@@ -157,7 +164,13 @@ Client (React)
 
 - **REST** gestisce: autenticazione, profilo utente, creazione/join lobby, leaderboard.
 - **WebSocket** gestisce: tutto il gameplay in tempo reale (ogni messaggio è un JSON `{action: "...", ...}`).
-- **engine.py** contiene solo funzioni pure (testabili senza DB), chiamate dal `game_handler`.
+- **engine.py** (core, ~165 righe): funzioni pure testabili (roll, combat, deck, death, ELO). Re-esporta tutto da `engine_boss`.
+- **engine_boss.py** (~1000 righe): sistema boss completo — tutti i 100 boss, query helper, `apply_boss_ability`. Separato per leggibilità; nessuna modifica al callee.
+- **game_handler.py** (thin router, 65 righe): routing WS. Tutta la logica è in `handlers/` e `game_helpers.py`.
+- **handlers/lobby.py**: join, select_character, start_game.
+- **handlers/turn.py**: draw_card, play_card, buy_addon, use_addon, end_turn.
+- **handlers/combat.py**: start_combat, roll_dice, retreat, declare_card, declare_card_type.
+- **game_helpers.py**: helper condivisi (`_build_game_state`, `_error`, `_broadcast_state`, `_apply_elo`, `_send_hand_state`, …).
 - **manager.py** tiene in memoria le connessioni WS attive raggruppate per `game_code`.
 
 ---
@@ -457,6 +470,7 @@ FINE TURNO
 - [x] **Boss ability system (boss 1–100, COMPLETO)** — architettura a due livelli in `engine.py` + wiring completo in `game_handler.py`. Tutti i trigger (on_combat_start / on_round_start / after_miss / after_hit / on_player_damage / on_round_end / on_boss_defeated) cablati. Tutti i query helper applicati nei punti giusti del flusso.
 - [x] **Migration `0005_combat_state.py`** — aggiunge `GamePlayer.combat_state` (JSON), `GamePlayer.pending_addon_cost_penalty` (INT), `GameSession.last_defeated_boss_id` (INT), `GameSession.last_defeated_legendary_boss_id` (INT), `GameSession.banned_card_ids` (JSON).
 - [x] **Wiring boss residui (25, 26, 31, 34, 55, 56, 74, 82, 84, 91, 94, 100)** — sfruttano i nuovi DB fields. One-shot revive (25), one-shot necromancer (34), addon cost penalty (26), lock/unlock addon (31), steal/return addon (91), petrify cards (82), doomsayer prediction cap (84), loyalty shield (94), mimic routing (55), shape-shifter routing (74), omega routing (100), permanent card ban (56).
+- [x] **Refactoring moduli** — `engine.py` (1154 righe) → `engine.py` (core, 165 righe) + `engine_boss.py` (boss system, 1001 righe). `game_handler.py` (1887 righe) → thin router (65 righe) + `game_helpers.py` (156 righe) + `handlers/lobby.py` (151 righe) + `handlers/turn.py` (480 righe) + `handlers/combat.py` (1079 righe). Nessuna logica modificata. Backward-compatible tramite `from app.game.engine_boss import *` in engine.py.
 - [x] **Boss 33, 45, 63, 83, 86 — TUTTI I 100 BOSS COMPLETAMENTE CABLATI**
   - Boss 33 (Experience Cloud Illusion): nuova action `declare_card` — il player dichiara la carta prima del tiro. Se miss, la carta viene consumata. Handler: `_handle_declare_card` + guard in `_handle_roll_dice`.
   - Boss 45 (Agentforce Rebellion): ogni round hijack di 1 addon random untapped (tappato); broadcast `addon_hijacked_by_boss`. Effetto invertito deferred a `apply_addon_effect`.
