@@ -18,6 +18,8 @@ class ClientAction:
     RETREAT_COMBAT = "retreat_combat"
     DECLARE_CARD = "declare_card"           # boss 33 — declare card before rolling
     DECLARE_CARD_TYPE = "declare_card_type" # boss 86 — declare Offensiva/Difensiva at combat start
+    PLAY_REACTION = "play_reaction"         # out-of-turn: {hand_card_id: int}
+    PASS_REACTION = "pass_reaction"         # out-of-turn: pass the reaction window
 
 
 class ServerEvent:
@@ -39,3 +41,6 @@ class ServerEvent:
     GAME_OVER = "game_over"
     HAND_STATE = "hand_state"
     ERROR = "error"
+    REACTION_WINDOW_OPEN = "reaction_window_open"   # privato al target: puoi reagire
+    REACTION_WINDOW_CLOSED = "reaction_window_closed" # privato al target: finestra chiusa
+    REACTION_RESOLVED = "reaction_resolved"           # broadcast: come è andata la reazione

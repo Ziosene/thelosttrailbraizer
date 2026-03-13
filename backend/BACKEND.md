@@ -345,6 +345,8 @@ Tutti i messaggi sono JSON. Il server autentica via JWT al momento della conness
 | `end_turn` | — | Fase `action` o `draw`, proprio turno |
 | `declare_card` | `{hand_card_id}` | Fase `combat`, prima di `roll_dice` contro boss 33 — dichiara la carta che si intende giocare |
 | `declare_card_type` | `{card_type: "Offensiva"\|"Difensiva"}` | Fase `combat`, dopo `start_combat` contro boss 86 — dichiara il tipo di carte che si potrà giocare |
+| `play_reaction` | `{hand_card_id}` | Fuori dal proprio turno — risposta a `reaction_window_open`; gioca una carta interferenza |
+| `pass_reaction` | — | Fuori dal proprio turno — rinuncia alla finestra di reazione |
 
 ### Server → Client (eventi)
 
@@ -367,6 +369,9 @@ Tutti i messaggi sono JSON. Il server autentica via JWT al momento della conness
 | `game_over` | `{winner_id}` | partita terminata |
 | `hand_state` | `{hand: [...], addons: [...]}` | privato — inviato solo al giocatore dopo draw, play, morte, reconnect |
 | `error` | `{message}` | errore di validazione/stato |
+| `reaction_window_open` | `{trigger_card, attacker_player_id, timeout_ms}` | privato al target — si è aperta una finestra di reazione (8 s) |
+| `reaction_window_closed` | — | privato al target — finestra chiusa (timeout o risposta ricevuta) |
+| `reaction_resolved` | `{reactor_player_id, original_cancelled, reaction_effect}` | broadcast — come è stata risolta la reazione |
 
 ---
 
@@ -478,6 +483,7 @@ FINE TURNO
 - [x] **Migration `0005_combat_state.py`** — aggiunge `GamePlayer.combat_state` (JSON), `GamePlayer.pending_addon_cost_penalty` (INT), `GameSession.last_defeated_boss_id` (INT), `GameSession.last_defeated_legendary_boss_id` (INT), `GameSession.banned_card_ids` (JSON).
 - [x] **Wiring boss residui (25, 26, 31, 34, 55, 56, 74, 82, 84, 91, 94, 100)** — sfruttano i nuovi DB fields. One-shot revive (25), one-shot necromancer (34), addon cost penalty (26), lock/unlock addon (31), steal/return addon (91), petrify cards (82), doomsayer prediction cap (84), loyalty shield (94), mimic routing (55), shape-shifter routing (74), omega routing (100), permanent card ban (56).
 - [x] **Refactoring moduli** — `engine.py` (1154 righe) → `engine.py` (core, 165 righe) + `engine_boss.py` (boss system, 1001 righe). `game_handler.py` (1887 righe) → thin router (65 righe) + `game_helpers.py` (156 righe) + `handlers/lobby.py` (151 righe) + `handlers/turn.py` (480 righe) + `handlers/combat.py` (1079 righe). Nessuna logica modificata. Backward-compatible tramite `from app.game.engine_boss import *` in engine.py.
+- [x] **Sistema reazione out-of-turn** — `reaction_manager.py`: asyncio Event per finestre di reazione (8 s timeout, in-memory, no DB). `_handle_play_card` apre una finestra se la carta colpisce un avversario con budget carte disponibile. Il target può rispondere con `play_reaction {hand_card_id}` o `pass_reaction`. Risoluzione: Shield Platform (carta 20) annulla l'originale; Chargeback (carta 7) su furto Licenze annulla + dà +1L; altre interferenze si applicano entrambe. Budget carte condiviso in-turn/out-of-turn: `cards_played_this_turn` conta entrambi. Nuovi ClientAction: `play_reaction`, `pass_reaction`. Nuovi ServerEvent: `reaction_window_open` (privato), `reaction_window_closed` (privato), `reaction_resolved` (broadcast).
 - [x] **Effetti carte azione — carte 1–20 implementate** — Refactoring da `engine_cards.py` a package `engine_cards/` con un modulo per categoria (economica, offensiva, difensiva). Cablato in `_handle_play_card` (rispetta boss 69 approval). combat_state keys aggiunte: `boss_ability_disabled_until_round` (carta 10), `double_damage_until_round` (carta 12), `boss_threshold_reduction` (carta 13), `boss_threshold_increase_until_round` (carta 15), `addons_blocked_next_turn` (carta 18). combat.py applica tutti questi modificatori nel flusso roll. turn.py `_handle_buy_addon` controlla `addons_blocked_next_turn`; `_handle_end_turn` lo pulisce.
 - [x] **Boss 33, 45, 63, 83, 86 — TUTTI I 100 BOSS COMPLETAMENTE CABLATI**
   - Boss 33 (Experience Cloud Illusion): nuova action `declare_card` — il player dichiara la carta prima del tiro. Se miss, la carta viene consumata. Handler: `_handle_declare_card` + guard in `_handle_roll_dice`.

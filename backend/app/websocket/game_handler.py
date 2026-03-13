@@ -15,6 +15,7 @@ from app.websocket.handlers.combat import (
     _handle_start_combat, _handle_roll_dice, _handle_retreat,
     _handle_declare_card, _handle_declare_card_type,
 )
+from app.websocket.handlers.reaction import _handle_play_reaction, _handle_pass_reaction
 
 
 async def handle_message(
@@ -61,5 +62,9 @@ async def handle_message(
         await _handle_declare_card(game, user_id, data, db)
     elif action == ClientAction.DECLARE_CARD_TYPE:
         await _handle_declare_card_type(game, user_id, data, db)
+    elif action == ClientAction.PLAY_REACTION:
+        await _handle_play_reaction(game, user_id, data, db)
+    elif action == ClientAction.PASS_REACTION:
+        await _handle_pass_reaction(game, user_id, data, db)
     else:
         await _error(game_code, user_id, f"Unknown action: {action}")

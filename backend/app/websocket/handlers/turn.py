@@ -13,6 +13,7 @@ from app.models.game import GameSession, GameStatus, TurnPhase
 from app.models.card import ActionCard, BossCard, AddonCard
 from app.game import engine
 from app.game.engine_cards import apply_action_card_effect
+from app.websocket.reaction_manager import open_reaction_window
 
 
 async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Session):
@@ -249,12 +250,78 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
             extra_compliance_dmg = compliance_penalty  # 1 HP per extra card (not cumulative — fires each play)
             player.hp = max(0, player.hp - extra_compliance_dmg)
 
-    # Apply card effect (if implemented for this card number)
+    # ── Reaction window ───────────────────────────────────────────────────────
+    # Se la carta colpisce un avversario specifico e quell'avversario ha ancora
+    # budget carte (cards_played_this_turn < MAX_CARDS_PER_TURN), gli apriamo
+    # una finestra di reazione PRIMA di applicare l'effetto originale.
+    target_player_id = data.get("target_player_id")
+    reaction_target = None
+    reaction_response = None
+
+    if card and card_approved and target_player_id:
+        reaction_target = next(
+            (p for p in game.players if p.id == target_player_id and p.id != player.id),
+            None,
+        )
+        if reaction_target and reaction_target.cards_played_this_turn < engine.MAX_CARDS_PER_TURN:
+            await manager.send_to_player(game.code, reaction_target.user_id, {
+                "type": ServerEvent.REACTION_WINDOW_OPEN,
+                "trigger_card": {"id": card.id, "name": card.name},
+                "attacker_player_id": player.id,
+                "timeout_ms": 8000,
+            })
+            reaction_response = await open_reaction_window(
+                game.code, reaction_target.id, timeout=8.0
+            )
+            await manager.send_to_player(game.code, reaction_target.user_id, {
+                "type": ServerEvent.REACTION_WINDOW_CLOSED,
+            })
+
+    # ── Risoluzione reazione ──────────────────────────────────────────────────
+    original_cancelled = False
+    reaction_card_result: dict = {}
+
+    if reaction_response and reaction_response.get("action") == "play" and reaction_target:
+        rhc_id = reaction_response.get("hand_card_id")
+        from app.models.game import PlayerHandCard as _RPHC
+        rhc = db.get(_RPHC, rhc_id)
+        if rhc and rhc.player_id == reaction_target.id:
+            reaction_card = db.get(ActionCard, rhc.action_card_id)
+            # Consuma la carta di reazione
+            game.action_discard = (game.action_discard or []) + [rhc.action_card_id]
+            db.delete(rhc)
+            reaction_target.cards_played_this_turn += 1
+
+            if reaction_card:
+                if reaction_card.number == 20:
+                    # Shield Platform: annulla la carta originale, nessun altro effetto
+                    original_cancelled = True
+                    reaction_card_result = {
+                        "card_number": 20, "applied": True, "cancelled_original": True,
+                    }
+                elif reaction_card.number == 7 and card and card.card_type == "Economica":
+                    # Chargeback come reazione a un furto di Licenze:
+                    # annulla il furto e dà +1L al difensore (recupero + bonus)
+                    original_cancelled = True
+                    reaction_target.licenze += 1
+                    reaction_card_result = {
+                        "card_number": 7, "applied": True,
+                        "cancelled_original": True, "licenze_gained": 1,
+                    }
+                else:
+                    # Qualsiasi altra carta fuori turno: si applica,
+                    # poi l'originale si applica comunque
+                    reaction_card_result = apply_action_card_effect(
+                        reaction_card, reaction_target, game, db,
+                        target_player_id=player.id,
+                    )
+
+    # ── Effetto carta originale (a meno che non sia stato annullato) ──────────
     card_effect_result: dict = {}
-    if card and card_approved:
+    if card and card_approved and not original_cancelled:
         card_effect_result = apply_action_card_effect(
             card, player, game, db,
-            target_player_id=data.get("target_player_id"),
+            target_player_id=target_player_id,
         )
 
     db.commit()
@@ -266,8 +333,17 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
         "card": {"id": card.id, "name": card.name, "effect": card.effect} if card else {},
         "effect_result": card_effect_result,
     })
+    if reaction_card_result:
+        await manager.broadcast(game.code, {
+            "type": ServerEvent.REACTION_RESOLVED,
+            "reactor_player_id": reaction_target.id if reaction_target else None,
+            "original_cancelled": original_cancelled,
+            "reaction_effect": reaction_card_result,
+        })
     await _broadcast_state(game, db)
     await _send_hand_state(game.code, player, db)
+    if reaction_target:
+        await _send_hand_state(game.code, reaction_target, db)
 
 
 async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Session):
