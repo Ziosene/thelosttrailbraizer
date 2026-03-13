@@ -159,7 +159,7 @@ def update_elo(ratings: list[int], winner_index: int) -> list[int]:
 
 
 # ---------------------------------------------------------------------------
-# Boss ability system (bosses 1–40 implemented)
+# Boss ability system (bosses 1–50 implemented)
 # ---------------------------------------------------------------------------
 # All functions are pure — no DB access.  game_handler reads the returned
 # values and applies the actual mutations to DB objects.
@@ -201,6 +201,9 @@ _EMPTY_EFFECT: dict = {
     "bonus_chaos_roll": False,      # handler rolls an extra d10; on 1 a random penalty fires (card/HP/licenza)
     "boss_revive_to_deck": 0,       # boss is defeated but re-enters deck with N HP (once per game; handler tracks flag)
     "aoe_all_players_hp_damage": 0, # ALL players (including combatant) each lose N HP
+    "licenza_or_hp_drain": 0,       # drain N licenze from player; if player has 0 licenze, drain N HP instead
+    "hijack_addon": False,          # boss uses 1 of the combatant's untapped addons against them (inverted)
+    "force_extra_card_discard": False,  # combatant must discard 1 additional card this round (involuntarily)
 }
 
 
@@ -374,6 +377,48 @@ def boss_card_declared_before_roll(boss_id: int) -> bool:
         case 33:  # The Experience Cloud Illusion
             return True
     return False
+
+
+def boss_hand_visible_to_opponents(boss_id: int) -> bool:
+    """
+    Returns True if opponents can see which action card the combatant intends to play
+    before it resolves (handler broadcasts a 'card_declared' event to non-combatants).
+    """
+    match boss_id:
+        case 41:  # The Quip Wisp
+            return True
+    return False
+
+
+def boss_immune_to_card_damage(boss_id: int) -> bool:
+    """Returns True if action-card damage effects deal 0 HP to this boss."""
+    match boss_id:
+        case 43:  # The Shield Golem — only dice rolls can wound it
+            return True
+    return False
+
+
+def boss_heals_on_addon_use(boss_id: int) -> int:
+    """
+    Returns the HP the boss recovers every time the combatant activates an addon.
+    Returns 0 if the boss has no such ability.
+    """
+    match boss_id:
+        case 49:  # The Managed Package Leech — +1 HP per addon activation
+            return 1
+    return 0
+
+
+def boss_expires_after_rounds(boss_id: int) -> int | None:
+    """
+    Returns the maximum number of combat rounds before this boss auto-expires
+    (combat ends immediately with NO reward for the player).
+    Returns None if the boss does not have an expiry mechanic.
+    """
+    match boss_id:
+        case 48:  # The Scratch Org Mirage — expires if combat exceeds 5 rounds
+            return 5
+    return None
 
 
 def boss_cancels_next_card(boss_id: int, combat_round: int) -> bool:
@@ -552,6 +597,48 @@ def apply_boss_ability(
         # ── Boss 40 — The Net Zero Apocalypse ────────────────────────────────
         # Every miss: ALL players (including the combatant) each lose 1 HP.
         case (40, "after_miss"):
+            return _boss_effect(aoe_all_players_hp_damage=1)
+
+        # ── Boss 42 — The Revenue Cloud Devourer ─────────────────────────────
+        # Round start: drain 1 Licenza. If player has 0 licenze, drain 1 HP instead.
+        case (42, "on_round_start"):
+            return _boss_effect(licenza_or_hp_drain=1)
+
+        # ── Boss 44 — The SSO Doppelganger ───────────────────────────────────
+        # At combat start a random opponent gains 2 Licenze (the "stolen identity" reward).
+        # NOTE: card says "avversario a scelta" (opponent's choice); using random until UX ready.
+        case (44, "on_combat_start"):
+            return _boss_effect(opponent_gains_licenza=2)
+
+        # ── Boss 45 — The Agentforce Rebellion ───────────────────────────────
+        # Every round the boss hijacks 1 of the combatant's available addons and uses it
+        # with inverted effect against them.
+        # Handler: pick a random untapped addon → apply inverted effect → mark it as tapped.
+        case (45, "on_round_start"):
+            return _boss_effect(hijack_addon=True)
+
+        # ── Boss 46 — The Process Builder Abomination ────────────────────────
+        # Every round the combatant involuntarily discards 1 extra card from their hand.
+        case (46, "on_round_start"):
+            return _boss_effect(force_extra_card_discard=True)
+
+        # ── Boss 47 — The Omni-Channel Chimera ───────────────────────────────
+        # Cycling 3-round attack pattern (1-indexed, wraps with mod 3):
+        #   cycle position 1 → extra damage to combatant
+        #   cycle position 2 → steal (discard) 1 card from combatant's hand
+        #   cycle position 0 → a random opponent gains 2 Licenze
+        case (47, "on_round_end"):
+            cycle = combat_round % 3
+            if cycle == 1:
+                return _boss_effect(extra_damage=1)
+            elif cycle == 2:
+                return _boss_effect(discard_cards=1)
+            else:  # cycle == 0
+                return _boss_effect(opponent_gains_licenza=2)
+
+        # ── Boss 50 — The Health Cloud Plague ────────────────────────────────
+        # Every round ALL players (including combatant) lose 1 HP.
+        case (50, "on_round_end"):
             return _boss_effect(aoe_all_players_hp_damage=1)
 
     return _boss_effect()
