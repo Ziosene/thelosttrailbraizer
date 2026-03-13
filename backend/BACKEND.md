@@ -135,12 +135,15 @@ backend/
 │       ├── __init__.py           ✅
 │       ├── engine.py             ✅ funzioni pure core (~165 righe): roll, combat, deck, death, ELO + re-export engine_boss
 │       ├── engine_boss.py        ✅ boss ability system (~1000 righe): tutti i 100 boss, query helper, apply_boss_ability
-│       └── engine_cards/         ✅ effetti carte azione (20/300 implementate)
+│       └── engine_cards/         ✅ effetti carte azione (40/300 implementate)
 │           ├── __init__.py       ✅ dispatcher apply_action_card_effect
 │           ├── helpers.py        ✅ get_target()
 │           ├── economica.py      ✅ carte 1–8
 │           ├── offensiva.py      ✅ carte 9–18
-│           └── difensiva.py      ✅ carte 19–20
+│           ├── difensiva.py      ✅ carte 19–25
+│           ├── manipolazione.py  ✅ carte 26–30 (dice manipulation)
+│           ├── utilita.py        ✅ carte 31–37 (draw, discard, deck mgmt)
+│           └── interferenza.py   ✅ carte 38–40 (out-of-turn interference)
 ├── scripts/
 │   └── seed_cards.py             ✅ parser .md → insert DB (idempotente, safe re-run)
 └── tests/
@@ -172,7 +175,7 @@ Client (React)
 - **WebSocket** gestisce: tutto il gameplay in tempo reale (ogni messaggio è un JSON `{action: "...", ...}`).
 - **engine.py** (core, ~165 righe): funzioni pure testabili (roll, combat, deck, death, ELO). Re-esporta tutto da `engine_boss`.
 - **engine_boss.py** (~1000 righe): sistema boss completo — tutti i 100 boss, query helper, `apply_boss_ability`. Separato per leggibilità; nessuna modifica al callee.
-- **engine_cards/** (package): effetti carte azione. Entry-point: `apply_action_card_effect(card, player, game, db, *, target_player_id)`. Un modulo per categoria: `economica` (1–8), `offensiva` (9–18), `difensiva` (19–20). Aggiungi carte aprendo il modulo della categoria e aggiungendo una funzione + chiave al dict esposto. `__init__.py` unisce tutti i dict e fa il dispatch per numero carta.
+- **engine_cards/** (package): effetti carte azione. Entry-point: `apply_action_card_effect(card, player, game, db, *, target_player_id)`. Un modulo per categoria: `economica` (1–8), `offensiva` (9–18), `difensiva` (19–25), `manipolazione` (26–30), `utilita` (31–37), `interferenza` (38–40). Per aggiungere carte: apri il modulo della categoria, aggiungi una funzione e la chiave al dict esposto. `__init__.py` unisce tutti i dict e fa il dispatch per numero carta.
 - **game_handler.py** (thin router, 65 righe): routing WS. Tutta la logica è in `handlers/` e `game_helpers.py`.
 - **handlers/lobby.py**: join, select_character, start_game.
 - **handlers/turn.py**: draw_card, play_card, buy_addon, use_addon, end_turn.
@@ -484,7 +487,7 @@ FINE TURNO
 - [x] **Wiring boss residui (25, 26, 31, 34, 55, 56, 74, 82, 84, 91, 94, 100)** — sfruttano i nuovi DB fields. One-shot revive (25), one-shot necromancer (34), addon cost penalty (26), lock/unlock addon (31), steal/return addon (91), petrify cards (82), doomsayer prediction cap (84), loyalty shield (94), mimic routing (55), shape-shifter routing (74), omega routing (100), permanent card ban (56).
 - [x] **Refactoring moduli** — `engine.py` (1154 righe) → `engine.py` (core, 165 righe) + `engine_boss.py` (boss system, 1001 righe). `game_handler.py` (1887 righe) → thin router (65 righe) + `game_helpers.py` (156 righe) + `handlers/lobby.py` (151 righe) + `handlers/turn.py` (480 righe) + `handlers/combat.py` (1079 righe). Nessuna logica modificata. Backward-compatible tramite `from app.game.engine_boss import *` in engine.py.
 - [x] **Sistema reazione out-of-turn** — `reaction_manager.py`: asyncio Event per finestre di reazione (8 s timeout, in-memory, no DB). `_handle_play_card` apre una finestra se la carta colpisce un avversario con budget carte disponibile. Il target può rispondere con `play_reaction {hand_card_id}` o `pass_reaction`. Risoluzione: Shield Platform (carta 20) annulla l'originale; Chargeback (carta 7) su furto Licenze annulla + dà +1L; altre interferenze si applicano entrambe. Budget carte condiviso in-turn/out-of-turn: `cards_played_this_turn` conta entrambi. Nuovi ClientAction: `play_reaction`, `pass_reaction`. Nuovi ServerEvent: `reaction_window_open` (privato), `reaction_window_closed` (privato), `reaction_resolved` (broadcast).
-- [x] **Effetti carte azione — carte 1–20 implementate** — Refactoring da `engine_cards.py` a package `engine_cards/` con un modulo per categoria (economica, offensiva, difensiva). Cablato in `_handle_play_card` (rispetta boss 69 approval). combat_state keys aggiunte: `boss_ability_disabled_until_round` (carta 10), `double_damage_until_round` (carta 12), `boss_threshold_reduction` (carta 13), `boss_threshold_increase_until_round` (carta 15), `addons_blocked_next_turn` (carta 18). combat.py applica tutti questi modificatori nel flusso roll. turn.py `_handle_buy_addon` controlla `addons_blocked_next_turn`; `_handle_end_turn` lo pulisce.
+- [x] **Effetti carte azione — carte 1–40 implementate** — Package `engine_cards/` con 6 moduli: `economica` (1–8), `offensiva` (9–18), `difensiva` (19–25), `manipolazione` (26–30), `utilita` (31–37), `interferenza` (38–40). `combat_state` keys aggiunte: `boss_ability_disabled_until_round` (carte 10, 21), `double_damage_until_round` (12), `boss_threshold_reduction` (13), `boss_threshold_increase_until_round` (15), `addons_blocked_next_turn` (18), `disaster_recovery_ready` (23), `next_roll_forced` (26), `reroll_available` (27), `critical_system_until_round` (28), `chaos_mode_next_roll` (29), `force_field_until_round` (30), `free_trial_addon_player_addon_ids` (37), `consulting_hours_until_round` + `consulting_hours_threshold_reduction` (38). Hooks in `combat.py` `_handle_roll_dice`: dice optimizer → chaos mode → lucky roll (post-roll); consulting hours (threshold); critical system (hit branch); force field (miss branch); disaster recovery (pre-death check). `turn.py` `_handle_end_turn` rimuove gli addon free trial.
 - [x] **Boss 33, 45, 63, 83, 86 — TUTTI I 100 BOSS COMPLETAMENTE CABLATI**
   - Boss 33 (Experience Cloud Illusion): nuova action `declare_card` — il player dichiara la carta prima del tiro. Se miss, la carta viene consumata. Handler: `_handle_declare_card` + guard in `_handle_roll_dice`.
   - Boss 45 (Agentforce Rebellion): ogni round hijack di 1 addon random untapped (tappato); broadcast `addon_hijacked_by_boss`. Effetto invertito deferred a `apply_addon_effect`.
@@ -496,15 +499,9 @@ FINE TURNO
 
 ### ⬜ Da fare
 
-- [ ] **Effetti carte azione (300 carte)** — `_handle_play_card` rimuove la carta dalla mano ma NON applica nessun effetto. Va creata una funzione `apply_action_card_effect(card, player, game, db)` in `engine.py` con un branch per ognuna delle 300 carte (o per famiglia di effetto). Vedere `cards/action_cards.md`. Categorie:
-  - Economiche: guadagna/trasferisci licenze con condizioni
-  - Offensive: danno immediato o persistente al boss
-  - Difensive: recupero HP, scudi, blocco danno
-  - Manipolazione dado: modifica soglia, ritiro, forza valore
-  - Utilità: pesca carte, riordina/recupera mazzi
-  - Interferenza: azioni forzate su avversari, furti
-  - Leggendarie: effetti compositi multi-categoria
-  - **Validazione timing** — ogni carta ha un campo `Quando` che va verificato prima di giocarla (es. "durante combattimento", "fuori dal combattimento"). Da implementare in `can_play_card(card, game)`.
+- [ ] **Effetti carte azione (carte 41–300)** — 40/300 implementate. Pattern: aggiungere funzione + chiave al dict del modulo della categoria. Per le nuove categorie creare modulo + aggiornare `__init__.py`. Vedere `cards/action_cards.md` batch 2+ (41–300).
+  - **Validazione timing** — ogni carta ha un campo `Quando` che va verificato prima di giocarla (es. "durante combattimento", "fuori dal combattimento"). Da implementare in `can_play_card(card, game)` e chiamare in `_handle_play_card`.
+  - **Knowledge Article (32)** — il riordino delle top 3 carte richiede un messaggio client follow-up con l'ordine preferito (non ancora implementato; attualmente solo preview).
 
 - [ ] **Effetti addon (200 addon)** — `_handle_use_addon` tappa l'addon ma NON applica nessun effetto. Va creata `apply_addon_effect(addon, player, game, db)` per gli addon Attivi (uso manuale) e hook `trigger_passive_addons(event, player, game, db)` nei seguenti punti del flusso:
   - `on_draw` — in `_handle_draw_card` dopo aver pescato

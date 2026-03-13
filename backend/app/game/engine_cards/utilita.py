@@ -1,0 +1,185 @@
+"""Carte Utilità — gestione mano, mazzo e risorse (carte 31–37)."""
+import random
+
+from app.game import engine
+from app.models.card import BossCard, AddonCard
+
+
+def _card_31(player, game, db, *, target_player_id=None) -> dict:
+    """Trailhead Module — Pesca 2 carte extra (fuori da combattimento)."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "cannot_use_in_combat"}
+
+    from app.models.game import PlayerHandCard
+    drawn = 0
+    for _ in range(2):
+        if len(list(player.hand)) + drawn >= engine.MAX_HAND_SIZE:
+            break
+        if game.action_deck_1:
+            db.add(PlayerHandCard(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+            drawn += 1
+        elif game.action_deck_2:
+            db.add(PlayerHandCard(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+            drawn += 1
+        elif game.action_discard:
+            new_deck = engine.shuffle_deck(game.action_discard)
+            game.action_deck_1, game.action_deck_2 = engine.split_deck(new_deck)
+            game.action_discard = []
+            if game.action_deck_1:
+                db.add(PlayerHandCard(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+                drawn += 1
+
+    return {"applied": True, "cards_drawn": drawn}
+
+
+def _card_32(player, game, db, *, target_player_id=None) -> dict:
+    """Knowledge Article — Guarda le prime 3 carte del mazzo azione e rimettile nell'ordine preferito.
+
+    Returns top 3 card info as revealed_top_cards. Reordering requires a second client
+    message with the preferred order — not yet implemented (TODO).
+    """
+    from app.models.card import ActionCard
+
+    preview = []
+    for cid in (game.action_deck_1 or [])[:3]:
+        card = db.get(ActionCard, cid)
+        if card:
+            preview.append({"id": card.id, "number": card.number, "name": card.name})
+    return {
+        "applied": True,
+        "revealed_top_cards": preview,
+        "note": "reorder_requires_client_followup",
+    }
+
+
+def _card_33(player, game, db, *, target_player_id=None) -> dict:
+    """Quick Action — Questa carta non conta come una delle 2 carte giocabili per turno.
+
+    Decrements cards_played_this_turn by 1 to cancel the +1 applied before this call.
+    """
+    player.cards_played_this_turn = max(0, player.cards_played_this_turn - 1)
+    return {"applied": True, "card_did_not_count": True}
+
+
+def _card_34(player, game, db, *, target_player_id=None) -> dict:
+    """Recycle Bin — Recupera fino a 2 carte dal mazzo degli scarti (fuori da combattimento).
+
+    Takes the 2 most recently discarded cards and adds them to the player's hand.
+    TODO: accept specific card IDs from client via extra_data for player choice.
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "cannot_use_in_combat"}
+
+    from app.models.game import PlayerHandCard
+    discard = list(game.action_discard or [])
+    recovered = []
+    for _ in range(min(2, len(discard))):
+        if len(list(player.hand)) + len(recovered) >= engine.MAX_HAND_SIZE:
+            break
+        card_id = discard.pop(-1)
+        db.add(PlayerHandCard(player_id=player.id, action_card_id=card_id))
+        recovered.append(card_id)
+
+    game.action_discard = discard
+    return {"applied": True, "cards_recovered": recovered}
+
+
+def _card_35(player, game, db, *, target_player_id=None) -> dict:
+    """Sandbox Refresh — Rimescola la mano nel mazzo e pesca 4 nuove carte (fuori da combattimento)."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "cannot_use_in_combat"}
+
+    from app.models.game import PlayerHandCard
+
+    # Discard entire hand
+    hand_discarded = 0
+    for hc in list(player.hand):
+        game.action_discard = (game.action_discard or []) + [hc.action_card_id]
+        db.delete(hc)
+        hand_discarded += 1
+    db.flush()
+
+    # Draw 4 new cards
+    drawn = 0
+    for _ in range(4):
+        if game.action_deck_1:
+            db.add(PlayerHandCard(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+            drawn += 1
+        elif game.action_deck_2:
+            db.add(PlayerHandCard(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+            drawn += 1
+        elif game.action_discard:
+            new_deck = engine.shuffle_deck(game.action_discard)
+            game.action_deck_1, game.action_deck_2 = engine.split_deck(new_deck)
+            game.action_discard = []
+            if game.action_deck_1:
+                db.add(PlayerHandCard(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+                drawn += 1
+
+    return {"applied": True, "hand_discarded": hand_discarded, "cards_drawn": drawn}
+
+
+def _card_36(player, game, db, *, target_player_id=None) -> dict:
+    """Sprint Planning — Guarda le prime 2 carte del mazzo boss senza pescarle (fuori da combattimento)."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "cannot_use_in_combat"}
+
+    preview = []
+    for bid in (game.boss_deck_1 or [])[:2]:
+        bc = db.get(BossCard, bid)
+        if bc:
+            preview.append({
+                "id": bc.id,
+                "name": bc.name,
+                "hp": bc.hp,
+                "threshold": bc.dice_threshold,
+                "has_certification": bc.has_certification,
+            })
+    return {"applied": True, "revealed_boss_cards": preview}
+
+
+def _card_37(player, game, db, *, target_player_id=None) -> dict:
+    """Free Trial — Pesca 1 carta AddOn e tienila senza pagare per questo turno. Scartata a fine turno.
+
+    Draws from addon_deck_1 (or deck_2 if empty). Creates a PlayerAddon tagged as
+    free trial in combat_state["free_trial_addon_player_addon_ids"].
+    turn.py _handle_end_turn removes these addons when the player's turn ends.
+    """
+    from app.models.game import PlayerAddon
+
+    addon_id = None
+    if game.addon_deck_1:
+        addon_id = game.addon_deck_1.pop(0)
+    elif game.addon_deck_2:
+        addon_id = game.addon_deck_2.pop(0)
+
+    if addon_id is None:
+        return {"applied": False, "reason": "no_addons_available"}
+
+    addon = db.get(AddonCard, addon_id)
+    pa = PlayerAddon(player_id=player.id, addon_id=addon_id)
+    db.add(pa)
+    db.flush()  # needed to get pa.id
+
+    cs = dict(player.combat_state or {})
+    trial_ids = list(cs.get("free_trial_addon_player_addon_ids", []))
+    trial_ids.append(pa.id)
+    cs["free_trial_addon_player_addon_ids"] = trial_ids
+    player.combat_state = cs
+
+    return {
+        "applied": True,
+        "free_trial_addon": {"id": addon.id, "name": addon.name} if addon else {},
+        "expires_at_turn_end": True,
+    }
+
+
+UTILITA: dict = {
+    31: _card_31,
+    32: _card_32,
+    33: _card_33,
+    34: _card_34,
+    35: _card_35,
+    36: _card_36,
+    37: _card_37,
+}

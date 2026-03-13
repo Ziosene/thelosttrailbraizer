@@ -193,7 +193,26 @@ Il combattimento termina quando:
   └─ HP Giocatore = 0 → Giocatore muore
 ```
 
-### 5.3 Modificatori al combattimento
+### 5.3 Categorie di carte azione
+
+| Categoria | Quando si gioca | Esempi di effetto |
+|---|---|---|
+| **Economica** | In qualsiasi momento / fuori combattimento | Guadagna/ruba Licenze o Certificazioni |
+| **Offensiva** | Durante o fuori combattimento | Danno al boss, danno ad avversari |
+| **Difensiva** | In qualsiasi momento / fuori dal proprio turno | Cura HP, scudo, fuga dal combattimento |
+| **Manipolazione dado** | Durante combattimento | Forza tiro a 8, reroll, critico ×3, inverti, force field |
+| **Interferenza** | Fuori dal proprio turno | Sabota o aiuta durante il turno altrui |
+| **Utilità** | In qualsiasi momento / fuori combattimento | Pesca, scarta, rimescola, spia mazzi |
+
+**Note meccaniche speciali:**
+- **Escape Route (22)**: termina il combattimento senza conseguenze — boss va in fondo al mazzo, no penalità.
+- **Disaster Recovery (23)**: giocata proattivamente, salva il giocatore dalla morte con 1 HP (il flag viene consumato al momento fatale).
+- **Quick Action (33)**: non conta come carta giocata, non scala il budget di 2 per turno.
+- **Free Trial (37)**: crea un addon temporaneo dalla cima del mazzo addon; rimosso automaticamente a fine turno.
+- **Consulting Hours (38)**: abbassa la soglia dado di un alleato in combattimento (−2 per 2 round).
+- **Budget carte out-of-turn**: una carta Interferenza/Difensiva giocata fuori turno scala lo stesso budget di 2 carte condiviso dall'inizio del turno all'inizio del turno successivo.
+
+### 5.3.1 Modificatori al combattimento
 
 Le carte azione possono modificare il combattimento in corso:
 - Aumentare i danni (es. "-2 HP al boss in un round")
@@ -430,6 +449,7 @@ VITTORIA
 | [cards/boss_cards.md](cards/boss_cards.md) | 100 boss da creare | 100/100 ✅ |
 | [cards/addon_cards.md](cards/addon_cards.md) | 200 AddOn da creare | 200/200 ✅ |
 | [cards/action_cards.md](cards/action_cards.md) | 300 carte azione da creare | 300/300 ✅ |
+| [backend/app/game/engine_cards/](backend/app/game/engine_cards/) | Effetti carte azione implementati | 40/300 🔄 |
 
 ## 12. To Do / Da Definire
 

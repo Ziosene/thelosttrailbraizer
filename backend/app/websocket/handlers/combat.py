@@ -534,6 +534,27 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
     elif roll_mode == "second_of_2":
         roll = engine.roll_d10()
 
+    # Card 26 (Dice Optimizer): force next roll to a fixed value
+    _forced_roll = (player.combat_state or {}).get("next_roll_forced")
+    if _forced_roll is not None:
+        roll = _forced_roll
+        cs = dict(player.combat_state)
+        cs.pop("next_roll_forced", None)
+        player.combat_state = cs
+    else:
+        # Card 29 (Chaos Mode): opponent flipped this roll (11 − roll)
+        if (player.combat_state or {}).get("chaos_mode_next_roll"):
+            roll = 11 - roll
+            cs = dict(player.combat_state)
+            cs.pop("chaos_mode_next_roll", None)
+            player.combat_state = cs
+        # Card 27 (Lucky Roll): reroll once, take the new result
+        if (player.combat_state or {}).get("reroll_available"):
+            roll = engine.roll_d10()
+            cs = dict(player.combat_state)
+            cs.pop("reroll_available", None)
+            player.combat_state = cs
+
     # Boss 67 (Developer Console Glitch): roll 1 or 2 → entire round is nullified
     round_nullified = engine.boss_nullifies_round_on_low_roll(boss.id) and roll <= 2
 
@@ -552,6 +573,10 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
     _scope_creep_until = (player.combat_state or {}).get("boss_threshold_increase_until_round", 0)
     if _scope_creep_until >= current_round:
         threshold += 2
+    # Card 38 (Consulting Hours): ally lowered threshold for 2 rounds
+    _consulting_until = (player.combat_state or {}).get("consulting_hours_until_round", 0)
+    if _consulting_until >= current_round:
+        threshold -= (player.combat_state or {}).get("consulting_hours_threshold_reduction", 2)
     threshold = max(1, threshold)  # can't go below 1
 
     result = engine.resolve_combat_round(roll, threshold)
@@ -561,6 +586,9 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
 
     # Card 12 (Governor Limit Exploit): double boss damage per successful hit for N rounds
     _hit_damage = 2 if (player.combat_state or {}).get("double_damage_until_round", 0) >= current_round else 1
+    # Card 28 (Critical System): roll of exactly 10 deals 3 HP to boss (overrides all other modifiers)
+    if (player.combat_state or {}).get("critical_system_until_round", 0) >= current_round and roll == 10:
+        _hit_damage = 3
 
     if round_nullified:
         # No damage in either direction this round
@@ -586,8 +614,12 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                 if prediction == "hit":
                     player.current_boss_hp -= 1  # prediction bonus: always 1
     else:
+        # Card 30 (Force Field): player immune to boss roll damage for 1 round
+        _force_field_until = (player.combat_state or {}).get("force_field_until_round", 0)
+        if _force_field_until >= current_round:
+            pass  # neutral round — no player damage
         # Boss 95 (Identity & Access Heretic): player damage redirected to random opponent
-        if engine.boss_redirects_damage_to_opponent(boss.id):
+        elif engine.boss_redirects_damage_to_opponent(boss.id):
             opponents_redir = [p for p in game.players if p.id != player.id]
             if opponents_redir:
                 target_redir = random.choice(opponents_redir)
@@ -717,6 +749,13 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                 db.add(PHC_draw(player_id=target_draw.id, action_card_id=game.action_deck_1.pop(0)))
             elif game.action_deck_2:
                 db.add(PHC_draw(player_id=target_draw.id, action_card_id=game.action_deck_2.pop(0)))
+
+    # Card 23 (Disaster Recovery): survive fatal blow with 1 HP — played proactively before this roll
+    if player.hp <= 0 and (player.combat_state or {}).get("disaster_recovery_ready"):
+        player.hp = 1
+        cs = dict(player.combat_state)
+        cs.pop("disaster_recovery_ready", None)
+        player.combat_state = cs
 
     boss_defeated = player.current_boss_hp is not None and player.current_boss_hp <= 0
     player_died = player.hp <= 0

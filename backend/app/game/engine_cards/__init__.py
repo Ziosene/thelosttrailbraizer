@@ -2,12 +2,12 @@
 engine_cards — effetti delle carte azione.
 
 Ogni categoria ha il suo modulo:
-  economica.py   — carte Economiche  (guadagna/ruba Licenze, Certificazioni)
-  offensiva.py   — carte Offensive   (danno a boss o avversari)
-  difensiva.py   — carte Difensive   (cura, scudi, HP)
-  manipolazione.py — Manipolazione dado (TODO)
-  interferenza.py  — Interferenza pura (TODO)
-  utilita.py       — Utilità (pesca, scarto, mazzo) (TODO)
+  economica.py     — carte Economiche    (guadagna/ruba Licenze, Certificazioni)
+  offensiva.py     — carte Offensive     (danno a boss o avversari)
+  difensiva.py     — carte Difensive     (cura, scudi, HP)
+  manipolazione.py — Manipolazione dado  (modifica tiri di dado)
+  utilita.py       — Utilità             (pesca, scarto, gestione mano/mazzo)
+  interferenza.py  — Interferenza pura   (giocabili durante il turno altrui)
 
 Ogni modulo espone un dict {card_number: handler_fn}.
 apply_action_card_effect è l'unico entry-point pubblico.
@@ -15,11 +15,17 @@ apply_action_card_effect è l'unico entry-point pubblico.
 from .economica import ECONOMICA
 from .offensiva import OFFENSIVA
 from .difensiva import DIFENSIVA
+from .manipolazione import MANIPOLAZIONE
+from .utilita import UTILITA
+from .interferenza import INTERFERENZA
 
 _HANDLERS: dict = {
     **ECONOMICA,
     **OFFENSIVA,
     **DIFENSIVA,
+    **MANIPOLAZIONE,
+    **UTILITA,
+    **INTERFERENZA,
 }
 
 

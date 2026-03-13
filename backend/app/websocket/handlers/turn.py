@@ -539,6 +539,19 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
         cs.pop("addons_blocked_next_turn")
         player.combat_state = cs
 
+    # Card 37 (Free Trial): remove free trial addons at end of turn
+    if player.combat_state and player.combat_state.get("free_trial_addon_player_addon_ids"):
+        from app.models.game import PlayerAddon as _PA_ft
+        trial_ids = list(player.combat_state.get("free_trial_addon_player_addon_ids", []))
+        for pa_id in trial_ids:
+            pa_ft = db.get(_PA_ft, pa_id)
+            if pa_ft and pa_ft.player_id == player.id:
+                game.addon_graveyard = (game.addon_graveyard or []) + [pa_ft.addon_id]
+                db.delete(pa_ft)
+        cs = dict(player.combat_state)
+        cs.pop("free_trial_addon_player_addon_ids", None)
+        player.combat_state = cs
+
     player.cards_played_this_turn = 0
 
     # Advance turn
