@@ -159,7 +159,7 @@ def update_elo(ratings: list[int], winner_index: int) -> list[int]:
 
 
 # ---------------------------------------------------------------------------
-# Boss ability system (bosses 1–90 implemented)
+# Boss ability system (bosses 1–100 implemented — ALL BOSSES COMPLETE)
 # ---------------------------------------------------------------------------
 # All functions are pure — no DB access.  game_handler reads the returned
 # values and applies the actual mutations to DB objects.
@@ -224,6 +224,14 @@ _EMPTY_EFFECT: dict = {
     "force_card_type_declaration": False,  # combatant must declare Attack or Defense type; restricted for full combat
     "aoe_unblockable_hp_damage": 0, # ALL players (including combatant) lose N HP; defensive cards cannot negate this
     "reveal_next_bosses": 0,        # reveal the next N boss cards in the deck to all players
+    # ── Bosses 91-100 ───────────────────────────────────────────────────────
+    "steal_and_use_addon": False,   # boss steals 1 combatant addon, applies its effect vs player; returned on defeat
+    "draw_bonus_cards": 0,          # combatant draws N extra cards at combat start
+    "subscription_drain": 0,        # pay N licenze each round; if unable, take 2×N HP instead
+    "permanently_destroy_addon": 0, # permanently destroy N random combatant addons (not recovered on win)
+    "shuffle_all_hands": False,     # pool all players' hand cards, reshuffle, redistribute keeping same counts
+    "bonus_licenze_to_helpers": 0,  # every player who played an action card this combat gains N licenze on defeat
+    "instant_win": False,           # combatant wins the game immediately on boss defeat (skips cert check)
 }
 
 
@@ -657,6 +665,70 @@ def boss_halves_card_effects(boss_id: int) -> bool:
     return False
 
 
+def boss_draw_costs_hp(boss_id: int) -> int:
+    """
+    Returns the HP cost the combatant pays each time they draw an action card during combat.
+    Handler deducts N HP from the combatant after every draw (including the combat-start draw bonus).
+    """
+    match boss_id:
+        case 92:  # The Einstein Copilot Seraph — each card drawn costs 1 HP
+            return 1
+    return 0
+
+
+def boss_loyalty_shield(boss_id: int) -> int:
+    """
+    Returns the starting number of loyalty points that shield this boss from dice damage.
+    Handler stores current loyalty in combat_state.loyalty_points;
+    while loyalty_points > 0, boss_immune_to_dice returns True.
+    Each defensive action card the combatant plays decrements loyalty_points by 1.
+    Returns 0 if the boss has no loyalty shield.
+    """
+    match boss_id:
+        case 94:  # The Loyalty Cloud Warden — starts with 3 loyalty points
+            return 3
+    return 0
+
+
+def boss_redirects_damage_to_opponent(boss_id: int) -> bool:
+    """
+    Returns True if HP damage that the boss would deal to the combatant is redirected
+    to a random opponent instead.  The combatant still fights the boss normally;
+    only the damage destination changes.
+    """
+    match boss_id:
+        case 95:  # The Identity & Access Heretic
+            return True
+    return False
+
+
+def boss_compliance_penalty_per_extra_card(boss_id: int) -> int:
+    """
+    Returns the extra HP damage the boss deals for each action card played beyond the
+    first in a single round.  Handler checks cards_played_this_turn after each play_card;
+    if it exceeds 1, immediately deals (cards_played_this_turn - 1) × return_value HP.
+    Returns 0 if the boss has no compliance mechanic.
+    """
+    match boss_id:
+        case 96:  # The Compliance Cloud Sentinel — 1 extra HP per card over the first
+            return 1
+    return 0
+
+
+def boss_is_omega(boss_id: int) -> bool:
+    """
+    Returns True if this boss is the Lost Trailblazer Omega — the final boss.
+    On each phase transition (every time boss HP crosses a multiple-of-3 threshold),
+    the handler routes all triggers to game.last_defeated_legendary_boss_id and applies
+    those effects in addition to the omega's own.
+    Requires ≥10 bosses to have been defeated in the game before it can appear.
+    """
+    match boss_id:
+        case 100:  # The Lost Trailblazer Omega
+            return True
+    return False
+
+
 def apply_boss_ability(
     boss_id: int,
     trigger: str,
@@ -1006,5 +1078,77 @@ def apply_boss_ability(
         # Opponents may use this info to prepare; the combatant is considered "unprepared" (flavor only).
         case (88, "on_combat_start"):
             return _boss_effect(reveal_next_bosses=3)
+
+        # ── Boss 91 — The List View Usurper ──────────────────────────────────
+        # At combat start: steals 1 addon from combatant and immediately uses it against them.
+        # Handler: pick a random untapped addon → apply its effect inversely → mark it as stolen
+        # (store in combat_state.stolen_addon_id).  On defeat: return it to the player's addon list.
+        case (91, "on_combat_start"):
+            return _boss_effect(steal_and_use_addon=True)
+        case (91, "on_boss_defeated"):
+            return _boss_effect(unlock_locked_addon=True)
+
+        # ── Boss 92 — The Einstein Copilot Seraph ────────────────────────────
+        # At combat start: combatant draws 2 extra cards (seraph's "gift").
+        # Every card drawn during this combat costs 1 HP (tracked via boss_draw_costs_hp() helper).
+        # The 2 bonus draws at start also trigger the HP cost.
+        case (92, "on_combat_start"):
+            return _boss_effect(draw_bonus_cards=2)
+
+        # ── Boss 93 — The Subscription Management Tormentor ──────────────────
+        # Every round: pay 1 Licenza or take 2 HP damage instead.
+        # Handler checks player.licenze; if > 0 deduct 1; else deal 2 HP to combatant.
+        case (93, "on_round_start"):
+            return _boss_effect(subscription_drain=1)
+
+        # ── Boss 96 — The Compliance Cloud Sentinel ───────────────────────────
+        # On round end: for each action card played beyond the first this round,
+        # boss deals 1 extra HP damage to the combatant.
+        # (boss_compliance_penalty_per_extra_card() is the query helper for live per-card checks.)
+        case (96, "on_round_end"):
+            extra = max(0, cards_played - 1)
+            if extra > 0:
+                return _boss_effect(extra_damage=extra)
+
+        # ── Boss 97 — The myTrailhead Defiler ─────────────────────────────────
+        # At combat start: permanently destroys 1 random addon from the combatant.
+        # The addon goes to game.addon_graveyard and is NOT returned even on boss defeat.
+        case (97, "on_combat_start"):
+            return _boss_effect(permanently_destroy_addon=1)
+
+        # ── Boss 98 — The Dreamforce Aftermath Cataclysm (Trophy) ─────────────
+        # At combat start: pool all players' hand cards, shuffle, redistribute (each keeps same count).
+        # Handler: collect all player_hand_cards, shuffle pool, deal back N to each player
+        # where N = their original hand size.
+        case (98, "on_combat_start"):
+            return _boss_effect(shuffle_all_hands=True)
+
+        # ── Boss 99 — The Certified Technical Architect Titan (Trophy) ────────
+        # Legendary, 4 phases (HP 12→9→6→3).  Each phase beyond the first adds 1 extra HP
+        # damage to the combatant on every miss:
+        #   Phase 1 (HP 10–12): 0 extra   Phase 2 (HP 7–9): +1
+        #   Phase 3 (HP 4–6):  +2         Phase 4 (HP 1–3): +3
+        # On defeat: every player who played an action card this combat gains 2 Licenze.
+        # Threshold (8+) is printed on the card — no boss_threshold override needed.
+        case (99, "after_miss"):
+            if current_hp >= 10:
+                pass  # phase 1 — no extra damage
+            elif current_hp >= 7:
+                return _boss_effect(extra_damage=1)
+            elif current_hp >= 4:
+                return _boss_effect(extra_damage=2)
+            else:
+                return _boss_effect(extra_damage=3)
+        case (99, "on_boss_defeated"):
+            return _boss_effect(bonus_licenze_to_helpers=2)
+
+        # ── Boss 100 — The Lost Trailblazer Omega (Trophy — FINAL BOSS) ───────
+        # THE final boss. 5 phases, each copies the last defeated Legendary boss's ability.
+        # Handled entirely via boss_is_omega() query helper: handler routes every trigger
+        # to game.last_defeated_legendary_boss_id in parallel with the omega's own effects.
+        # On defeat: combatant wins the game immediately regardless of cert count,
+        # and gains 2 bonus certifications.
+        case (100, "on_boss_defeated"):
+            return _boss_effect(instant_win=True, bonus_certification=2)
 
     return _boss_effect()
