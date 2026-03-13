@@ -159,7 +159,7 @@ def update_elo(ratings: list[int], winner_index: int) -> list[int]:
 
 
 # ---------------------------------------------------------------------------
-# Boss ability system (bosses 1–50 implemented)
+# Boss ability system (bosses 1–60 implemented)
 # ---------------------------------------------------------------------------
 # All functions are pure — no DB access.  game_handler reads the returned
 # values and applies the actual mutations to DB objects.
@@ -204,6 +204,10 @@ _EMPTY_EFFECT: dict = {
     "licenza_or_hp_drain": 0,       # drain N licenze from player; if player has 0 licenze, drain N HP instead
     "hijack_addon": False,          # boss uses 1 of the combatant's untapped addons against them (inverted)
     "force_extra_card_discard": False,  # combatant must discard 1 additional card this round (involuntarily)
+    "entry_fee_licenze": 0,         # pay N licenze at combat start; 1 HP damage per missing licenza
+    "corrupt_deck_cards": 0,        # insert N corrupted cards into combatant's action deck; each deals 1 HP if drawn
+    "makes_prediction": False,      # boss predicts hit/miss before roll; if correct, double the round effect
+    "invert_random_hand_card": False,   # invert the effect of 1 random card in combatant's hand for this combat
 }
 
 
@@ -419,6 +423,70 @@ def boss_expires_after_rounds(boss_id: int) -> int | None:
         case 48:  # The Scratch Org Mirage — expires if combat exceeds 5 rounds
             return 5
     return None
+
+
+def boss_damage_absorption(boss_id: int) -> int:
+    """
+    Returns the number of hits this boss absorbs (ignores) before taking real damage.
+    Handler tracks `combat_hits_absorbed` counter; only decrement boss HP once counter is exhausted.
+    """
+    match boss_id:
+        case 52:  # The Manufacturing Cloud Beast — first 3 hits absorbed
+            return 3
+    return 0
+
+
+def boss_is_mimic(boss_id: int) -> bool:
+    """
+    Returns True if this boss copies the ability of the last boss defeated in this game.
+    Handler must call apply_boss_ability(game.last_defeated_boss_id, trigger, ...) in parallel
+    and apply those effects too.  If no boss has been defeated yet, no extra effects fire.
+    """
+    match boss_id:
+        case 55:  # The Custom Metadata Mimic
+            return True
+    return False
+
+
+def boss_permanently_bans_used_cards(boss_id: int) -> bool:
+    """
+    Returns True if every action card played during this combat is permanently banned —
+    removed from the deck and added to game.banned_card_ids for the rest of the game.
+    """
+    match boss_id:
+        case 56:  # The Change Data Capture Lurker
+            return True
+    return False
+
+
+def boss_death_licenze_to_top_cert(boss_id: int) -> bool:
+    """
+    Returns True if, when the combatant dies during this fight, their lost Licenze go
+    to the opponent with the most certifications instead of disappearing.
+    """
+    match boss_id:
+        case 57:  # The Named Credentials Thief
+            return True
+    return False
+
+
+def boss_heals_on_interference(boss_id: int) -> int:
+    """
+    Returns the HP the boss recovers each time an opponent plays an interference card
+    against the combatant during this combat.
+    """
+    match boss_id:
+        case 59:  # The Trailblazer Community Mob — +1 HP per interference card
+            return 1
+    return 0
+
+
+def boss_blocks_addon_purchase(boss_id: int) -> bool:
+    """Returns True if the combatant cannot buy addons while this boss is in combat."""
+    match boss_id:
+        case 60:  # The Connected App Infiltrator (Legendary)
+            return True
+    return False
 
 
 def boss_cancels_next_card(boss_id: int, combat_round: int) -> bool:
@@ -640,5 +708,38 @@ def apply_boss_ability(
         # Every round ALL players (including combatant) lose 1 HP.
         case (50, "on_round_end"):
             return _boss_effect(aoe_all_players_hp_damage=1)
+
+        # ── Boss 51 — The Financial Services Fiend ───────────────────────────
+        # At combat start: pay 3 Licenze as "commission". For each licenza short, take 1 HP.
+        case (51, "on_combat_start"):
+            return _boss_effect(entry_fee_licenze=3)
+
+        # ── Boss 53 — The Einstein Discovery Oracle ───────────────────────────
+        # Before each roll the boss makes a random prediction (hit / miss).
+        # Handler stores the prediction, then after the roll doubles the effect if correct:
+        #   correct hit prediction  → boss takes 2 HP instead of 1
+        #   correct miss prediction → player takes 2 HP instead of 1
+        case (53, "on_round_start"):
+            return _boss_effect(makes_prediction=True)
+
+        # ── Boss 54 — The Workbench Tinkerer ─────────────────────────────────
+        # At combat start: 3 corrupted cards are shuffled into the combatant's action deck.
+        # When drawn, each corrupted card deals 1 HP to the player instead of having an effect.
+        # Handler adds 3 sentinel card IDs (e.g. -54) to the shared action_deck.
+        case (54, "on_combat_start"):
+            return _boss_effect(corrupt_deck_cards=3)
+
+        # ── Boss 58 — The Prompt Builder Djinn ───────────────────────────────
+        # Each round: pick 1 random card in the combatant's hand and invert its effect
+        # for the remainder of this combat (tracked in combat state as a set of card IDs).
+        case (58, "on_round_start"):
+            return _boss_effect(invert_random_hand_card=True)
+
+        # ── Boss 60 — The Connected App Infiltrator (Legendary) ──────────────
+        # Every even round: auto-discard 1 random card from combatant's hand.
+        # Addon-purchase block is handled by boss_blocks_addon_purchase() query helper.
+        case (60, "on_round_end"):
+            if combat_round % 2 == 0:
+                return _boss_effect(discard_cards=1)
 
     return _boss_effect()

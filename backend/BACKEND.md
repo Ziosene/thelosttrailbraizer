@@ -464,10 +464,12 @@ FINE TURNO
   - `on_roll` — in `_handle_roll_dice` prima/dopo il tiro dado
   Vedere `cards/addon_cards.md` per l'effetto completo di ogni addon.
 
-- [ ] **Abilità speciali boss (51–100)** — Boss 1–50 implementati. Restano 50 boss.
+- [ ] **Abilità speciali boss (61–100)** — Boss 1–60 implementati. Restano 40 boss.
   - Nuovi campi effetto aggiunti per boss 41–50: `licenza_or_hp_drain`, `hijack_addon`, `force_extra_card_discard`.
+  - Nuovi campi effetto aggiunti per boss 51–60: `entry_fee_licenze`, `corrupt_deck_cards`, `makes_prediction`, `invert_random_hand_card`.
   - Nuovi query helper: `boss_hand_visible_to_opponents()` (41), `boss_immune_to_card_damage()` (43), `boss_heals_on_addon_use()` (49), `boss_expires_after_rounds()` (48).
-  - Handler da aggiornare: `licenza_or_hp_drain` (drain licenza con fallback HP), `hijack_addon` (prendi addon random non tappato, applica effetto invertito), `force_extra_card_discard` (scarta carta random da mano), `boss_expires_after_rounds` (check in `_handle_roll_dice` → termina combat senza reward), `boss_heals_on_addon_use` (check in `_handle_use_addon`).
+  - Nuovi query helper per 51–60: `boss_damage_absorption()` (52), `boss_is_mimic()` (55), `boss_permanently_bans_used_cards()` (56), `boss_death_licenze_to_top_cert()` (57), `boss_heals_on_interference()` (59), `boss_blocks_addon_purchase()` (60).
+  - Handler da aggiornare: `licenza_or_hp_drain`, `hijack_addon`, `force_extra_card_discard`, `boss_expires_after_rounds`, `boss_heals_on_addon_use`, `entry_fee_licenze` (paga o prendi HP), `corrupt_deck_cards` (sentinelle con id=-54 nel deck), `makes_prediction` (random coin flip → doppio effetto se corretto), `invert_random_hand_card` (set `combat_inverted_cards`), `boss_damage_absorption` (counter `combat_hits_absorbed`), `boss_is_mimic` (re-route trigger a `game.last_defeated_boss_id`), `boss_permanently_bans_used_cards` (`game.banned_card_ids`), `boss_death_licenze_to_top_cert`, `boss_heals_on_interference`, `boss_blocks_addon_purchase` (check in `_handle_buy_addon`).
   - Nuovi campi effetto aggiunti per boss 21–30: `aoe_all_hp_damage`, `reveal_hand`, `boss_revive`, `next_addon_cost_penalty`, `absorb_cards`, `return_absorbed_cards`.
   - Nuovi campi effetto aggiunti per boss 31–40: `lock_addon`, `unlock_locked_addon`, `opponent_discards_from_hand`, `bonus_chaos_roll`, `boss_revive_to_deck`, `aoe_all_players_hp_damage`.
   - Nuovi query helper: `boss_card_declared_before_roll()` (boss 33), `boss_cancels_next_card()` (boss 38), `boss_roll_mode` → `"second_of_2"` (boss 39).
