@@ -1206,12 +1206,12 @@
 
 ---
 
-### 122. Engagement Studio
+### 122. Marketing Automation
 - **Tipo**: Economica
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Per 2 turni, ogni carta azione che giochi ti dà 1 Licenza aggiuntiva
 - **Rarità**: Non comune
-- **Image prompt**: `A 2D hand-drawn engagement studio console in the art style of The Binding of Isaac. A broadcasting panel tracking every played card, automatically minting one bonus coin each time for two turns. Thick black outlines, flat shading, productive mood. Plain off-white parchment background. Indie game card art.`
+- **Image prompt**: `A 2D hand-drawn automation console in the art style of The Binding of Isaac. A glowing control panel with gears and scheduled triggers firing automatically, dropping one bonus coin each time a card is played for two turns. Thick black outlines, flat shading, efficient mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -1273,12 +1273,12 @@
 
 ---
 
-### 129. Knowledge Article
+### 129. Boss Dossier
 - **Tipo**: Offensiva
 - **Quando**: Durante combattimento
 - **Effetto**: Studia il boss: guarda la sua abilità speciale, poi infliggi 1 HP
 - **Rarità**: Non comune
-- **Image prompt**: `A 2D hand-drawn knowledge base scene in the art style of The Binding of Isaac. A figure reading a boss monster profile article on a scroll, then striking it for 1 HP with informed precision. Thick black outlines, flat shading, studious mood. Plain off-white parchment background. Indie game card art.`
+- **Image prompt**: `A 2D hand-drawn classified dossier in the art style of The Binding of Isaac. A top-secret folder stamped with a boss monster silhouette, a detective magnifying it to reveal its special ability, then landing one precise blow. Thick black outlines, flat shading, investigative mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
@@ -2045,12 +2045,12 @@
 
 ---
 
-### 209. Campaign Influence
+### 209. Activity Score
 - **Tipo**: Economica
 - **Quando**: Fuori dal combattimento
 - **Effetto**: Se hai giocato carte in 3 turni consecutivi senza saltare, guadagna 4 Licenze bonus
 - **Rarità**: Non comune
-- **Image prompt**: `A 2D hand-drawn streak bonus in the art style of The Binding of Isaac. A three-turn chain counter fully lit, releasing a burst of four bonus coins as a campaign-streak reward. Thick black outlines, flat shading, consistent effort mood. Plain off-white parchment background. Indie game card art.`
+- **Image prompt**: `A 2D hand-drawn activity tracker in the art style of The Binding of Isaac. A three-bar streak counter fully lit in green, with a burst of four bonus coins exploding out as a reward for sustained consistent play. Thick black outlines, flat shading, disciplined mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
