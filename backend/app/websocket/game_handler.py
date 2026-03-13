@@ -206,6 +206,10 @@ async def handle_message(
         await _handle_end_turn(game, user_id, db)
     elif action == ClientAction.RETREAT_COMBAT:
         await _handle_retreat(game, user_id, db)
+    elif action == ClientAction.DECLARE_CARD:
+        await _handle_declare_card(game, user_id, data, db)
+    elif action == ClientAction.DECLARE_CARD_TYPE:
+        await _handle_declare_card_type(game, user_id, data, db)
     else:
         await _error(game_code, user_id, f"Unknown action: {action}")
 
@@ -525,6 +529,25 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
         return
 
     card = db.get(ActionCard, hc.action_card_id)
+
+    # Boss 82 (Customer 360 Gorgon): petrified cards cannot be played this fight
+    if player.is_in_combat and player.combat_state:
+        petrified = player.combat_state.get("petrified_card_ids", [])
+        if card and card.id in petrified:
+            await _error(game.code, user_id, "This card is petrified and cannot be played")
+            return
+
+    # Boss 86 (Record Type Ravager): only declared card type may be played
+    if player.is_in_combat and player.combat_state:
+        allowed_type = player.combat_state.get("allowed_card_type")
+        if allowed_type and card and card.card_type != allowed_type:
+            await _error(game.code, user_id, f"Boss restricts you to {allowed_type} cards only")
+            return
+
+    # Boss 56 (Change Data Capture Lurker): banned cards cannot be played anywhere in this game
+    if card and card.id in (game.banned_card_ids or []):
+        await _error(game.code, user_id, "This card has been permanently banned from the game")
+        return
     game.action_discard.append(hc.action_card_id)
     db.delete(hc)
     player.cards_played_this_turn += 1
@@ -541,9 +564,8 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
                 card_approved = False
 
         # Boss 56 (Change Data Capture Lurker): played cards are permanently banned from the game
-        # TODO: requires game.banned_card_ids field — add to GameSession model when ready
-        # if engine.boss_permanently_bans_used_cards(player.current_boss_id):
-        #     game.banned_card_ids = (game.banned_card_ids or []) + [card.id]
+        if engine.boss_permanently_bans_used_cards(player.current_boss_id):
+            game.banned_card_ids = (game.banned_card_ids or []) + [card.id]
 
         # Boss 59 (Trailblazer Community Mob): boss heals when opponent plays an interference card
         # Interference cards played by NON-combatant players against this player also heal the boss
@@ -647,12 +669,13 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
             await _error(game.code, user_id, "Addon purchases are blocked by the boss")
             return
 
-    cost = addon.cost
+    cost = addon.cost + (player.pending_addon_cost_penalty or 0)
     if player.licenze < cost:
         await _error(game.code, user_id, f"Need {cost} Licenze (have {player.licenze})")
         return
 
     player.licenze -= cost
+    player.pending_addon_cost_penalty = 0  # penalty consumed on first purchase (boss 26)
 
     # Bought addons are tracked as owned by player; market slot gets refilled
     if source == "market_1":
@@ -729,6 +752,7 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
     player.current_boss_source = source
     player.current_boss_hp = boss.hp
     player.combat_round = 0
+    player.combat_state = {}  # reset per-combat state for every new fight
     game.current_phase = TurnPhase.combat
 
     # Boss 68 (Schema Builder Monstrosity): boss HP increases by 1 for each addon the combatant owns
@@ -890,11 +914,78 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
                     db.add(PHC_chaos(player_id=p_ch.id, action_card_id=pool[idx]))
                     idx += 1
 
-    # TODO: Boss 82 (petrify_cards) — needs combat_state.petrified_card_ids tracking
-    # TODO: Boss 83 (siren_deal) — needs client accept/reject flow per round
-    # TODO: Boss 84 (doomsayer_prediction_roll) — needs combat_state to store prediction cap
-    # TODO: Boss 86 (force_card_type_declaration) — needs client declaration flow
-    # TODO: Boss 91 (steal_and_use_addon) — needs addon effect application + tracking
+    # Boss 31 (AppExchange Parasite): lock 1 random untapped addon for the fight
+    if start_effect["lock_addon"] > 0:
+        untapped = [pa for pa in player.addons if not pa.is_tapped]
+        if untapped:
+            pa_lock = random.choice(untapped)
+            pa_lock.is_tapped = True
+            cs = dict(player.combat_state or {})
+            cs["locked_addon_id"] = pa_lock.id
+            player.combat_state = cs
+
+    # Boss 82 (Customer 360 Gorgon): petrify 2 random hand cards (cannot be played this fight)
+    if start_effect["petrify_cards"] > 0:
+        hand_cards_pet = list(player.hand)
+        n_pet = min(start_effect["petrify_cards"], len(hand_cards_pet))
+        petrified = [hc.action_card_id for hc in random.sample(hand_cards_pet, n_pet)]
+        cs = dict(player.combat_state or {})
+        cs["petrified_card_ids"] = petrified
+        player.combat_state = cs
+        await manager.broadcast(game.code, {
+            "type": "cards_petrified",
+            "player_id": player.id,
+            "count": n_pet,
+        })
+
+    # Boss 84 (Data Import Doomsayer): predict fight duration; exceed prediction → extra HP per round
+    if start_effect["doomsayer_prediction_roll"]:
+        pred_roll = engine.roll_d10()
+        if pred_roll <= 4:
+            prediction_cap = 2
+        elif pred_roll <= 7:
+            prediction_cap = 4
+        else:
+            prediction_cap = 6
+        cs = dict(player.combat_state or {})
+        cs["doomsayer_prediction_cap"] = prediction_cap
+        player.combat_state = cs
+        await manager.broadcast(game.code, {
+            "type": "boss_doomsayer_prediction",
+            "player_id": player.id,
+            "prediction_cap": prediction_cap,
+        })
+
+    # Boss 91 (List View Usurper): steal 1 random untapped addon; return it on defeat
+    # Note: applying the stolen addon's effect against the player requires apply_addon_effect —
+    # deferred until that system is implemented. Theft and return are fully tracked.
+    if start_effect["steal_and_use_addon"]:
+        untapped_91 = [pa for pa in player.addons if not pa.is_tapped]
+        if untapped_91:
+            pa_steal = random.choice(untapped_91)
+            cs = dict(player.combat_state or {})
+            cs["stolen_addon_id"] = pa_steal.addon_id
+            player.combat_state = cs
+            db.delete(pa_steal)
+            await manager.broadcast(game.code, {
+                "type": "addon_stolen_by_boss",
+                "player_id": player.id,
+                "boss_id": boss_id,
+            })
+
+    # Boss 94 (Loyalty Cloud Warden): initialise loyalty points shield (blocks first 3 hits)
+    if engine.boss_loyalty_shield(boss_id) > 0:
+        cs = dict(player.combat_state or {})
+        cs["loyalty_points"] = engine.boss_loyalty_shield(boss_id)
+        player.combat_state = cs
+
+    # Boss 86 (Record Type Ravager): prompt combatant to declare card type before fighting
+    if start_effect["force_card_type_declaration"]:
+        await manager.send_to_player(game.code, player.user_id, {
+            "type": "card_type_declaration_required",
+            "player_id": player.id,
+            "options": ["Offensiva", "Difensiva"],
+        })
 
     db.commit()
     db.refresh(game)
@@ -925,6 +1016,14 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
 
     # combat_round is still 0-indexed here; current roll = round N+1
     current_round = (player.combat_round or 0) + 1
+
+    # ── Boss 55 (mimic) / Boss 74 (shape shifter): copy last defeated boss ───
+    copy_boss_id: int | None = None
+    if game.last_defeated_boss_id:
+        if engine.boss_is_mimic(boss.id):
+            copy_boss_id = game.last_defeated_boss_id
+        elif engine.boss_is_shape_shifter(boss.id) and current_round % 2 == 0:
+            copy_boss_id = game.last_defeated_boss_id
 
     # ── on_round_start effects (before rolling) ──────────────────────────
     round_start = engine.apply_boss_ability(
@@ -999,9 +1098,96 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         else:
             player.hp = max(0, player.hp - 2 * n_sub)
 
-    # TODO: Boss 45 (hijack_addon) — needs addon effect application
-    # TODO: Boss 63 (deal_offer) — needs client accept/reject flow
-    # TODO: Boss 83 (siren_deal) — needs client accept/reject flow
+    # Boss 100 (Omega): apply last legendary boss's on_round_start effects in parallel
+    if engine.boss_is_omega(boss.id) and game.last_defeated_legendary_boss_id:
+        omega_rs = engine.apply_boss_ability(
+            game.last_defeated_legendary_boss_id, "on_round_start",
+            combat_round=current_round,
+            cards_played=player.cards_played_this_turn,
+        )
+        if omega_rs["licenza_drain"] > 0:
+            player.licenze = max(0, player.licenze - omega_rs["licenza_drain"])
+        if omega_rs["licenza_or_hp_drain"] > 0:
+            n = omega_rs["licenza_or_hp_drain"]
+            if player.licenze >= n:
+                player.licenze -= n
+            else:
+                player.hp = max(0, player.hp - n)
+        if omega_rs["subscription_drain"] > 0:
+            ns = omega_rs["subscription_drain"]
+            if player.licenze >= ns:
+                player.licenze -= ns
+            else:
+                player.hp = max(0, player.hp - 2 * ns)
+
+    # Boss 55 / Boss 74: apply shadow copy's on_round_start effects
+    if copy_boss_id:
+        copy_rs = engine.apply_boss_ability(
+            copy_boss_id, "on_round_start",
+            combat_round=current_round,
+            cards_played=player.cards_played_this_turn,
+        )
+        if copy_rs["licenza_drain"] > 0:
+            player.licenze = max(0, player.licenze - copy_rs["licenza_drain"])
+        if copy_rs["licenza_or_hp_drain"] > 0:
+            n = copy_rs["licenza_or_hp_drain"]
+            if player.licenze >= n:
+                player.licenze -= n
+            else:
+                player.hp = max(0, player.hp - n)
+        if copy_rs["force_discard_or_damage"] > 0:
+            hcl = list(player.hand)
+            if hcl:
+                hc_cp = random.choice(hcl)
+                game.action_discard = (game.action_discard or []) + [hc_cp.action_card_id]
+                db.delete(hc_cp)
+            else:
+                player.hp = max(0, player.hp - copy_rs["force_discard_or_damage"])
+        if copy_rs["subscription_drain"] > 0:
+            ns = copy_rs["subscription_drain"]
+            if player.licenze >= ns:
+                player.licenze -= ns
+            else:
+                player.hp = max(0, player.hp - 2 * ns)
+
+    # Boss 45 (Agentforce Rebellion): hijack 1 random untapped addon — tap it (boss "uses" it)
+    # Full inverted-effect application deferred until apply_addon_effect is implemented.
+    threshold_bonus = 0
+    if round_start["hijack_addon"]:
+        untapped_45 = [pa for pa in player.addons if not pa.is_tapped]
+        if untapped_45:
+            pa_hijack = random.choice(untapped_45)
+            pa_hijack.is_tapped = True
+            hijacked_addon = db.get(AddonCard, pa_hijack.addon_id)
+            await manager.broadcast(game.code, {
+                "type": "addon_hijacked_by_boss",
+                "player_id": player.id,
+                "addon": {"id": hijacked_addon.id, "name": hijacked_addon.name} if hijacked_addon else {},
+            })
+
+    # Boss 63 (Loyalty Management Trickster): auto-accept deal — +1 Licenza, threshold +1 this roll
+    if round_start["deal_offer"]:
+        player.licenze += 1
+        threshold_bonus += 1
+        await manager.broadcast(game.code, {
+            "type": "boss_deal_auto_accepted",
+            "player_id": player.id,
+            "gained_licenze": 1,
+            "threshold_penalty": 1,
+        })
+
+    # Boss 83 (Account Engagement Siren): auto-reject siren deal — no HP trade this round
+    if round_start["siren_deal"]:
+        await manager.broadcast(game.code, {
+            "type": "boss_siren_deal_rejected",
+            "player_id": player.id,
+        })
+
+    # Boss 33 (Experience Cloud Illusion): player must have declared a card before rolling
+    if engine.boss_card_declared_before_roll(boss.id):
+        if not (player.combat_state or {}).get("declared_card_id"):
+            await _error(game.code, user_id, "You must declare a card (declare_card) before rolling against this boss")
+            return
 
     # ── Boss expires check ────────────────────────────────────────────────
     # Boss 48 (Scratch Org Mirage) / Boss 90 (Quick Action Marauder): auto-expire
@@ -1035,13 +1221,14 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
     round_nullified = engine.boss_nullifies_round_on_low_roll(boss.id) and roll <= 2
 
     # Boss 10, 12, 22, 37: dynamic threshold (now also passes combat_round for boss 22)
+    # threshold_bonus from boss 63 deal (auto-accept raises threshold by 1 for this roll only)
     threshold = engine.boss_threshold(
         boss.id,
         boss.dice_threshold,
         player.current_boss_hp or 0,
         hand_count=len(player.hand),
         combat_round=current_round,
-    )
+    ) + threshold_bonus
 
     result = engine.resolve_combat_round(roll, threshold)
     player.combat_round += 1
@@ -1054,10 +1241,22 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
     elif result == "hit":
         # Boss 78 (Known Issues Ghost) / Boss 89 (Object Manager Juggernaut): immune to dice
         if not engine.boss_immune_to_dice(boss.id, current_round):
-            player.current_boss_hp -= 1
-            # Double boss damage if prediction was "hit" and correct (boss 53)
-            if prediction == "hit":
-                if not engine.boss_immune_to_dice(boss.id, current_round):
+            # Boss 94 (Loyalty Cloud Warden): absorb hit with loyalty point instead of HP
+            if engine.boss_loyalty_shield(boss.id) > 0 and player.combat_state:
+                lp = player.combat_state.get("loyalty_points", 0)
+                if lp > 0:
+                    cs = dict(player.combat_state)
+                    cs["loyalty_points"] = lp - 1
+                    player.combat_state = cs
+                    # Hit absorbed by loyalty — no boss HP damage this roll
+                else:
+                    player.current_boss_hp -= 1
+                    if prediction == "hit":
+                        player.current_boss_hp -= 1
+            else:
+                player.current_boss_hp -= 1
+                # Double boss damage if prediction was "hit" and correct (boss 53)
+                if prediction == "hit":
                     player.current_boss_hp -= 1  # extra damage for correct prediction
     else:
         # Boss 95 (Identity & Access Heretic): player damage redirected to random opponent
@@ -1089,6 +1288,36 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             # Boss 40 (Net Zero Apocalypse): ALL players lose 1 HP on every miss
             for p_aoe in game.players:
                 p_aoe.hp = max(0, p_aoe.hp - miss_effect["aoe_all_players_hp_damage"])
+
+        # Boss 33 (Experience Cloud Illusion): consume declared card on miss
+        if engine.boss_card_declared_before_roll(boss.id) and player.combat_state:
+            declared_hc_id = player.combat_state.get("declared_hand_card_id")
+            if declared_hc_id:
+                from app.models.game import PlayerHandCard as _PHC33
+                hc_33 = db.get(_PHC33, declared_hc_id)
+                if hc_33 and hc_33.player_id == player.id:
+                    game.action_discard = (game.action_discard or []) + [hc_33.action_card_id]
+                    db.delete(hc_33)
+
+    # Clear boss 33 declaration after every roll (hit or miss)
+    if engine.boss_card_declared_before_roll(boss.id) and player.combat_state:
+        cs = dict(player.combat_state)
+        cs.pop("declared_card_id", None)
+        cs.pop("declared_hand_card_id", None)
+        player.combat_state = cs
+
+    # Boss 55 / Boss 74: apply shadow copy's after_miss effects
+    if copy_boss_id and result == "miss":
+        copy_miss = engine.apply_boss_ability(
+            copy_boss_id, "after_miss",
+            dice_result=roll,
+            combat_round=current_round,
+            current_hp=player.current_boss_hp or 0,
+        )
+        if copy_miss["extra_damage"] > 0:
+            player.hp = max(0, player.hp - copy_miss["extra_damage"])
+        if copy_miss["boss_heal"] > 0:
+            player.current_boss_hp = min(boss.hp, (player.current_boss_hp or 0) + copy_miss["boss_heal"])
 
     # Boss 5 (Sandbox Tyrant): random opponent gains 1 Licenza when player takes damage
     if player_took_damage:
@@ -1126,6 +1355,30 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
     if round_end["aoe_unblockable_hp_damage"] > 0:
         for p_aoe in game.players:
             p_aoe.hp = max(0, p_aoe.hp - round_end["aoe_unblockable_hp_damage"])
+
+    # Boss 84 (Data Import Doomsayer): if fight runs longer than prediction, deal 1 extra HP per excess round
+    if player.combat_state:
+        dcap = player.combat_state.get("doomsayer_prediction_cap")
+        if dcap is not None and current_round > dcap:
+            player.hp = max(0, player.hp - 1)
+
+    # Boss 55 / Boss 74: apply shadow copy's on_round_end effects
+    if copy_boss_id:
+        copy_re = engine.apply_boss_ability(
+            copy_boss_id, "on_round_end",
+            combat_round=current_round,
+            cards_played=player.cards_played_this_turn,
+        )
+        if copy_re["aoe_hp_damage"] > 0:
+            opponents_c = [p for p in game.players if p.id != player.id]
+            if opponents_c:
+                random.choice(opponents_c).hp = max(0, random.choice(opponents_c).hp - copy_re["aoe_hp_damage"])
+        if copy_re["aoe_all_hp_damage"] > 0:
+            for p_c in [p for p in game.players if p.id != player.id]:
+                p_c.hp = max(0, p_c.hp - copy_re["aoe_all_hp_damage"])
+        if copy_re["aoe_all_players_hp_damage"] > 0:
+            for p_c in game.players:
+                p_c.hp = max(0, p_c.hp - copy_re["aoe_all_players_hp_damage"])
 
     # Boss 73 (Streaming API Storm): every round a random opponent draws 1 extra card
     if round_end["opponent_draws_card"] > 0:
@@ -1167,32 +1420,41 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         if defeated_effect["bonus_licenze"] > 0:
             player.licenze += defeated_effect["bonus_licenze"]
 
-        # Boss 25 (Heroku Dyno Zombie): boss revives with N HP once
-        # NOTE: fires every time boss reaches 0 HP — true one-shot needs combat_state.resurrection_used
+        # Boss 25 (Heroku Dyno Zombie): one-shot revive — only fires if resurrection not yet used
         if defeated_effect["boss_revive"] > 0:
-            player.current_boss_hp = defeated_effect["boss_revive"]
-            db.commit()
-            db.refresh(game)
-            await manager.broadcast(game.code, {
-                "type": "boss_revived",
-                "player_id": player.id,
-                "boss_id": boss.id,
-                "new_hp": player.current_boss_hp,
-            })
-            await _broadcast_state(game, db)
-            return  # combat continues
+            cs = dict(player.combat_state or {})
+            if not cs.get("resurrection_used", False):
+                cs["resurrection_used"] = True
+                player.combat_state = cs
+                player.current_boss_hp = defeated_effect["boss_revive"]
+                db.commit()
+                db.refresh(game)
+                await manager.broadcast(game.code, {
+                    "type": "boss_revived",
+                    "player_id": player.id,
+                    "boss_id": boss.id,
+                    "new_hp": player.current_boss_hp,
+                })
+                await _broadcast_state(game, db)
+                return  # combat continues — boss revived
 
-        # Boss 34 (Batch Apex Necromancer): on defeat, boss re-enters deck with N HP
-        # NOTE: fires every defeat — true one-shot needs combat_state.necromancer_resurrected
+        # Boss 34 (Batch Apex Necromancer): first defeat re-inserts boss into deck; second is permanent
         if defeated_effect["boss_revive_to_deck"] > 0:
-            # Give rewards normally, then re-insert boss at bottom of its deck
-            if player.current_boss_source == "deck_1" or player.current_boss_source == "market_1":
-                game.boss_deck_1 = (game.boss_deck_1 or []) + [boss.id]
-            else:
-                game.boss_deck_2 = (game.boss_deck_2 or []) + [boss.id]
+            cs = dict(player.combat_state or {})
+            if not cs.get("necromancer_resurrected", False):
+                cs["necromancer_resurrected"] = True
+                player.combat_state = cs
+                if player.current_boss_source in ("deck_1", "market_1"):
+                    game.boss_deck_1 = (game.boss_deck_1 or []) + [boss.id]
+                else:
+                    game.boss_deck_2 = (game.boss_deck_2 or []) + [boss.id]
+            # On second defeat the boss is simply discarded normally (falls through to defeat logic)
 
         # Boss 26 (CPQ Configuration Chaos): next addon purchase costs +3 licenze
-        # TODO: requires player.pending_addon_cost_penalty field — add to GamePlayer model when ready
+        if defeated_effect["next_addon_cost_penalty"] > 0:
+            player.pending_addon_cost_penalty = (
+                (player.pending_addon_cost_penalty or 0) + defeated_effect["next_addon_cost_penalty"]
+            )
 
         # Boss 99 (CTA Titan): every player who played an action card this combat gains N licenze
         if defeated_effect["bonus_licenze_to_helpers"] > 0:
@@ -1212,8 +1474,57 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             await _broadcast_state(game, db)
             return
 
-        # Boss 31 (AppExchange Parasite) / Boss 91 (List View Usurper): return locked/stolen addon
-        # TODO: requires combat_state.locked_addon_id / stolen_addon_id field
+        # Boss 31 (AppExchange Parasite): unlock locked addon (untap it)
+        # Boss 91 (List View Usurper): return stolen addon to player's possession
+        if defeated_effect["unlock_locked_addon"] and player.combat_state:
+            cs = player.combat_state
+            locked_pa_id = cs.get("locked_addon_id")
+            stolen_addon_id = cs.get("stolen_addon_id")
+            if locked_pa_id:
+                from app.models.game import PlayerAddon as _PA
+                pa_unlock = db.get(_PA, locked_pa_id)
+                if pa_unlock and pa_unlock.player_id == player.id:
+                    pa_unlock.is_tapped = False
+            if stolen_addon_id:
+                from app.models.game import PlayerAddon as _PA2
+                db.add(_PA2(player_id=player.id, addon_id=stolen_addon_id))
+
+        # Boss 82 (Customer 360 Gorgon): clear petrified cards on defeat
+        if player.combat_state and player.combat_state.get("petrified_card_ids"):
+            cs = dict(player.combat_state)
+            cs.pop("petrified_card_ids", None)
+            player.combat_state = cs
+
+        # Boss 55 / Boss 74: also apply shadow copy's on_boss_defeated effects
+        if copy_boss_id:
+            copy_def = engine.apply_boss_ability(
+                copy_boss_id, "on_boss_defeated",
+                cards_played=player.cards_played_this_turn,
+            )
+            if copy_def["bonus_certification"] > 0:
+                player.certificazioni += copy_def["bonus_certification"]
+            if copy_def["bonus_licenze"] > 0:
+                player.licenze += copy_def["bonus_licenze"]
+            if copy_def["next_addon_cost_penalty"] > 0:
+                player.pending_addon_cost_penalty = (
+                    (player.pending_addon_cost_penalty or 0) + copy_def["next_addon_cost_penalty"]
+                )
+
+        # Boss 100 (Omega): also apply the last legendary boss's on_boss_defeated effects
+        if engine.boss_is_omega(boss.id) and game.last_defeated_legendary_boss_id:
+            omega_def = engine.apply_boss_ability(
+                game.last_defeated_legendary_boss_id, "on_boss_defeated",
+                cards_played=player.cards_played_this_turn,
+            )
+            if omega_def["bonus_certification"] > 0:
+                player.certificazioni += omega_def["bonus_certification"]
+            if omega_def["bonus_licenze"] > 0:
+                player.licenze += omega_def["bonus_licenze"]
+
+        # Track last defeated boss for mimic (55) / shape shifter (74) / omega (100) routing
+        game.last_defeated_boss_id = boss.id
+        if boss.has_certification:
+            game.last_defeated_legendary_boss_id = boss.id
 
         source = player.current_boss_source
         if boss.has_certification:
@@ -1411,6 +1722,12 @@ async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Ses
         await _error(game.code, user_id, "Addon is tapped (already used this turn)")
         return
 
+    # Boss 31 (AppExchange Parasite): locked addon cannot be used during this fight
+    if player.is_in_combat and player.combat_state:
+        if player.combat_state.get("locked_addon_id") == pa.id:
+            await _error(game.code, user_id, "This addon is locked by the boss for this fight")
+            return
+
     # Boss 15 (trust.salesforce.DOOM) / Boss 79 (ISVForce Overlord): ALL addons disabled
     for p in game.players:
         if p.is_in_combat and p.current_boss_id:
@@ -1495,3 +1812,76 @@ async def _handle_retreat(game: GameSession, user_id: int, db: Session):
         "retreated": True,
     })
     await _broadcast_state(game, db)
+
+
+async def _handle_declare_card(game: GameSession, user_id: int, data: dict, db: Session):
+    """Boss 33 (Experience Cloud Illusion): player declares which hand card they'll play
+    BEFORE rolling the dice.  If the roll is a miss, the declared card is consumed.
+    Must be sent after start_combat and before roll_dice each round."""
+    if game.status != GameStatus.in_progress or game.current_phase != TurnPhase.combat:
+        await _error(game.code, user_id, "Not in combat phase")
+        return
+
+    player = _get_player(game, user_id)
+    if not player or not _is_player_turn(game, player) or not player.is_in_combat:
+        await _error(game.code, user_id, "Not your combat")
+        return
+
+    if not engine.boss_card_declared_before_roll(player.current_boss_id):
+        await _error(game.code, user_id, "Current boss does not require card declaration")
+        return
+
+    hand_card_id = data.get("hand_card_id")
+    from app.models.game import PlayerHandCard
+    hc = db.get(PlayerHandCard, hand_card_id)
+    if not hc or hc.player_id != player.id:
+        await _error(game.code, user_id, "Card not in hand")
+        return
+
+    cs = dict(player.combat_state or {})
+    cs["declared_card_id"] = hc.action_card_id
+    cs["declared_hand_card_id"] = hc.id
+    player.combat_state = cs
+    db.commit()
+
+    card = db.get(ActionCard, hc.action_card_id)
+    await manager.broadcast(game.code, {
+        "type": "card_declared_before_roll",
+        "player_id": player.id,
+        "card": {"id": card.id, "name": card.name} if card else {},
+    })
+
+
+async def _handle_declare_card_type(game: GameSession, user_id: int, data: dict, db: Session):
+    """Boss 86 (Record Type Ravager): player declares which card type they'll use
+    for the rest of this combat (Offensiva or Difensiva).  Only cards of that type
+    may be played until the boss is defeated or player dies/retreats."""
+    if game.status != GameStatus.in_progress or game.current_phase != TurnPhase.combat:
+        await _error(game.code, user_id, "Not in combat phase")
+        return
+
+    player = _get_player(game, user_id)
+    if not player or not _is_player_turn(game, player) or not player.is_in_combat:
+        await _error(game.code, user_id, "Not your combat")
+        return
+
+    boss = db.get(BossCard, player.current_boss_id)
+    if not boss or boss.id != 86:
+        await _error(game.code, user_id, "Current boss does not require card type declaration")
+        return
+
+    card_type = data.get("card_type")
+    if card_type not in ("Offensiva", "Difensiva"):
+        await _error(game.code, user_id, "card_type must be 'Offensiva' or 'Difensiva'")
+        return
+
+    cs = dict(player.combat_state or {})
+    cs["allowed_card_type"] = card_type
+    player.combat_state = cs
+    db.commit()
+
+    await manager.send_to_player(game.code, user_id, {
+        "type": "card_type_declared",
+        "player_id": player.id,
+        "allowed_card_type": card_type,
+    })

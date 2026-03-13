@@ -16,6 +16,8 @@ class ClientAction:
     ROLL_DICE = "roll_dice"
     END_TURN = "end_turn"
     RETREAT_COMBAT = "retreat_combat"
+    DECLARE_CARD = "declare_card"           # boss 33 — declare card before rolling
+    DECLARE_CARD_TYPE = "declare_card_type" # boss 86 — declare Offensiva/Difensiva at combat start
 
 
 class ServerEvent:

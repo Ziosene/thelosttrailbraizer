@@ -93,7 +93,11 @@ backend/
 │   ├── env.py                    ✅ configurato
 │   ├── script.py.mako            ✅
 │   └── versions/
-│       └── 0001_initial_schema.py ✅ schema completo + FK circolare risolta
+│       ├── 0001_initial_schema.py ✅ schema completo + FK circolare risolta
+│       ├── 0002_dual_decks.py    ✅ doppi mazzi + mercato
+│       ├── 0003_shared_discards.py ✅ 3 scarti condivisi
+│       ├── 0004_player_trophies.py ✅ trofei boss cert
+│       └── 0005_combat_state.py  ✅ combat_state, pending_addon_cost_penalty, last_defeated_boss_id, banned_card_ids
 ├── app/
 │   ├── __init__.py               ✅
 │   ├── main.py                   ✅ FastAPI app + WebSocket endpoint + auth JWT
@@ -228,6 +232,9 @@ Client (React)
 | addon_graveyard | JSON | addon persi dai giocatori alla morte o distrutti da effetti carta |
 | turn_order | JSON | lista di GamePlayer.id in ordine di turno |
 | winner_id | FK → game_players | nullable |
+| last_defeated_boss_id | INT nullable | ultimo boss sconfitto — usato da boss 55 (mimic) e boss 74 (shape shifter) |
+| last_defeated_legendary_boss_id | INT nullable | ultimo boss leggendario (cert) sconfitto — usato da boss 100 (omega) |
+| banned_card_ids | JSON | carte permanentemente bandite da boss 56 (Change Data Capture Lurker) |
 | created_at / finished_at | DATETIME | |
 
 ### `game_players`
@@ -248,6 +255,8 @@ Client (React)
 | current_boss_hp | INT | HP attuale del boss in combattimento |
 | current_boss_source | VARCHAR(10) | `market_1` / `market_2` / `deck_1` / `deck_2` — determina logica vittoria/sconfitta |
 | combat_round | INT | round corrente di combattimento |
+| combat_state | JSON nullable | stato transiente per-combat: `resurrection_used`, `necromancer_resurrected`, `locked_addon_id`, `stolen_addon_id`, `petrified_card_ids`, `doomsayer_prediction_cap`, `loyalty_points` — resettato a `{}` ad ogni nuovo combattimento |
+| pending_addon_cost_penalty | INT | extra costo licenze sul prossimo acquisto addon (boss 26); resettato dopo il primo acquisto |
 | score / bosses_defeated | INT | per ELO |
 
 ### `player_addons`
@@ -314,6 +323,8 @@ Tutti i messaggi sono JSON. Il server autentica via JWT al momento della conness
 | `roll_dice` | — | Fase `combat`, proprio turno |
 | `retreat_combat` | — | Fase `combat`, proprio turno |
 | `end_turn` | — | Fase `action` o `draw`, proprio turno |
+| `declare_card` | `{hand_card_id}` | Fase `combat`, prima di `roll_dice` contro boss 33 — dichiara la carta che si intende giocare |
+| `declare_card_type` | `{card_type: "Offensiva"\|"Difensiva"}` | Fase `combat`, dopo `start_combat` contro boss 86 — dichiara il tipo di carte che si potrà giocare |
 
 ### Server → Client (eventi)
 
@@ -443,7 +454,17 @@ FINE TURNO
 - [x] **Doppi mazzi + mercato** — `start_game` divide tutti i mazzi in due metà; boss e addon hanno 1 carta visibile per mazzo nel "mercato". `draw_card` accetta `{deck: 1|2}`. `start_combat` e `buy_addon` accettano `{source: market_1|market_2|deck_1|deck_2}`. Logica vittoria/sconfitta rispetta le regole del mercato. Migration `0002_dual_decks.py`.
 - [x] **3 mazzi degli scarti condivisi** — `action_discard` (scarto azione, rimescolato tra i 2 mazzi quando si esauriscono), `boss_graveyard` (boss senza cert), `addon_graveyard` (addon persi/distrutti). Migration `0003_shared_discards.py`.
 - [x] **Trofei boss con certificazione** — boss cert sconfitti diventano trofei fisici del giocatore (`player.trophies`). Possono essere rubati (→ trofei avversario) o distrutti (→ `boss_graveyard`). Visibili a tutti nel `game_state`. Migration `0004_player_trophies.py`.
-- [x] **Boss ability system (boss 1–100, COMPLETO)** — architettura a due livelli in `engine.py` + wiring completo in `game_handler.py`. Tutti i trigger (on_combat_start / on_round_start / after_miss / after_hit / on_player_damage / on_round_end / on_boss_defeated) cablati. Tutti i query helper applicati nei punti giusti del flusso. TODO residui solo per meccaniche che richiedono nuovo DB field o client interaction (lock_addon, petrify_cards, deal_offer, siren_deal, doomsayer_prediction, force_card_type_declaration, steal_and_use_addon, hijack_addon, boss_splits_on_heavy_hit, boss_permanently_bans_used_cards, next_addon_cost_penalty, absorbed_cards, boss_is_shape_shifter, boss_is_omega).
+- [x] **Boss ability system (boss 1–100, COMPLETO)** — architettura a due livelli in `engine.py` + wiring completo in `game_handler.py`. Tutti i trigger (on_combat_start / on_round_start / after_miss / after_hit / on_player_damage / on_round_end / on_boss_defeated) cablati. Tutti i query helper applicati nei punti giusti del flusso.
+- [x] **Migration `0005_combat_state.py`** — aggiunge `GamePlayer.combat_state` (JSON), `GamePlayer.pending_addon_cost_penalty` (INT), `GameSession.last_defeated_boss_id` (INT), `GameSession.last_defeated_legendary_boss_id` (INT), `GameSession.banned_card_ids` (JSON).
+- [x] **Wiring boss residui (25, 26, 31, 34, 55, 56, 74, 82, 84, 91, 94, 100)** — sfruttano i nuovi DB fields. One-shot revive (25), one-shot necromancer (34), addon cost penalty (26), lock/unlock addon (31), steal/return addon (91), petrify cards (82), doomsayer prediction cap (84), loyalty shield (94), mimic routing (55), shape-shifter routing (74), omega routing (100), permanent card ban (56).
+- [x] **Boss 33, 45, 63, 83, 86 — TUTTI I 100 BOSS COMPLETAMENTE CABLATI**
+  - Boss 33 (Experience Cloud Illusion): nuova action `declare_card` — il player dichiara la carta prima del tiro. Se miss, la carta viene consumata. Handler: `_handle_declare_card` + guard in `_handle_roll_dice`.
+  - Boss 45 (Agentforce Rebellion): ogni round hijack di 1 addon random untapped (tappato); broadcast `addon_hijacked_by_boss`. Effetto invertito deferred a `apply_addon_effect`.
+  - Boss 63 (Loyalty Management Trickster): auto-accept deal — +1 Licenza, soglia dado +1 per quel round (via `threshold_bonus` locale). Broadcast `boss_deal_auto_accepted`.
+  - Boss 83 (Account Engagement Siren): auto-reject — broadcast `boss_siren_deal_rejected`, nessun effetto.
+  - Boss 86 (Record Type Ravager): nuova action `declare_card_type` — player dichiara "Offensiva" o "Difensiva" a inizio combat. Server invia `card_type_declaration_required`. Scelta salvata in `combat_state.allowed_card_type`. Guard in `_handle_play_card` blocca carte del tipo sbagliato.
+  - Nuovi ClientAction: `declare_card`, `declare_card_type`.
+  - Nuovi ServerEvent di controllo: `card_declared_before_roll`, `card_type_declaration_required`, `card_type_declared`, `addon_hijacked_by_boss`, `boss_deal_auto_accepted`, `boss_siren_deal_rejected`.
 
 ### ⬜ Da fare
 

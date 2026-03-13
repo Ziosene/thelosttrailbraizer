@@ -66,6 +66,12 @@ class GameSession(Base):
     addon_graveyard: Mapped[list] = mapped_column(JSON, default=list)
     turn_order: Mapped[list] = mapped_column(JSON, default=list)    # list of GamePlayer.id in turn order
     winner_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("game_players.id"), nullable=True)
+    # Last boss defeated in this session (used by boss 55 mimic + boss 74 shape shifter)
+    last_defeated_boss_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Last legendary (cert) boss defeated (used by boss 100 omega to copy its phases)
+    last_defeated_legendary_boss_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Card IDs permanently banned from this game by boss 56 (Change Data Capture Lurker)
+    banned_card_ids: Mapped[list] = mapped_column(JSON, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
@@ -104,6 +110,14 @@ class GamePlayer(Base):
     # "market_1" | "market_2" | "deck_1" | "deck_2" — determines what happens on win/loss
     current_boss_source: Mapped[str | None] = mapped_column(String(10), nullable=True)
     combat_round: Mapped[int] = mapped_column(Integer, default=0)
+
+    # Per-combat transient state (resurrection flags, petrified cards, loyalty points, etc.)
+    # Keys: resurrection_used, necromancer_resurrected, locked_addon_id (PlayerAddon.id),
+    #       stolen_addon_id (AddonCard.id), petrified_card_ids (list[int]),
+    #       doomsayer_prediction_cap (int), allowed_card_type (str), loyalty_points (int)
+    combat_state: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    # Addon cost surcharge queued by boss 26 (CPQ Configuration Chaos); reset after first purchase
+    pending_addon_cost_penalty: Mapped[int] = mapped_column(Integer, default=0)
 
     # Score (for ELO calculation at end)
     score: Mapped[int] = mapped_column(Integer, default=0)
