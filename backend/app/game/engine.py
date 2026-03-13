@@ -159,7 +159,7 @@ def update_elo(ratings: list[int], winner_index: int) -> list[int]:
 
 
 # ---------------------------------------------------------------------------
-# Boss ability system (bosses 1–60 implemented)
+# Boss ability system (bosses 1–70 implemented)
 # ---------------------------------------------------------------------------
 # All functions are pure — no DB access.  game_handler reads the returned
 # values and applies the actual mutations to DB objects.
@@ -208,6 +208,10 @@ _EMPTY_EFFECT: dict = {
     "corrupt_deck_cards": 0,        # insert N corrupted cards into combatant's action deck; each deals 1 HP if drawn
     "makes_prediction": False,      # boss predicts hit/miss before roll; if correct, double the round effect
     "invert_random_hand_card": False,   # invert the effect of 1 random card in combatant's hand for this combat
+    "exam_roll": False,             # handler rolls d10 before combat: ≥7 → player +1 HP; ≤3 → player -1 HP
+    "deal_offer": False,            # boss offers 1 free licenza; if accepted, threshold +1 this round (player chooses)
+    "bonus_hp_per_player_addon": False,  # boss starts combat with +1 HP for each addon the combatant owns
+    "boss_splits_on_heavy_hit": False,   # if boss takes 2+ damage this round, spawn a 3-HP no-ability duplicate
 }
 
 
@@ -489,6 +493,67 @@ def boss_blocks_addon_purchase(boss_id: int) -> bool:
     return False
 
 
+def boss_forces_top_card_play(boss_id: int) -> bool:
+    """
+    Returns True if the combatant's hand is reshuffled into the deck each round and
+    only the top card may be played (no free choice of card).
+    """
+    match boss_id:
+        case 64:  # The Order Management Maelstrom
+            return True
+    return False
+
+
+def boss_cancels_offensive_if_revealed(boss_id: int) -> bool:
+    """
+    Returns True if the boss reveals the intended action card before it resolves
+    and automatically cancels it if it is an offensive card (card is still consumed).
+    """
+    match boss_id:
+        case 65:  # The Einstein Vision Stalker
+            return True
+    return False
+
+
+def boss_blocks_retreat(boss_id: int) -> bool:
+    """Returns True if no action card or game mechanic can trigger a retreat from this combat."""
+    match boss_id:
+        case 66:  # The Deploy to Production Nemesis (Legendary)
+            return True
+    return False
+
+
+def boss_death_addon_penalty(boss_id: int) -> int:
+    """Returns the number of addons lost on player death (default: DEATH_LOSE_ADDONS = 1)."""
+    match boss_id:
+        case 66:  # The Deploy to Production Nemesis — death costs 2 addons
+            return 2
+    return DEATH_LOSE_ADDONS
+
+
+def boss_nullifies_round_on_low_roll(boss_id: int) -> bool:
+    """
+    Returns True if a dice result of 1 or 2 nullifies the entire round — no damage
+    in either direction.  Handler checks the actual roll AFTER rolling and skips
+    all damage application if True and roll ≤ 2.
+    """
+    match boss_id:
+        case 67:  # The Developer Console Glitch
+            return True
+    return False
+
+
+def boss_requires_approval_roll(boss_id: int) -> bool:
+    """
+    Returns True if every action card played must pass an approval roll (extra d10).
+    If the approval roll is ≤ 4 the card is consumed but has no effect.
+    """
+    match boss_id:
+        case 69:  # The Approval Process Bureaucrat
+            return True
+    return False
+
+
 def boss_cancels_next_card(boss_id: int, combat_round: int) -> bool:
     """
     Returns True if the boss automatically nullifies the next action card played
@@ -741,5 +806,39 @@ def apply_boss_ability(
         case (60, "on_round_end"):
             if combat_round % 2 == 0:
                 return _boss_effect(discard_cards=1)
+
+        # ── Boss 61 — The Nonprofit Cloud Blight ─────────────────────────────
+        # Combatant starts combat with 2 fewer Licenze ("always underfunded").
+        case (61, "on_combat_start"):
+            return _boss_effect(steal_licenze=2)
+
+        # ── Boss 62 — The Education Cloud Inquisitor ─────────────────────────
+        # Before combat: roll exam d10.
+        #   ≥ 7 → combatant gains +1 HP (extra health from passing)
+        #   ≤ 3 → combatant starts with -1 HP (penalty for failing)
+        #   4–6 → no effect
+        case (62, "on_combat_start"):
+            return _boss_effect(exam_roll=True)
+
+        # ── Boss 63 — The Loyalty Management Trickster ───────────────────────
+        # Every round: boss offers 1 free Licenza. Accepting raises the dice threshold
+        # by 1 for this round only. Handler broadcasts a deal_offer event and waits for
+        # player response; if accepted, gain 1 licenza and apply +1 to effective threshold.
+        # TODO: implement client accept/reject flow; currently auto-accepts for simplicity.
+        case (63, "on_round_start"):
+            return _boss_effect(deal_offer=True)
+
+        # ── Boss 68 — The Schema Builder Monstrosity ──────────────────────────
+        # At combat start: boss HP increases by 1 for each addon the combatant owns.
+        # Handler: boss_current_hp += len(player.addons)
+        case (68, "on_combat_start"):
+            return _boss_effect(bonus_hp_per_player_addon=True)
+
+        # ── Boss 70 — The Duplicate Management Monster ────────────────────────
+        # After any hit: if boss took 2+ damage this round, it splits into a second
+        # boss with 3 HP and no special ability.  Handler spawns a secondary combat
+        # target on player.current_boss_duplicate_hp = 3 (flag once per combat).
+        case (70, "after_hit"):
+            return _boss_effect(boss_splits_on_heavy_hit=True)
 
     return _boss_effect()

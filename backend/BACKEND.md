@@ -464,7 +464,10 @@ FINE TURNO
   - `on_roll` — in `_handle_roll_dice` prima/dopo il tiro dado
   Vedere `cards/addon_cards.md` per l'effetto completo di ogni addon.
 
-- [ ] **Abilità speciali boss (61–100)** — Boss 1–60 implementati. Restano 40 boss.
+- [ ] **Abilità speciali boss (71–100)** — Boss 1–70 implementati. Restano 30 boss.
+  - Nuovi campi effetto aggiunti per boss 61–70: `exam_roll`, `deal_offer`, `bonus_hp_per_player_addon`, `boss_splits_on_heavy_hit`.
+  - Nuovi query helper: `boss_forces_top_card_play()` (64), `boss_cancels_offensive_if_revealed()` (65), `boss_blocks_retreat()` (66), `boss_death_addon_penalty()` (66), `boss_nullifies_round_on_low_roll()` (67), `boss_requires_approval_roll()` (69).
+  - Handler da aggiornare: `exam_roll` (d10 → ±HP pre-combat), `deal_offer` (evento WS accept/reject → licenza + threshold +1), `bonus_hp_per_player_addon` (boss.hp += len(player.addons) all'inizio), `boss_splits_on_heavy_hit` (spawn boss duplicate con 3 HP), `boss_blocks_retreat` (blocca qualsiasi carta retreat), `boss_death_addon_penalty` (affianca `boss_death_licenze_penalty`), `boss_nullifies_round_on_low_roll` (skip danno se roll ≤ 2), `boss_requires_approval_roll` (d10 extra per carta → ≤4 carta consumata senza effetto).
   - Nuovi campi effetto aggiunti per boss 41–50: `licenza_or_hp_drain`, `hijack_addon`, `force_extra_card_discard`.
   - Nuovi campi effetto aggiunti per boss 51–60: `entry_fee_licenze`, `corrupt_deck_cards`, `makes_prediction`, `invert_random_hand_card`.
   - Nuovi query helper: `boss_hand_visible_to_opponents()` (41), `boss_immune_to_card_damage()` (43), `boss_heals_on_addon_use()` (49), `boss_expires_after_rounds()` (48).
