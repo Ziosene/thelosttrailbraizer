@@ -464,9 +464,12 @@ FINE TURNO
   - `on_roll` — in `_handle_roll_dice` prima/dopo il tiro dado
   Vedere `cards/addon_cards.md` per l'effetto completo di ogni addon.
 
-- [ ] **Abilità speciali boss (31–100)** — Boss 1–30 implementati. Restano 70 boss. Stessa architettura: aggiungere `case (N, trigger):` in `apply_boss_ability` e nei query helpers dove necessario. Vedere `cards/boss_cards.md`.
+- [ ] **Abilità speciali boss (41–100)** — Boss 1–40 implementati. Restano 60 boss. Stessa architettura: aggiungere `case (N, trigger):` in `apply_boss_ability` e nei query helpers dove necessario. Vedere `cards/boss_cards.md`.
   - Nuovi campi effetto aggiunti per boss 21–30: `aoe_all_hp_damage`, `reveal_hand`, `boss_revive`, `next_addon_cost_penalty`, `absorb_cards`, `return_absorbed_cards`.
-  - Handler da aggiornare: gestire `boss_revive` (flag `boss_resurrection_used`), `absorb_cards` (lista `combat_absorbed_cards` nel game state), `next_addon_cost_penalty` (campo `pending_addon_cost_penalty` su player), `aoe_all_hp_damage` (danno a tutti gli avversari).
+  - Nuovi campi effetto aggiunti per boss 31–40: `lock_addon`, `unlock_locked_addon`, `opponent_discards_from_hand`, `bonus_chaos_roll`, `boss_revive_to_deck`, `aoe_all_players_hp_damage`.
+  - Nuovi query helper: `boss_card_declared_before_roll()` (boss 33), `boss_cancels_next_card()` (boss 38), `boss_roll_mode` → `"second_of_2"` (boss 39).
+  - `apply_boss_ability` ora accetta `current_hp` per effetti basati sulla fase (boss 37).
+  - Handler da aggiornare: `lock_addon` (flag `combat_locked_addon_id`), `bonus_chaos_roll` (dado extra d10 → penalità casuale), `boss_revive_to_deck` (flag `batch_necromancer_resurrected`), `boss_cancels_next_card` (flag `cancel_next_card_this_round`), `boss_card_declared_before_roll` (campo `declared_card_id` nel combat state).
 
 - [ ] **Rate limiting WS** — un utente non dovrebbe poter inviare messaggi troppo veloci.
 

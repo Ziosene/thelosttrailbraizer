@@ -159,7 +159,7 @@ def update_elo(ratings: list[int], winner_index: int) -> list[int]:
 
 
 # ---------------------------------------------------------------------------
-# Boss ability system (bosses 1–30 implemented)
+# Boss ability system (bosses 1–40 implemented)
 # ---------------------------------------------------------------------------
 # All functions are pure — no DB access.  game_handler reads the returned
 # values and applies the actual mutations to DB objects.
@@ -195,6 +195,12 @@ _EMPTY_EFFECT: dict = {
     "next_addon_cost_penalty": 0,   # player's next addon purchase costs +N licenze
     "absorb_cards": 0,              # boss absorbs N cards from player's hand (stored in combat state)
     "return_absorbed_cards": False, # player recovers all previously absorbed cards
+    "lock_addon": 0,                # player must lock N addons at combat start (their choice); recovered on win
+    "unlock_locked_addon": False,   # player recovers any addon locked by this combat
+    "opponent_discards_from_hand": 0,  # one opponent (their choice) discards N cards from combatant's hand
+    "bonus_chaos_roll": False,      # handler rolls an extra d10; on 1 a random penalty fires (card/HP/licenza)
+    "boss_revive_to_deck": 0,       # boss is defeated but re-enters deck with N HP (once per game; handler tracks flag)
+    "aoe_all_players_hp_damage": 0, # ALL players (including combatant) each lose N HP
 }
 
 
@@ -212,8 +218,10 @@ def boss_roll_mode(boss_id: int, combat_round: int) -> str | None:
       "worst_of_2"  — roll twice, keep the lower result
     """
     match boss_id:
-        case 1:  # Lord of the Governor Limits — odd rounds: worst of two rolls
+        case 1:   # Lord of the Governor Limits — odd rounds: worst of two rolls
             return "worst_of_2" if combat_round % 2 == 1 else None
+        case 39:  # The Bulk API Behemoth — always roll twice, keep only the second result
+            return "second_of_2"
     return None
 
 
@@ -268,6 +276,11 @@ def boss_threshold(
                 return max(base_threshold, 7)
         case 22:  # The Seasonal Release Nightmare — threshold +1 per round, cap 10
             return min(10, base_threshold + (combat_round - 1))
+        case 37:  # The Hyperforce Leviathan — 3 phases by HP
+            # Phase 3 (≤3 HP): threshold 8+; phases 1–2 (>3 HP): threshold 7+
+            if current_hp <= 3:
+                return max(base_threshold, 8)
+            return max(base_threshold, 7)
     return base_threshold
 
 
@@ -352,6 +365,28 @@ def boss_action_card_licenze_blocked(boss_id: int) -> bool:
     return False
 
 
+def boss_card_declared_before_roll(boss_id: int) -> bool:
+    """
+    Returns True if the player must declare which action card they intend to play
+    BEFORE rolling the dice.  If the roll fails, the declared card is still consumed.
+    """
+    match boss_id:
+        case 33:  # The Experience Cloud Illusion
+            return True
+    return False
+
+
+def boss_cancels_next_card(boss_id: int, combat_round: int) -> bool:
+    """
+    Returns True if the boss automatically nullifies the next action card played
+    this round.  Handler must set a per-round flag so the first card played is ignored.
+    """
+    match boss_id:
+        case 38:  # The Einstein Bot Imposter — cancels on even rounds (2, 4, 6, …)
+            return combat_round % 2 == 0
+    return False
+
+
 def apply_boss_ability(
     boss_id: int,
     trigger: str,
@@ -359,6 +394,7 @@ def apply_boss_ability(
     dice_result: int | None = None,
     combat_round: int = 1,
     cards_played: int = 0,
+    current_hp: int = 0,
 ) -> dict:
     """
     Returns a side-effect dict describing what the game_handler must apply.
@@ -377,6 +413,7 @@ def apply_boss_ability(
         dice_result:   Actual d10 value (needed for some after_miss effects).
         combat_round:  1-indexed round number (needed for round-conditional effects).
         cards_played:  Cards played this turn (needed for on_boss_defeated effects).
+        current_hp:    Boss current HP (needed for phase-based effects like boss 37).
     """
     match (boss_id, trigger):
 
@@ -469,5 +506,52 @@ def apply_boss_ability(
             return _boss_effect(absorb_cards=1)
         case (29, "on_boss_defeated"):
             return _boss_effect(return_absorbed_cards=True)
+
+        # ── Boss 31 — The AppExchange Parasite ───────────────────────────────
+        # At combat start the player locks 1 addon of their choice (disabled for the fight).
+        # On defeat, the locked addon is restored.
+        case (31, "on_combat_start"):
+            return _boss_effect(lock_addon=1)
+        case (31, "on_boss_defeated"):
+            return _boss_effect(unlock_locked_addon=True)
+
+        # ── Boss 32 — The Field Service Revenant ─────────────────────────────
+        # On even rounds the boss automatically deals 1 extra HP damage to the combatant.
+        case (32, "on_round_end"):
+            if combat_round % 2 == 0:
+                return _boss_effect(extra_damage=1)
+
+        # ── Boss 34 — The Batch Apex Necromancer ─────────────────────────────
+        # First defeat is real (player gets rewards). Boss re-enters deck with 3 HP.
+        # Handler checks `batch_necromancer_resurrected` flag in game state;
+        # if already True, the boss is simply discarded normally on second defeat.
+        case (34, "on_boss_defeated"):
+            return _boss_effect(boss_revive_to_deck=3)
+
+        # ── Boss 35 — The Platform Event Gremlin ─────────────────────────────
+        # Every round the handler rolls an extra d10. On a 1, one random penalty fires:
+        # lose 1 card | take 1 HP damage | a random opponent gains 2 Licenze.
+        case (35, "on_round_start"):
+            return _boss_effect(bonus_chaos_roll=True)
+
+        # ── Boss 36 — The SOSL Shade ─────────────────────────────────────────
+        # At combat start one opponent (of their choice) peeks at the combatant's hand
+        # and discards 1 card from it.
+        case (36, "on_combat_start"):
+            return _boss_effect(opponent_discards_from_hand=1)
+
+        # ── Boss 37 — The Hyperforce Leviathan (Legendary) ───────────────────
+        # Phases 2 & 3 (boss HP ≤ 6): each miss deals 2 HP to combatant (extra_damage=1
+        # on top of the standard 1 HP miss penalty).
+        # Threshold scaling is handled by boss_threshold(); free-interference flag by
+        # boss_free_interference() is NOT set here — this boss has no free-interference.
+        case (37, "after_miss"):
+            if current_hp <= 6:
+                return _boss_effect(extra_damage=1)
+
+        # ── Boss 40 — The Net Zero Apocalypse ────────────────────────────────
+        # Every miss: ALL players (including the combatant) each lose 1 HP.
+        case (40, "after_miss"):
+            return _boss_effect(aoe_all_players_hp_damage=1)
 
     return _boss_effect()
