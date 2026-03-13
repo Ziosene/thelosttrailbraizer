@@ -2,6 +2,7 @@
 WebSocket message router — connects client actions to game engine logic and DB.
 """
 import json
+import random
 from fastapi import WebSocket
 from sqlalchemy.orm import Session
 
@@ -417,7 +418,12 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
         await _error(game.code, user_id, "Not your turn")
         return
 
-    if player.cards_played_this_turn >= engine.MAX_CARDS_PER_TURN:
+    max_cards = (
+        engine.boss_max_cards_per_turn(player.current_boss_id, engine.MAX_CARDS_PER_TURN)
+        if player.is_in_combat and player.current_boss_id
+        else engine.MAX_CARDS_PER_TURN
+    )
+    if player.cards_played_this_turn >= max_cards:
         await _error(game.code, user_id, "Card limit reached this turn")
         return
 
@@ -426,6 +432,19 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
     # "In qualsiasi momento", "Automatica"). Attualmente non viene verificato.
     # Va implementata una funzione can_play_card(card, game) che confronta
     # card.timing con game.current_phase e player.is_in_combat.
+
+    # Boss ability checks for card play during combat:
+    #   Boss  9 (Code Coverage Ghoul): offensive cards blocked — enforced when card types are modelled.
+    #   Boss 15 (trust.salesforce.DOOM): interference blocked — checked via boss_interference_blocked().
+    #   Boss 17 (Validation Rule Hell): dice-modifier cards have no effect — TODO: enforce in card effect.
+    #   Boss  8 (MuleSoft Kraken): interference doubled — applied in card effect logic.
+    if player.is_in_combat and player.current_boss_id:
+        if engine.boss_offensive_cards_blocked(player.current_boss_id):
+            # TODO: enforce once card.card_type is used; deferred until card timing system is implemented.
+            pass
+        if engine.boss_dice_modifiers_blocked(player.current_boss_id):
+            # TODO: pass this flag into apply_action_card_effect so dice-modifier cards no-op.
+            pass
 
     hand_card_id = data.get("hand_card_id")
     from app.models.game import PlayerHandCard
@@ -594,6 +613,23 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
     player.current_boss_hp = boss.hp
     player.combat_round = 0
     game.current_phase = TurnPhase.combat
+
+    # Apply on_combat_start boss ability (bosses 2 and 7 have effects here)
+    start_effect = engine.apply_boss_ability(boss_id, "on_combat_start")
+
+    if start_effect["steal_licenze"] > 0:
+        # Boss 7 — The SOQL Vampire: steal licenze at combat start
+        player.licenze = max(0, player.licenze - start_effect["steal_licenze"])
+
+    if start_effect["discard_cards"] > 0:
+        # Boss 2 — The Haunted Debug Log: player discards N random cards
+        hand_cards = list(player.hand)
+        n_discard = min(start_effect["discard_cards"], len(hand_cards))
+        to_discard = random.sample(hand_cards, n_discard)
+        for hc in to_discard:
+            game.action_discard = (game.action_discard or []) + [hc.action_card_id]
+            db.delete(hc)
+
     db.commit()
     db.refresh(game)
 
@@ -601,6 +637,7 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
         "type": ServerEvent.COMBAT_STARTED,
         "player_id": player.id,
         "boss": {"id": boss.id, "name": boss.name, "hp": boss.hp, "threshold": boss.dice_threshold},
+        "boss_effect": {k: v for k, v in start_effect.items() if v},
     })
     await _broadcast_state(game, db)
 
@@ -620,22 +657,79 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         await _error(game.code, user_id, "Boss not found")
         return
 
+    # combat_round is still 0-indexed here; current roll = round N+1
+    current_round = (player.combat_round or 0) + 1
+
+    # ── on_round_start effects (before rolling) ──────────────────────────
+    round_start = engine.apply_boss_ability(boss.id, "on_round_start", combat_round=current_round)
+
+    # Boss 18 (Tech Debt Lich): drain 1 Licenza every round
+    if round_start["licenza_drain"] > 0:
+        player.licenze = max(0, player.licenze - round_start["licenza_drain"])
+
+    # Boss 13 (Flow Builder Gone Rogue): discard 1 card or take 1 HP damage
+    if round_start["force_discard_or_damage"] > 0:
+        hand_cards = list(player.hand)
+        if hand_cards:
+            # Auto-discard a random card — TODO: make this a client choice
+            hc = random.choice(hand_cards)
+            game.action_discard = (game.action_discard or []) + [hc.action_card_id]
+            db.delete(hc)
+        else:
+            player.hp -= round_start["force_discard_or_damage"]
+
+    # Boss 1 (Lord of the Governor Limits): odd rounds → roll twice, keep worst
+    roll_mode = engine.boss_roll_mode(boss.id, current_round)
     roll = engine.roll_d10()
+    if roll_mode == "worst_of_2":
+        roll = min(roll, engine.roll_d10())
 
-    # TODO: applicare abilità speciale del boss prima/dopo il tiro.
-    # Ogni boss in boss_cards.md ha un campo "Abilità speciale" con effetto unico
-    # (es. modifica soglia dado, infligge danno extra, protegge HP, ecc.).
-    # Va implementata una funzione apply_boss_ability(boss, player, game, roll, db)
-    # che distingue i trigger: "prima del tiro", "dopo il tiro", "quando sopravvive".
-    # Vedere cards/boss_cards.md per l'abilità completa di ogni boss.
+    # Boss 10 (The Eternal Org) and Boss 12 (Merge Conflict Demon): dynamic threshold
+    threshold = engine.boss_threshold(
+        boss.id,
+        boss.dice_threshold,
+        player.current_boss_hp or 0,
+        hand_count=len(player.hand),
+    )
 
-    result = engine.resolve_combat_round(roll, boss.dice_threshold)
+    result = engine.resolve_combat_round(roll, threshold)
     player.combat_round += 1
 
+    player_took_damage = False
     if result == "hit":
         player.current_boss_hp -= 1
     else:
         player.hp -= 1
+        player_took_damage = True
+        # Boss 3 (extra damage on roll=1) and Boss 6 (boss heals on miss)
+        miss_effect = engine.apply_boss_ability(boss.id, "after_miss", dice_result=roll)
+        if miss_effect["extra_damage"] > 0:
+            player.hp -= miss_effect["extra_damage"]
+        if miss_effect["boss_heal"] > 0:
+            player.current_boss_hp = min(
+                boss.hp,
+                (player.current_boss_hp or 0) + miss_effect["boss_heal"],
+            )
+
+    # Boss 5 (The Sandbox Tyrant): random opponent gains 1 Licenza when player takes damage
+    if player_took_damage:
+        dmg_effect = engine.apply_boss_ability(boss.id, "on_player_damage")
+        if dmg_effect["opponent_gains_licenza"] > 0:
+            opponents = [p for p in game.players if p.id != player.id]
+            if opponents:
+                # NOTE: player should choose; using random until client UX is designed
+                random.choice(opponents).licenze += dmg_effect["opponent_gains_licenza"]
+
+    # ── on_round_end effects (after hit/miss and damage resolved) ─────────
+    round_end = engine.apply_boss_ability(boss.id, "on_round_end", combat_round=current_round)
+
+    # Boss 11 (LWC Poltergeist): even rounds → random opponent takes 1 HP
+    # NOTE: does not trigger full death logic for the opponent — TODO when death cascade is needed
+    if round_end["aoe_hp_damage"] > 0:
+        opponents = [p for p in game.players if p.id != player.id]
+        if opponents:
+            target = random.choice(opponents)
+            target.hp = max(0, target.hp - round_end["aoe_hp_damage"])
 
     boss_defeated = player.current_boss_hp is not None and player.current_boss_hp <= 0
     player_died = player.hp <= 0
@@ -654,6 +748,17 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         player.licenze += boss.reward_licenze
         if boss.has_certification:
             player.certificazioni += 1
+
+        # ── on_boss_defeated effects ──────────────────────────────────────
+        defeated_effect = engine.apply_boss_ability(
+            boss.id, "on_boss_defeated", cards_played=player.cards_played_this_turn
+        )
+        # Boss 19 (Dreamforce Hydra): +1 bonus certification on kill
+        if defeated_effect["bonus_certification"] > 0:
+            player.certificazioni += defeated_effect["bonus_certification"]
+        # Boss 20 (Corrupted Trailblazer): +3 licenze if no cards played this turn
+        if defeated_effect["bonus_licenze"] > 0:
+            player.licenze += defeated_effect["bonus_licenze"]
 
         source = player.current_boss_source
         if boss.has_certification:
@@ -700,6 +805,12 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         hand_ids = [hc.action_card_id for hc in player.hand]
         addon_ids = [pa.addon_id for pa in player.addons]
         penalty = engine.apply_death_penalty(hand_ids, player.licenze, addon_ids)
+
+        # Boss 14 (The Great Data Reaper): death costs 2 Licenze instead of 1
+        extra_licenza_loss = engine.boss_death_licenze_penalty(boss.id) - engine.DEATH_LOSE_LICENZE
+        if extra_licenza_loss > 0:
+            penalty["licenze"] = max(0, penalty["licenze"] - extra_licenza_loss)
+            penalty["lost"]["licenza"] = penalty["lost"].get("licenza", 0) + extra_licenza_loss
 
         # Remove lost card from hand (goes to discard 1 by default)
         if "card" in penalty["lost"]:
@@ -825,6 +936,20 @@ async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Ses
     if pa.is_tapped:
         await _error(game.code, user_id, "Addon is tapped (already used this turn)")
         return
+
+    # Boss 15 (trust.salesforce.DOOM): ALL players' addons are disabled while this boss is in play.
+    for p in game.players:
+        if p.is_in_combat and p.current_boss_id and engine.boss_disables_all_addons(p.current_boss_id):
+            await _error(game.code, user_id, "All addons are disabled while this boss is in play")
+            return
+
+    # Boss 4 (The Cursed Friday Deployment): combatant's addons disabled rounds 1–2.
+    # combat_round is 0-indexed before first roll; current round = combat_round + 1.
+    if player.is_in_combat and player.current_boss_id:
+        current_round = (player.combat_round or 0) + 1
+        if engine.boss_addons_disabled(player.current_boss_id, current_round):
+            await _error(game.code, user_id, "Addons are disabled by the boss this round")
+            return
 
     pa.is_tapped = True
     db.commit()
