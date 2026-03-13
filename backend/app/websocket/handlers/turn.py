@@ -312,6 +312,11 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
         await _error(game.code, user_id, "Addon not found")
         return
 
+    # Card 18 (Org Takeover): opponent blocked this player from buying addons next turn
+    if (player.combat_state or {}).get("addons_blocked_next_turn"):
+        await _error(game.code, user_id, "Addon purchases blocked this turn (Org Takeover)")
+        return
+
     # Boss 60 (Connected App Infiltrator): addon purchases are blocked during this combat
     if player.is_in_combat and player.current_boss_id:
         if engine.boss_blocks_addon_purchase(player.current_boss_id):
@@ -451,6 +456,12 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
     # Untap all addons
     for pa in player.addons:
         pa.is_tapped = False
+
+    # Card 18 (Org Takeover): clear the one-turn addon block when this player's turn ends
+    if player.combat_state and player.combat_state.get("addons_blocked_next_turn"):
+        cs = dict(player.combat_state)
+        cs.pop("addons_blocked_next_turn")
+        player.combat_state = cs
 
     player.cards_played_this_turn = 0
 

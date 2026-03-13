@@ -546,11 +546,21 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         hand_count=len(player.hand),
         combat_round=current_round,
     ) + threshold_bonus
+    # Card 13 (Debug Exploit): persistent threshold reduction for rest of combat
+    threshold -= (player.combat_state or {}).get("boss_threshold_reduction", 0)
+    # Card 15 (Scope Creep): opponent raised threshold for this roll only
+    _scope_creep_until = (player.combat_state or {}).get("boss_threshold_increase_until_round", 0)
+    if _scope_creep_until >= current_round:
+        threshold += 2
+    threshold = max(1, threshold)  # can't go below 1
 
     result = engine.resolve_combat_round(roll, threshold)
     player.combat_round += 1
 
     player_took_damage = False
+
+    # Card 12 (Governor Limit Exploit): double boss damage per successful hit for N rounds
+    _hit_damage = 2 if (player.combat_state or {}).get("double_damage_until_round", 0) >= current_round else 1
 
     if round_nullified:
         # No damage in either direction this round
@@ -567,14 +577,14 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                     player.combat_state = cs
                     # Hit absorbed by loyalty — no boss HP damage this roll
                 else:
-                    player.current_boss_hp -= 1
+                    player.current_boss_hp -= _hit_damage
                     if prediction == "hit":
-                        player.current_boss_hp -= 1
+                        player.current_boss_hp -= 1  # prediction bonus: always 1
             else:
-                player.current_boss_hp -= 1
+                player.current_boss_hp -= _hit_damage
                 # Double boss damage if prediction was "hit" and correct (boss 53)
                 if prediction == "hit":
-                    player.current_boss_hp -= 1  # extra damage for correct prediction
+                    player.current_boss_hp -= 1  # prediction bonus: always 1
     else:
         # Boss 95 (Identity & Access Heretic): player damage redirected to random opponent
         if engine.boss_redirects_damage_to_opponent(boss.id):
