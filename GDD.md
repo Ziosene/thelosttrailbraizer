@@ -141,6 +141,14 @@ FASE CARTE
   └─ Gioca 0–2 carte dalla propria mano in qualsiasi momento del turno
      (prima, durante o dopo il combattimento)
 
+FUORI DAL PROPRIO TURNO (reazione)
+  └─ Se un avversario gioca una carta che ti colpisce direttamente,
+     puoi rispondere con una carta "Fuori dal proprio turno" (interferenza)
+     entro 8 secondi dalla notifica del server
+     ├─ Puoi reagire solo se non hai ancora esaurito il tuo budget di 2 carte
+     │  (budget condiviso tra carte in-turno e carte di reazione)
+     └─ Puoi sempre passare la reazione (nessuna penalità)
+
 FINE TURNO
   └─ Il giocatore dichiara esplicitamente la fine del proprio turno
 ```
@@ -202,14 +210,43 @@ Durante il combattimento di un giocatore, gli **altri giocatori** possono giocar
 
 > Un boss è "occupato" finché non viene sconfitto o il combattente muore. Due giocatori non possono combattere lo stesso boss contemporaneamente.
 
-### 5.5 Ricompense boss
+### 5.5 Sistema di reazione (finestra out-of-turn)
+
+Quando un giocatore gioca una carta che colpisce direttamente un avversario (es. ruba Licenze, ruba Certificazioni, infligge danno), il server apre automaticamente una **finestra di reazione** per il giocatore bersaglio.
+
+```
+FINESTRA DI REAZIONE:
+  ├─ Notifica privata al bersaglio: tipo di carta, chi l'ha giocata, timeout 8 s
+  ├─ Il bersaglio può:
+  │    A) Giocare una carta "Fuori dal proprio turno" dalla sua mano
+  │       └─ La carta di reazione si applica PRIMA dell'effetto originale
+  │    B) Passare (nessun effetto, l'originale si applica normalmente)
+  │    C) Non rispondere entro 8 s → equivale a passare
+  └─ Broadcast a tutti: come è andata la reazione
+```
+
+**Regole speciali di risoluzione:**
+
+| Carta di reazione | Effetto sulla carta originale |
+|---|---|
+| **Shield Platform** | Annulla completamente la carta originale (nessun effetto) |
+| **Chargeback** (contro furto di Licenze) | Annulla il furto + il difensore guadagna 1 Licenza extra |
+| Qualsiasi altra carta di interferenza | Si applica normalmente; l'effetto originale si applica comunque |
+
+**Budget carte condiviso:** ogni giocatore può giocare al massimo **2 carte per ciclo di turno** (dal proprio inizio turno all'inizio del turno successivo), contando sia le carte giocate in-turno sia quelle giocate come reazione.
+
+- 0 carte giocate nel proprio turno → può reagire fino a 2 volte
+- 1 carta giocata nel proprio turno → può reagire 1 volta
+- 2 carte giocate nel proprio turno → non può reagire
+
+### 5.6 Ricompense boss
 
 | Tipo boss | Ricompensa |
 |---|---|
 | Boss normale | X Licenze (variabile per boss) → va nel Cimitero Boss |
 | Boss con certificazione | X Licenze + **1 Certificazione** → diventa trofeo fisico del giocatore |
 
-### 5.6 Trofei (boss con certificazione)
+### 5.7 Trofei (boss con certificazione)
 
 Quando un giocatore sconfigge un boss con certificazione, il boss diventa un **trofeo fisico** nel suo possesso — non viene scartato.
 
