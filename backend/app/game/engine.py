@@ -159,7 +159,7 @@ def update_elo(ratings: list[int], winner_index: int) -> list[int]:
 
 
 # ---------------------------------------------------------------------------
-# Boss ability system (bosses 1–80 implemented)
+# Boss ability system (bosses 1–90 implemented)
 # ---------------------------------------------------------------------------
 # All functions are pure — no DB access.  game_handler reads the returned
 # values and applies the actual mutations to DB objects.
@@ -217,6 +217,13 @@ _EMPTY_EFFECT: dict = {
     "reveal_all_licenze": False,    # reveal all players' licenze counts; richest non-combatant plays 1 free card
     "refresh_hand": 0,              # combatant discards entire hand and draws N new cards
     "certification_exam_rolls": 0,  # roll N dice before combat: each ≥8 → +1 HP +2 licenze; each ≤4 → -1 HP
+    # ── Bosses 81-90 ────────────────────────────────────────────────────────
+    "petrify_cards": 0,             # lock N random cards from combatant's hand; unlocked on boss defeat
+    "siren_deal": False,            # boss offers siren bargain: skip attack → +2 licenze, boss +1 HP (player chooses)
+    "doomsayer_prediction_roll": False,  # handler rolls d10 at combat start; stores prediction; each exceeded round → +1 HP
+    "force_card_type_declaration": False,  # combatant must declare Attack or Defense type; restricted for full combat
+    "aoe_unblockable_hp_damage": 0, # ALL players (including combatant) lose N HP; defensive cards cannot negate this
+    "reveal_next_bosses": 0,        # reveal the next N boss cards in the deck to all players
 }
 
 
@@ -424,6 +431,8 @@ def boss_immune_to_card_damage(boss_id: int, combat_round: int = 0) -> bool:
             return True
         case 78:  # The Known Issues Ghost — immune to cards on even rounds
             return combat_round % 2 == 0
+        case 89:  # The Object Manager Juggernaut — immune to cards on odd rounds
+            return combat_round % 2 == 1
     return False
 
 
@@ -447,6 +456,8 @@ def boss_expires_after_rounds(boss_id: int) -> int | None:
     match boss_id:
         case 48:  # The Scratch Org Mirage — expires if combat exceeds 5 rounds
             return 5
+        case 90:  # The Quick Action Marauder — escapes after round 3 with no reward
+            return 3
     return None
 
 
@@ -596,6 +607,8 @@ def boss_immune_to_dice(boss_id: int, combat_round: int) -> bool:
     match boss_id:
         case 78:  # The Known Issues Ghost — immune to dice on odd rounds
             return combat_round % 2 == 1
+        case 89:  # The Object Manager Juggernaut — immune to dice on even rounds
+            return combat_round % 2 == 0
     return False
 
 
@@ -618,6 +631,29 @@ def boss_cancels_next_card(boss_id: int, combat_round: int) -> bool:
     match boss_id:
         case 38:  # The Einstein Bot Imposter — cancels on even rounds (2, 4, 6, …)
             return combat_round % 2 == 0
+    return False
+
+
+def boss_jinx_on_draw(boss_id: int) -> bool:
+    """
+    Returns True if cards drawn by the combatant during combat are cursed —
+    handler rolls a d10 on each draw; result of 1–3 means the card is discarded
+    immediately without effect (jinxed).
+    """
+    match boss_id:
+        case 81:  # The Trailhead Jinx
+            return True
+    return False
+
+
+def boss_halves_card_effects(boss_id: int) -> bool:
+    """
+    Returns True if all action card effects are halved (rounded down) during this combat:
+    damage, healing, licenze bonuses, and any numeric modifier.
+    """
+    match boss_id:
+        case 85:  # The Formula Field Corruptor
+            return True
     return False
 
 
@@ -925,5 +961,50 @@ def apply_boss_ability(
         # Handler: roll 5 × d10, apply cumulative HP/licenze adjustments.
         case (80, "on_combat_start"):
             return _boss_effect(certification_exam_rolls=5)
+
+        # ── Boss 82 — The Customer 360 Gorgon ────────────────────────────────
+        # At combat start: 2 random cards in combatant's hand are petrified (cannot be played).
+        # Handler stores their IDs in combat_state.petrified_card_ids; unlocked on boss defeat.
+        case (82, "on_combat_start"):
+            return _boss_effect(petrify_cards=2)
+
+        # ── Boss 83 — The Account Engagement Siren ───────────────────────────
+        # Every round: siren offers a deal — skip the attack, gain 2 Licenze, boss recovers 1 HP.
+        # Handler broadcasts a siren_deal event; if player accepts, grant 2 licenze, heal boss 1 HP,
+        # and skip the roll for this round.
+        # TODO: implement client accept/reject flow; currently auto-rejects for simplicity.
+        case (83, "on_round_start"):
+            return _boss_effect(siren_deal=True)
+
+        # ── Boss 84 — The Data Import Doomsayer ──────────────────────────────
+        # At combat start: handler rolls d10 to predict fight duration.
+        #   1–4 → predicts ≤ 2 rounds (short)
+        #   5–7 → predicts ≤ 4 rounds (medium)
+        #   8–10 → predicts ≤ 6 rounds (long)
+        # On each on_round_end: if current combat_round exceeds the prediction cap, deal 1 HP extra.
+        # Handler stores prediction category + HP flag in combat state.
+        case (84, "on_combat_start"):
+            return _boss_effect(doomsayer_prediction_roll=True)
+
+        # ── Boss 86 — The Record Type Ravager ────────────────────────────────
+        # At combat start: combatant must declare Attack OR Defense.
+        # For the rest of the fight, only cards matching the declared type may be played.
+        # Handler broadcasts declaration request; stores player choice in combat_state.allowed_card_type.
+        # TODO: implement client declaration flow; currently defaults to no restriction until UX ready.
+        case (86, "on_combat_start"):
+            return _boss_effect(force_card_type_declaration=True)
+
+        # ── Boss 87 — The Pub/Sub API Pestilence (Trophy) ────────────────────
+        # Every round: ALL players (including combatant) each lose 1 HP from the published event.
+        # Opponents' defensive action cards cannot negate this damage (handler must bypass defense checks).
+        case (87, "on_round_end"):
+            return _boss_effect(aoe_unblockable_hp_damage=1)
+
+        # ── Boss 88 — The Report Builder Omen ────────────────────────────────
+        # At combat start: reveal the next 3 boss cards in the deck to all players.
+        # Handler reads the top 3 IDs from game.boss_deck and broadcasts a "boss_preview" event.
+        # Opponents may use this info to prepare; the combatant is considered "unprepared" (flavor only).
+        case (88, "on_combat_start"):
+            return _boss_effect(reveal_next_bosses=3)
 
     return _boss_effect()

@@ -464,7 +464,11 @@ FINE TURNO
   - `on_roll` — in `_handle_roll_dice` prima/dopo il tiro dado
   Vedere `cards/addon_cards.md` per l'effetto completo di ogni addon.
 
-- [ ] **Abilità speciali boss (81–100)** — Boss 1–80 implementati. Restano 20 boss.
+- [ ] **Abilità speciali boss (91–100)** — Boss 1–90 implementati. Restano 10 boss.
+  - Nuovi campi effetto aggiunti per boss 81–90: `petrify_cards`, `siren_deal`, `doomsayer_prediction_roll`, `force_card_type_declaration`, `aoe_unblockable_hp_damage`, `reveal_next_bosses`.
+  - Nuovi query helper: `boss_jinx_on_draw()` (81 — handler tira d10 su ogni pesca; 1–3 scarta la carta), `boss_halves_card_effects()` (85 — tutti gli effetti carta dimezzati round down).
+  - Aggiornati: `boss_immune_to_card_damage()` + case 89 (immune a carte round dispari), `boss_immune_to_dice()` + case 89 (immune a dado round pari), `boss_expires_after_rounds()` + case 90 (max 3 round).
+  - Handler da aggiornare: `petrify_cards` (blocca N carte in hand per tutta la durata), `siren_deal` (evento WS accept/reject → +2 licenze, boss +1 HP, skip roll), `doomsayer_prediction_roll` (d10 → predizione durata; ogni round che supera il cap → extra_damage=1), `force_card_type_declaration` (evento WS → player sceglie Attack/Defense; filtra play_card per tipo), `aoe_unblockable_hp_damage` (come aoe_all_players_hp_damage ma bypassa carte difensive), `reveal_next_bosses` (legge top N da boss_deck, broadcast "boss_preview" a tutti), `boss_jinx_on_draw` (controlla in `_handle_draw_card` → d10 → 1–3 scarta carta appena pescata), `boss_halves_card_effects` (controlla in `_handle_play_card` → floor-divide tutti i valori numerici dell'effetto).
   - Nuovi campi effetto aggiunti per boss 71–80: `aoe_discard_all_hands`, `opponent_draws_card`, `reveal_all_licenze`, `refresh_hand`, `certification_exam_rolls`.
   - Nuovi query helper: `boss_heals_on_defensive_card()` (72), `boss_is_shape_shifter()` (74), `boss_immune_to_dice()` (78).
   - Aggiornati: `boss_addons_disabled()` + case 77, `boss_immune_to_card_damage()` + `combat_round` param + case 78, `boss_disables_all_addons()` + `combat_round` param + case 79, `boss_interference_blocked()` + case 79.
