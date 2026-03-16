@@ -44,3 +44,4 @@ class ServerEvent:
     REACTION_WINDOW_OPEN = "reaction_window_open"   # privato al target: puoi reagire
     REACTION_WINDOW_CLOSED = "reaction_window_closed" # privato al target: finestra chiusa
     REACTION_RESOLVED = "reaction_resolved"           # broadcast: come è andata la reazione
+    LUCKY_ROLL_USED = "lucky_roll_used"               # broadcast: combatant ha usato Lucky Roll

@@ -12,6 +12,7 @@ from app.websocket.game_helpers import (
 from app.models.game import GameSession, GameStatus, TurnPhase
 from app.models.card import ActionCard, BossCard, AddonCard
 from app.game import engine
+from app.websocket.reaction_manager import open_reaction_window
 
 
 async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: Session):
@@ -534,7 +535,7 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
     elif roll_mode == "second_of_2":
         roll = engine.roll_d10()
 
-    # Card 26 (Dice Optimizer): force next roll to a fixed value
+    # Card 26 (Dice Optimizer): force next roll to a fixed value (pre-roll, proactive)
     _forced_roll = (player.combat_state or {}).get("next_roll_forced")
     if _forced_roll is not None:
         roll = _forced_roll
@@ -548,16 +549,11 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             cs = dict(player.combat_state)
             cs.pop("chaos_mode_next_roll", None)
             player.combat_state = cs
-        # Card 27 (Lucky Roll): reroll once, take the new result
-        if (player.combat_state or {}).get("reroll_available"):
-            roll = engine.roll_d10()
-            cs = dict(player.combat_state)
-            cs.pop("reroll_available", None)
-            player.combat_state = cs
 
     # Boss 67 (Developer Console Glitch): roll 1 or 2 → entire round is nullified
     round_nullified = engine.boss_nullifies_round_on_low_roll(boss.id) and roll <= 2
 
+    # ── Threshold calculation (needed to show preview to Lucky Roll window) ──
     # Boss 10, 12, 22, 37: dynamic threshold (now also passes combat_round for boss 22)
     # threshold_bonus from boss 63 deal (auto-accept raises threshold by 1 for this roll only)
     threshold = engine.boss_threshold(
@@ -578,6 +574,59 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
     if _consulting_until >= current_round:
         threshold -= (player.combat_state or {}).get("consulting_hours_threshold_reduction", 2)
     threshold = max(1, threshold)  # can't go below 1
+
+    # ── Card 27 (Lucky Roll): post-roll reaction window ───────────────────────
+    # The player sees the roll result before deciding. Open a window only if:
+    #   1. Card 27 is in hand, AND
+    #   2. Player still has card budget (cards_played_this_turn < max).
+    # Card 26 (Dice Optimizer) already fixed the roll — Lucky Roll cannot override a forced roll.
+    if _forced_roll is None:
+        _max_cards_lr = (
+            engine.boss_max_cards_per_turn(player.current_boss_id, engine.MAX_CARDS_PER_TURN)
+            if player.current_boss_id else engine.MAX_CARDS_PER_TURN
+        )
+        _has_budget = player.cards_played_this_turn < _max_cards_lr
+        if _has_budget:
+            # Check if player has Lucky Roll (card 27) in hand
+            from app.models.card import ActionCard as _AC27
+            _lucky_roll_hc = next(
+                (hc for hc in player.hand if db.get(_AC27, hc.action_card_id) and
+                 db.get(_AC27, hc.action_card_id).number == 27),
+                None,
+            )
+            if _lucky_roll_hc:
+                _preview_result = engine.resolve_combat_round(roll, threshold)
+                await manager.send_to_player(game.code, user_id, {
+                    "type": ServerEvent.REACTION_WINDOW_OPEN,
+                    "reason": "lucky_roll",
+                    "pending_roll": roll,
+                    "pending_result": _preview_result,
+                    "threshold": threshold,
+                    "timeout_ms": 8000,
+                })
+                _lr_response = await open_reaction_window(game.code, player.id, timeout=8.0)
+                await manager.send_to_player(game.code, user_id, {
+                    "type": ServerEvent.REACTION_WINDOW_CLOSED,
+                })
+                if _lr_response and _lr_response.get("action") == "play":
+                    _lr_rhc_id = _lr_response.get("hand_card_id")
+                    from app.models.game import PlayerHandCard as _LRPHC
+                    _lr_hc = db.get(_LRPHC, _lr_rhc_id)
+                    if _lr_hc and _lr_hc.player_id == player.id:
+                        _lr_card = db.get(ActionCard, _lr_hc.action_card_id)
+                        if _lr_card and _lr_card.number == 27:
+                            # Consume Lucky Roll card
+                            game.action_discard = (game.action_discard or []) + [_lr_hc.action_card_id]
+                            db.delete(_lr_hc)
+                            player.cards_played_this_turn += 1
+                            # Re-roll: take the new result regardless of whether it's better
+                            roll = engine.roll_d10()
+                            round_nullified = engine.boss_nullifies_round_on_low_roll(boss.id) and roll <= 2
+                            await manager.broadcast(game.code, {
+                                "type": ServerEvent.LUCKY_ROLL_USED,
+                                "player_id": player.id,
+                                "new_roll": roll,
+                            })
 
     result = engine.resolve_combat_round(roll, threshold)
     player.combat_round += 1

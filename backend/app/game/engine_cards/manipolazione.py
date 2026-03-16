@@ -22,17 +22,14 @@ def _card_26(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_27(player, game, db, *, target_player_id=None) -> dict:
-    """Lucky Roll — Ritira il dado una volta (prendi il nuovo risultato).
+    """Lucky Roll — Reazione post-roll: dopo aver visto il risultato del dado, ritiralo.
 
-    Stores reroll_available=True in combat_state.
-    combat.py rerolls automatically if this flag is set (and Dice Optimizer is not active).
+    Questa carta è di tipo REAZIONE e va giocata SOLO tramite la finestra di reazione
+    aperta automaticamente da _handle_roll_dice dopo ogni tiro in combattimento.
+    Se giocata normalmente via play_card, viene bloccata prima del consumo dal guard
+    in _handle_play_card — questo handler non dovrebbe mai essere raggiunto.
     """
-    if not player.is_in_combat:
-        return {"applied": False, "reason": "not_in_combat"}
-    cs = dict(player.combat_state or {})
-    cs["reroll_available"] = True
-    player.combat_state = cs
-    return {"applied": True, "reroll_available": True}
+    return {"applied": False, "reason": "reaction_only_card"}
 
 
 def _card_28(player, game, db, *, target_player_id=None) -> dict:

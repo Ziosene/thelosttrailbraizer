@@ -197,6 +197,12 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
 
     card = db.get(ActionCard, hc.action_card_id)
 
+    # Card 27 (Lucky Roll): reaction-only — must be played via the post-roll reaction window,
+    # not via play_card. Guard here prevents the card from being consumed without effect.
+    if card and card.number == 27:
+        await _error(game.code, user_id, "Lucky Roll is a reaction card: wait for the post-roll window to use it")
+        return
+
     # Boss 82 (Customer 360 Gorgon): petrified cards cannot be played this fight
     if player.is_in_combat and player.combat_state:
         petrified = player.combat_state.get("petrified_card_ids", [])
