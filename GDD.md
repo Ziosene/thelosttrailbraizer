@@ -259,14 +259,43 @@ FINESTRA DI REAZIONE:
 - 1 carta giocata nel proprio turno → può reagire 1 volta
 - 2 carte giocate nel proprio turno → non può reagire
 
-### 5.6 Ricompense boss
+### 5.6 Morte del Boss (ordine degli step)
+
+Quando un boss raggiunge 0 HP, i seguenti passaggi si eseguono **in ordine**:
+
+```
+1. Il boss viene rimosso dal proprio spazio (mercato o slot combattimento)
+   e spostato in una zona temporanea
+
+2. Si attivano eventuali abilità boss "prima della ricompensa"
+   (es. effetti on-death che si innescano prima di consegnare le Licenze)
+
+3. Il giocatore ottiene le Licenze ricompensa del boss
+
+4. Si attivano eventuali abilità boss "dopo la ricompensa"
+   (es. effetti on-death che si innescano dopo aver consegnato le Licenze)
+
+5. Se il boss ha la Certificazione:
+   └─ Il boss diventa un Trofeo e passa nel possesso del giocatore (+1 Certificazione)
+      → controllo vittoria: se il giocatore raggiunge 5 Certificazioni, vince
+
+6. Il boss va nel Cimitero Boss
+   (se era un boss con Certificazione, rimane come Trofeo — non va nel Cimitero)
+
+7. Lo spazio mercato viene riempito con la carta in cima al mazzo Boss corrispondente
+```
+
+> I passi 2 e 4 sono rilevanti per le abilità speciali dei boss implementate in `engine.py`.
+> Il controllo vittoria al passo 5 avviene **prima** del riempimento del mercato.
+
+### 5.8 Ricompense boss
 
 | Tipo boss | Ricompensa |
 |---|---|
 | Boss normale | X Licenze (variabile per boss) → va nel Cimitero Boss |
 | Boss con certificazione | X Licenze + **1 Certificazione** → diventa trofeo fisico del giocatore |
 
-### 5.7 Trofei (boss con certificazione)
+### 5.9 Trofei (boss con certificazione)
 
 Quando un giocatore sconfigge un boss con certificazione, il boss diventa un **trofeo fisico** nel suo possesso — non viene scartato.
 
