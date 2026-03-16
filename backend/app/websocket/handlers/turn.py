@@ -53,7 +53,28 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
             _cs_init["drip_program_remaining"] = _drip - 1
     # Card 42 (Engagement Studio): clear fought_this_turn so it's fresh for this new turn
     _cs_init.pop("fought_this_turn", None)
+    # Card 70 (Suppression List): skip draw this turn if suppressed
+    _suppressed = _cs_init.pop("suppressed_draw", False)
+    # Card 71 (Anypoint MQ): deliver forced queued card before normal draw
+    _forced_queue_id = _cs_init.pop("forced_queue_card_id", None)
     player.combat_state = _cs_init or {}
+
+    if _forced_queue_id:
+        from app.models.game import PlayerHandCard as _PHCQ
+        db.add(_PHCQ(player_id=player.id, action_card_id=_forced_queue_id))
+
+    if _suppressed:
+        game.current_phase = TurnPhase.action
+        db.commit()
+        db.refresh(game)
+        await manager.broadcast(game.code, {
+            "type": ServerEvent.CARD_DRAWN,
+            "player_id": player.id,
+            "suppressed": True,
+        })
+        await _broadcast_state(game, db)
+        await _send_hand_state(game.code, player, db)
+        return
 
     if len(player.hand) >= engine.MAX_HAND_SIZE:
         await _error(game.code, user_id, "Hand is full")
@@ -219,6 +240,11 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
     # not via play_card. Guard here prevents the card from being consumed without effect.
     if card and card.number == 27:
         await _error(game.code, user_id, "Lucky Roll is a reaction card: wait for the post-roll window to use it")
+        return
+
+    # Card 78 (Custom Redirect): reaction-only — played via play_reaction when targeted by an opponent.
+    if card and card.number == 78:
+        await _error(game.code, user_id, "Custom Redirect is a reaction card: play it when targeted by an opponent")
         return
 
     # Boss 82 (Customer 360 Gorgon): petrified cards cannot be played this fight

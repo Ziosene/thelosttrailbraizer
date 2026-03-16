@@ -1,4 +1,4 @@
-"""Carte Utilità — gestione mano, mazzo e risorse (carte 31–37)."""
+"""Carte Utilità — gestione mano, mazzo e risorse (carte 31–37, 63–69, 80)."""
 import random
 
 from app.game import engine
@@ -174,6 +174,178 @@ def _card_37(player, game, db, *, target_player_id=None) -> dict:
     }
 
 
+def _card_63(player, game, db, *, target_player_id=None) -> dict:
+    """Automation Studio — Pesca 2 carte extra (fuori da combattimento)."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    from app.models.game import PlayerHandCard as _PHC63
+    drawn = 0
+    for _ in range(2):
+        if len(list(player.hand)) + drawn >= engine.MAX_HAND_SIZE:
+            break
+        if game.action_deck_1:
+            db.add(_PHC63(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+            drawn += 1
+        elif game.action_deck_2:
+            db.add(_PHC63(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+            drawn += 1
+        elif game.action_discard:
+            new_deck = engine.shuffle_deck(game.action_discard)
+            game.action_deck_1, game.action_deck_2 = engine.split_deck(new_deck)
+            game.action_discard = []
+            if game.action_deck_1:
+                db.add(_PHC63(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+                drawn += 1
+    return {"applied": True, "cards_drawn": drawn}
+
+
+def _card_64(player, game, db, *, target_player_id=None) -> dict:
+    """Contact Builder — Guarda la mano completa di un avversario a scelta."""
+    from app.models.card import ActionCard as _AC64
+    from .helpers import get_target
+    target = get_target(game, player, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "no_target"}
+    hand_info = []
+    for hc in target.hand:
+        c = db.get(_AC64, hc.action_card_id)
+        if c:
+            hand_info.append({"id": c.id, "number": c.number, "name": c.name})
+    return {"applied": True, "target_player_id": target.id, "revealed_hand": hand_info}
+
+
+def _card_65(player, game, db, *, target_player_id=None) -> dict:
+    """Audience Builder — Guarda le prime 3 carte del mazzo boss senza pescarle."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    preview = []
+    for bid in (game.boss_deck_1 or [])[:3]:
+        bc = db.get(BossCard, bid)
+        if bc:
+            preview.append({
+                "id": bc.id, "name": bc.name,
+                "hp": bc.hp, "threshold": bc.dice_threshold,
+                "has_certification": bc.has_certification,
+            })
+    return {"applied": True, "revealed_boss_cards": preview}
+
+
+def _card_66(player, game, db, *, target_player_id=None) -> dict:
+    """Data Extension — Rimescola il mazzo degli scarti azione nel mazzo principale."""
+    if not game.action_discard:
+        return {"applied": True, "note": "discard_already_empty", "cards_recycled": 0}
+    recycled = len(game.action_discard)
+    new_deck = engine.shuffle_deck(game.action_discard)
+    d1, d2 = engine.split_deck(new_deck)
+    game.action_deck_1 = (game.action_deck_1 or []) + d1
+    game.action_deck_2 = (game.action_deck_2 or []) + d2
+    game.action_discard = []
+    return {"applied": True, "cards_recycled": recycled}
+
+
+def _card_67(player, game, db, *, target_player_id=None) -> dict:
+    """Pipeline Inspection — Guarda e riordina le prime 3 carte del mazzo boss come vuoi.
+
+    Returns top 3 boss card data. Actual reordering requires a follow-up client message.
+    TODO: accept preferred_order list from client to reorder boss_deck_1[:3].
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    preview = []
+    for bid in (game.boss_deck_1 or [])[:3]:
+        bc = db.get(BossCard, bid)
+        if bc:
+            preview.append({
+                "id": bc.id, "name": bc.name,
+                "hp": bc.hp, "threshold": bc.dice_threshold,
+                "has_certification": bc.has_certification,
+            })
+    return {
+        "applied": True,
+        "revealed_boss_cards": preview,
+        "note": "reorder_requires_client_followup",
+    }
+
+
+def _card_68(player, game, db, *, target_player_id=None) -> dict:
+    """Dataset — Pesca 4 carte e scartane 2 a scelta.
+
+    Simplified: auto-discards 2 oldest hand cards, then draws 4 fresh ones.
+    TODO: accept discard_ids from client for real player choice.
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    from app.models.game import PlayerHandCard as _PHC68
+    current_hand = list(player.hand)
+    discarded = 0
+    for hc in current_hand[:2]:
+        game.action_discard = (game.action_discard or []) + [hc.action_card_id]
+        db.delete(hc)
+        discarded += 1
+    db.flush()
+    drawn = 0
+    for _ in range(4):
+        if len(list(player.hand)) + drawn >= engine.MAX_HAND_SIZE:
+            break
+        if game.action_deck_1:
+            db.add(_PHC68(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+            drawn += 1
+        elif game.action_deck_2:
+            db.add(_PHC68(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+            drawn += 1
+        elif game.action_discard:
+            new_deck = engine.shuffle_deck(game.action_discard)
+            game.action_deck_1, game.action_deck_2 = engine.split_deck(new_deck)
+            game.action_discard = []
+            if game.action_deck_1:
+                db.add(_PHC68(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+                drawn += 1
+    return {"applied": True, "discarded": discarded, "cards_drawn": drawn}
+
+
+def _card_69(player, game, db, *, target_player_id=None) -> dict:
+    """Lookup Query — Cerca tra gli ultimi 10 scarti e recupera 1 carta specifica a scelta.
+
+    Simplified: recovers the most recently discarded card (last in action_discard[-10:]).
+    TODO: accept target card_id from client for real player choice.
+    """
+    from app.models.game import PlayerHandCard as _PHC69
+    discard = list(game.action_discard or [])
+    last_10 = discard[-10:]
+    if not last_10:
+        return {"applied": False, "reason": "discard_empty"}
+    recovered_id = last_10[-1]
+    discard.remove(recovered_id)
+    game.action_discard = discard
+    db.add(_PHC69(player_id=player.id, action_card_id=recovered_id))
+    return {"applied": True, "card_recovered": recovered_id}
+
+
+def _card_80(player, game, db, *, target_player_id=None) -> dict:
+    """Choice Router — Scegli: (A) pesca 2 carte oppure (B) guadagna 2 Licenze.
+
+    Client signals choice via target_player_id:
+      target_player_id=None  → Choice A: draw 2 cards
+      target_player_id!=None → Choice B: +2 Licenze
+    """
+    from app.models.game import PlayerHandCard as _PHC80
+    if target_player_id is None:
+        drawn = 0
+        for _ in range(2):
+            if len(list(player.hand)) + drawn >= engine.MAX_HAND_SIZE:
+                break
+            if game.action_deck_1:
+                db.add(_PHC80(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+                drawn += 1
+            elif game.action_deck_2:
+                db.add(_PHC80(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+                drawn += 1
+        return {"applied": True, "choice": "A", "cards_drawn": drawn}
+    else:
+        player.licenze += 2
+        return {"applied": True, "choice": "B", "licenze_gained": 2}
+
+
 UTILITA: dict = {
     31: _card_31,
     32: _card_32,
@@ -182,4 +354,12 @@ UTILITA: dict = {
     35: _card_35,
     36: _card_36,
     37: _card_37,
+    63: _card_63,
+    64: _card_64,
+    65: _card_65,
+    66: _card_66,
+    67: _card_67,
+    68: _card_68,
+    69: _card_69,
+    80: _card_80,
 }

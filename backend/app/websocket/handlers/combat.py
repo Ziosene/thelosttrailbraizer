@@ -543,7 +543,18 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
     elif roll_mode == "second_of_2":
         roll = engine.roll_d10()
 
-    # Card 26 (Dice Optimizer): force next roll to a fixed value (pre-roll, proactive)
+    # Card 72 (Engagement Split): opponent forced a reroll — take second result
+    if (player.combat_state or {}).get("forced_reroll_next"):
+        cs = dict(player.combat_state)
+        cs.pop("forced_reroll_next", None)
+        player.combat_state = cs
+        roll = engine.roll_d10()
+        if roll_mode == "worst_of_2":
+            roll = min(roll, engine.roll_d10())
+        elif roll_mode == "second_of_2":
+            roll = engine.roll_d10()
+
+    # Card 26 (Dice Optimizer) / Card 62 (DataWeave Script): force next roll to a fixed value
     _forced_roll = (player.combat_state or {}).get("next_roll_forced")
     if _forced_roll is not None:
         roll = _forced_roll
@@ -653,6 +664,14 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             roll = engine.roll_d10()
             round_nullified = engine.boss_nullifies_round_on_low_roll(boss.id) and roll <= 2
 
+    # Card 61 (Predictive Model): read and consume prediction — bonus applied later in hit branch
+    _predictive_model_prediction = (player.combat_state or {}).get("predictive_model_prediction")
+    if _predictive_model_prediction is not None:
+        cs = dict(player.combat_state)
+        cs.pop("predictive_model_prediction", None)
+        player.combat_state = cs
+    _predictive_bonus = (_predictive_model_prediction is not None and _predictive_model_prediction == roll)
+
     result = engine.resolve_combat_round(roll, threshold)
     player.combat_round += 1
 
@@ -660,6 +679,9 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
 
     # Card 12 (Governor Limit Exploit): double boss damage per successful hit for N rounds
     _hit_damage = 2 if (player.combat_state or {}).get("double_damage_until_round", 0) >= current_round else 1
+    # Card 61 (Predictive Model): exact prediction on hit → at least 2HP damage
+    if _predictive_bonus and _hit_damage < 2:
+        _hit_damage = 2
     # Card 28 (Critical System): roll of exactly 10 deals 3 HP to boss (overrides all other modifiers)
     if (player.combat_state or {}).get("critical_system_until_round", 0) >= current_round and roll == 10:
         _hit_damage = 3
@@ -850,6 +872,19 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
 
     boss_defeated = player.current_boss_hp is not None and player.current_boss_hp <= 0
     player_died = player.hp <= 0
+
+    # Card 76 (Milestone Action): watchers gain 1L per round the combatant survives
+    if not player_died and not boss_defeated:
+        for _watcher in game.players:
+            if _watcher.id != player.id and (_watcher.combat_state or {}).get("milestone_action_remaining", 0) > 0:
+                _ms = _watcher.combat_state["milestone_action_remaining"]
+                _watcher.licenze += 1
+                _wc = dict(_watcher.combat_state)
+                if _ms <= 1:
+                    _wc.pop("milestone_action_remaining", None)
+                else:
+                    _wc["milestone_action_remaining"] = _ms - 1
+                _watcher.combat_state = _wc
 
     event = {
         "type": ServerEvent.DICE_ROLLED,

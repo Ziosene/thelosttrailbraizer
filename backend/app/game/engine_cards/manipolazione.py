@@ -1,4 +1,4 @@
-"""Carte Manipolazione Dado — modificano i tiri di dado (carte 26–30, 59–60).
+"""Carte Manipolazione Dado — modificano i tiri di dado (carte 26–30, 59–62).
 
 Tutte le carte di questa categoria lavorano tramite flag in combat_state.
 combat.py (_handle_roll_dice) legge e consuma i flag prima/durante il tiro.
@@ -109,6 +109,38 @@ def _card_60(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "einstein_sto_next_roll_bonus": 1}
 
 
+def _card_61(player, game, db, *, target_player_id=None) -> dict:
+    """Predictive Model — Dichiara il risultato (1–10) prima di tirare. Esatto → boss -2HP su hit.
+
+    target_player_id is repurposed as the predicted roll value (1–10).
+    Stores predictive_model_prediction=N in combat_state.
+    combat.py: if roll == prediction and result == "hit", _hit_damage raised to 2.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    prediction = target_player_id
+    if not isinstance(prediction, int) or not (1 <= prediction <= 10):
+        return {"applied": False, "reason": "invalid_prediction: send 1-10 as target_player_id"}
+    cs = dict(player.combat_state or {})
+    cs["predictive_model_prediction"] = prediction
+    player.combat_state = cs
+    return {"applied": True, "predictive_model_prediction": prediction}
+
+
+def _card_62(player, game, db, *, target_player_id=None) -> dict:
+    """DataWeave Script — Converti qualsiasi risultato dado in 7 (fisso, non modificabile questo round).
+
+    Sets next_roll_forced=7 — same mechanism as card 26 (Dice Optimizer) but fixed to 7.
+    Takes priority over Chaos Mode, Lucky Roll, and Engagement Split.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["next_roll_forced"] = 7
+    player.combat_state = cs
+    return {"applied": True, "next_roll_forced": 7}
+
+
 MANIPOLAZIONE: dict = {
     26: _card_26,
     27: _card_27,
@@ -117,4 +149,6 @@ MANIPOLAZIONE: dict = {
     30: _card_30,
     59: _card_59,
     60: _card_60,
+    61: _card_61,
+    62: _card_62,
 }
