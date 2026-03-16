@@ -120,7 +120,7 @@ I ruoli sono organizzati per track certificativo Salesforce.
 - Non si spendono, si accumulano
 - **5 Certificazioni = vittoria immediata**
 - Possono essere rubate da altri giocatori tramite carte azione
-- Si perdono alla morte del personaggio (-1 Certificazione)
+- **Non si perdono alla morte** del personaggio (solo rubabili tramite carte azione)
 
 ---
 
@@ -133,9 +133,10 @@ INIZIO TURNO
 FASE AZIONE
   └─ Pesca obbligatoria di 1 carta dal mazzo Azione
 
-FASE DECISIONALE (scelta esclusiva)
+FASE DECISIONALE (azioni disponibili, una volta ciascuna per turno)
   ├─ A) COMBATTI: scegli quale boss affrontare (mercato A/B o pesca dal mazzo A/B)
-  └─ B) PASSA: termina il turno senza combattere
+  ├─ B) ACQUISTA: acquista un AddOn (mercato A/B o pesca dal mazzo A/B)
+  └─ C) PASSA: termina il turno senza combattere né acquistare
 
 FASE CARTE
   └─ Gioca 0–2 carte dalla propria mano in qualsiasi momento del turno
@@ -290,15 +291,17 @@ TROFEO:
 Quando l'HP scende a 0:
 
 ```
-CONSEGUENZE MORTE:
-  ├─ Perde 1 carta dalla propria mano (se ne ha)
+CONSEGUENZE MORTE (pena di morte):
+  ├─ Perde 1 carta dalla propria mano (se ne ha) — scartata
   ├─ Perde 1 Licenza (se ne ha)
-  └─ Perde 1 AddOn (se ne ha)
+  ├─ Perde 1 AddOn (il giocatore sceglie quale, se ne ha)
+  └─ Tutti gli AddOn rimanenti si tappano (non utilizzabili fino al prossimo turno)
 
 L'HP si resetta all'inizio del prossimo turno del giocatore.
 ```
 
 > Un giocatore può morire anche quando non è il suo turno (a causa di carte azione degli avversari).
+> **Un giocatore può morire al massimo una volta per turno** (proprio o altrui).
 
 ---
 
@@ -424,7 +427,7 @@ RESET (Untap):
 SETUP
   └─ I giocatori scelgono il personaggio
   └─ I mazzi vengono mescolati
-  └─ Ogni giocatore pesca 4 carte iniziali e riceve 3 Licenze
+  └─ Ogni giocatore pesca 3 carte iniziali e riceve 3 Licenze
 
 LOOP DI PARTITA (turni in ordine)
   └─ Inizio turno → reset HP
@@ -451,7 +454,36 @@ VITTORIA
 | [cards/action_cards.md](cards/action_cards.md) | 300 carte azione da creare | 300/300 ✅ |
 | [backend/app/game/engine_cards/](backend/app/game/engine_cards/) | Effetti carte azione implementati | 40/300 🔄 |
 
-## 12. To Do / Da Definire
+## 12. Termini Chiave
+
+| Termine | Definizione |
+|---|---|
+| **Giocatore Attivo** | Il giocatore che sta svolgendo il proprio turno. |
+| **Round di combattimento** | Un singolo tiro di dado contro un boss. Il combattimento è composto da round ripetuti finché boss o giocatore raggiungono 0 HP. |
+| **Round di partita** | Dal proprio inizio turno all'inizio del proprio turno successivo (include i turni di tutti gli altri giocatori nel mezzo). |
+| **Attaccare** | Dichiarare un combattimento contro un boss. Ogni giocatore può attaccare al massimo una volta per turno. |
+| **Tiro d'attacco** | Il lancio del d10 effettuato in ogni round di combattimento. |
+| **Soglia** | Il valore minimo che il tiro d'attacco deve raggiungere per infliggere -1 HP al boss. Sotto soglia: -1 HP al giocatore. |
+| **Acquistare** | Spendere 10 Licenze per ottenere un AddOn. Possibile una volta per turno, non durante il combattimento. |
+| **Ottenere** | Ricevere una risorsa o carta sotto il proprio controllo (Licenze, Certificazioni, AddOn, carte azione). |
+| **Dare / Rubare** | Spostare una risorsa o carta da un giocatore a un altro. *Rubare* = scegli tu cosa prendere; *Dare* = chi cede sceglie cosa cedere. |
+| **Scaricare (Tap)** | Ruotare un AddOn attivo di 90° per indicare che è stato usato. Un AddOn tappato non può essere riusato nello stesso turno. |
+| **Ricaricare (Untap)** | Riportare un AddOn in posizione attiva. Avviene automaticamente all'inizio del proprio turno. |
+| **Morire** | Il giocatore raggiunge 0 HP. Esegue la pena di morte e l'HP si resetta all'inizio del suo prossimo turno. Un giocatore può morire al massimo una volta per turno. |
+| **Distruggere** | Rimuovere permanentemente una carta (AddOn o boss) dal gioco, inviandola nel relativo Cimitero. Diverso da "perdere" (che va nel mazzo scarti). |
+| **Annullare** | Bloccare l'effetto di una carta prima che si risolva. La carta viene comunque consumata (va negli scarti). |
+| **Guarire** | Recuperare HP fino al massimo del proprio personaggio. Non si può superare il massimo. |
+| **Priorità** | Indica quale giocatore può agire. Il giocatore bersaglio di una carta ha sempre la possibilità di reagire (finestra 8 s) prima che l'effetto si applichi. |
+| **Finestra di reazione** | Periodo di 8 secondi in cui un giocatore colpito direttamente da una carta può rispondere con una propria carta. |
+| **Budget carte** | Ogni giocatore può giocare al massimo 2 carte per ciclo di turno (in-turno + reazioni). |
+| **Trofeo / Certificazione** | Una carta boss con certificazione sconfitta rimane nel possesso del giocatore come trofeo visibile. 5 trofei = vittoria. |
+| **Cimitero Boss** | Zona dove finiscono i boss normali sconfitti. |
+| **Cimitero AddOn** | Zona dove finiscono gli AddOn distrutti o persi alla morte. |
+| **Mercato** | La carta in cima al mazzo Boss o AddOn, sempre scoperta e visibile a tutti. |
+
+---
+
+## 13. To Do / Da Definire
 
 - [ ] Completare liste carte (piano piano)
 - [ ] Abilità speciale Evangelist (unica per seniority)
