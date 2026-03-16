@@ -596,10 +596,16 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
     _scope_creep_until = (player.combat_state or {}).get("boss_threshold_increase_until_round", 0)
     if _scope_creep_until >= current_round:
         threshold += 2
-    # Card 38 (Consulting Hours): ally lowered threshold for 2 rounds
+    # Card 38 (Consulting Hours) / Card 91 (Guided Selling): threshold reduction for N rounds
     _consulting_until = (player.combat_state or {}).get("consulting_hours_until_round", 0)
     if _consulting_until >= current_round:
         threshold -= (player.combat_state or {}).get("consulting_hours_threshold_reduction", 2)
+    # Card 96 (Review App): threshold -2 for round 1 only
+    if (player.combat_state or {}).get("review_app_active") and current_round == 1:
+        threshold -= 2
+        cs = dict(player.combat_state)
+        cs.pop("review_app_active", None)
+        player.combat_state = cs
     threshold = max(1, threshold)  # can't go below 1
 
     # ── Card 27 (Lucky Roll): post-roll reaction window ───────────────────────
@@ -655,6 +661,15 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                                 "new_roll": roll,
                             })
 
+    # Card 98 (Pause Element): round_nullified override — consumes 1 round of the flag
+    if (player.combat_state or {}).get("pause_element_rounds_remaining", 0) > 0:
+        cs = dict(player.combat_state)
+        cs["pause_element_rounds_remaining"] -= 1
+        if cs["pause_element_rounds_remaining"] <= 0:
+            cs.pop("pause_element_rounds_remaining", None)
+        player.combat_state = cs
+        round_nullified = True
+
     # Card 59 (Dynamic Content): auto-reroll once on a miss (player played this proactively)
     if (player.combat_state or {}).get("dynamic_content_reroll"):
         cs = dict(player.combat_state)
@@ -709,6 +724,12 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                 # Double boss damage if prediction was "hit" and correct (boss 53)
                 if prediction == "hit":
                     player.current_boss_hp -= 1  # prediction bonus: always 1
+        # Card 95 (Heroku CI): if boss HP ≤ 2 before this hit, finish the boss immediately
+        if (player.combat_state or {}).get("heroku_ci_active") and (player.current_boss_hp or 0) <= 2:
+            player.current_boss_hp = 0
+            cs = dict(player.combat_state)
+            cs.pop("heroku_ci_active", None)
+            player.combat_state = cs
     else:
         # Card 30 (Force Field) / Card 55 (Try Scope): player immune to boss roll damage for 1 round
         _force_field_until = (player.combat_state or {}).get("force_field_until_round", 0)
@@ -718,6 +739,9 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         _entitlement_active = _entitlement_until >= current_round
         if _force_field_until >= current_round or _try_scope_until >= current_round:
             pass  # neutral round — no player damage
+        # Card 97 (Fault Path): on miss gain 1L instead of taking HP damage (for whole combat)
+        elif (player.combat_state or {}).get("fault_path_active"):
+            player.licenze += 1
         # Boss 95 (Identity & Access Heretic): player damage redirected to random opponent
         elif engine.boss_redirects_damage_to_opponent(boss.id):
             opponents_redir = [p for p in game.players if p.id != player.id]
@@ -727,6 +751,10 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         else:
             player.hp -= 1
             player_took_damage = True
+            # Card 92 (Case Escalation): track boss hits for escalation bonus
+            cs92 = dict(player.combat_state or {})
+            cs92["combat_boss_hits_received"] = cs92.get("combat_boss_hits_received", 0) + 1
+            player.combat_state = cs92
 
         miss_effect = engine.apply_boss_ability(
             boss.id, "after_miss",
@@ -1125,8 +1153,18 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         player.hp = player.max_hp  # respawn with full HP
 
         # GDD §6: tutti gli AddOn rimanenti si tappano alla morte
+        # Card 84 (Renewal Opportunity): first addon is spared if player paid 5L proactively
+        _renewal = (player.combat_state or {}).get("renewal_protected", False)
+        _first_addon_spared = False
         for pa_death in player.addons:
+            if _renewal and not _first_addon_spared:
+                _first_addon_spared = True
+                continue  # protect this one addon from tapping
             pa_death.is_tapped = True
+        if _renewal:
+            cs_ren = dict(player.combat_state)
+            cs_ren.pop("renewal_protected", None)
+            player.combat_state = cs_ren
 
         player.is_in_combat = False
         player.current_boss_id = None

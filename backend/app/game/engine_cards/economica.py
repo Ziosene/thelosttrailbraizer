@@ -1,4 +1,4 @@
-"""Carte Economiche — guadagna/ruba Licenze o Certificazioni (carte 1–8, 41–48)."""
+"""Carte Economiche — guadagna/ruba Licenze o Certificazioni (carte 1–8, 41–48, 81–88)."""
 from .helpers import get_target
 
 
@@ -199,6 +199,103 @@ def _card_48(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "next_addon_price_discount": 3}
 
 
+def _card_81(player, game, db, *, target_player_id=None) -> dict:
+    """Automation Rule — +2 Licenze. Se mano < 3 carte, +4 invece."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    gain = 4 if len(list(player.hand)) < 3 else 2
+    player.licenze += gain
+    return {"applied": True, "licenze_gained": gain}
+
+
+def _card_82(player, game, db, *, target_player_id=None) -> dict:
+    """Segmentation Rule — +1 Licenza per ogni giocatore con meno Licenze di te."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    gain = sum(1 for p in game.players if p.id != player.id and p.licenze < player.licenze)
+    player.licenze += gain
+    return {"applied": True, "licenze_gained": gain, "qualifying_players": gain}
+
+
+def _card_83(player, game, db, *, target_player_id=None) -> dict:
+    """Discount Schedule — +4 Licenze (solo +2 se hai già 10 o più Licenze)."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    gain = 2 if player.licenze >= 10 else 4
+    player.licenze += gain
+    return {"applied": True, "licenze_gained": gain}
+
+
+def _card_84(player, game, db, *, target_player_id=None) -> dict:
+    """Renewal Opportunity — Paga 5 Licenze per proteggere un AddOn dalla morte.
+
+    Stores renewal_protected=True in combat_state.
+    combat.py player death: if flag set, the first AddOn is spared from the death-tap.
+    """
+    if player.licenze < 5:
+        return {"applied": False, "reason": "not_enough_licenze (need 5)"}
+    if not list(player.addons):
+        return {"applied": False, "reason": "no_addons_to_protect"}
+    player.licenze -= 5
+    cs = dict(player.combat_state or {})
+    cs["renewal_protected"] = True
+    player.combat_state = cs
+    return {"applied": True, "licenze_paid": 5, "renewal_protected": True}
+
+
+def _card_85(player, game, db, *, target_player_id=None) -> dict:
+    """Summary Variable — +1L ogni 10 Licenze totali in gioco tra tutti i giocatori (max 4)."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    total = sum(p.licenze for p in game.players)
+    gain = min(4, total // 10)
+    player.licenze += gain
+    return {"applied": True, "licenze_gained": gain, "total_in_play": total}
+
+
+def _card_86(player, game, db, *, target_player_id=None) -> dict:
+    """Percent of Total — +30% delle Licenze del giocatore più ricco (floor, min 1)."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    richest = max((p.licenze for p in game.players), default=0)
+    gain = max(1, int(richest * 0.30))
+    player.licenze += gain
+    return {"applied": True, "licenze_gained": gain, "richest_player_licenze": richest}
+
+
+def _card_87(player, game, db, *, target_player_id=None) -> dict:
+    """Block Pricing — +2L per ogni blocco di 5 Licenze spese in AddOn durante la partita (max 6).
+
+    Reads total_addon_licenze_spent from combat_state (tracked in _handle_buy_addon).
+    Simplified: counts len(player.addons) * 5 as estimate if no tracking present.
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    total_spent = (player.combat_state or {}).get("total_addon_licenze_spent") or len(list(player.addons)) * 5
+    gain = min(6, (total_spent // 5) * 2)
+    player.licenze += gain
+    return {"applied": True, "licenze_gained": gain, "total_addon_spent": total_spent}
+
+
+def _card_88(player, game, db, *, target_player_id=None) -> dict:
+    """Quote Calculator — Il giocatore con meno Licenze pesca 1 carta; tu +3 Licenze."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    from app.models.game import PlayerHandCard as _PHC88
+    from app.game import engine as _eng88
+    # +3 Licenze to caster
+    player.licenze += 3
+    # Poorest player (by licenze, excluding caster) draws 1 card
+    others = [p for p in game.players if p.id != player.id]
+    if others:
+        poorest = min(others, key=lambda p: p.licenze)
+        if game.action_deck_1:
+            db.add(_PHC88(player_id=poorest.id, action_card_id=game.action_deck_1.pop(0)))
+        elif game.action_deck_2:
+            db.add(_PHC88(player_id=poorest.id, action_card_id=game.action_deck_2.pop(0)))
+    return {"applied": True, "licenze_gained": 3, "poorest_player_drew": bool(others)}
+
+
 ECONOMICA: dict = {
     1: _card_1,
     2: _card_2,
@@ -216,4 +313,12 @@ ECONOMICA: dict = {
     46: _card_46,
     47: _card_47,
     48: _card_48,
+    81: _card_81,
+    82: _card_82,
+    83: _card_83,
+    84: _card_84,
+    85: _card_85,
+    86: _card_86,
+    87: _card_87,
+    88: _card_88,
 }

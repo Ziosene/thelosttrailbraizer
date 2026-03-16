@@ -373,8 +373,30 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
                         target_player_id=player.id,
                     )
 
+    # ── Card 99 (Web-to-Case) / Card 100 (Preference Center): target immunity checks ───────────
+    if card and card_approved and not original_cancelled and target_player_id:
+        _immunity_target = next(
+            (p for p in game.players if p.id == target_player_id and p.id != player.id), None
+        )
+        if _immunity_target and _immunity_target.combat_state:
+            # Card 99: block next offensive card targeting this player
+            if _immunity_target.combat_state.get("web_to_case_active") and card.card_type == "Offensiva":
+                original_cancelled = True
+                _cs99 = dict(_immunity_target.combat_state)
+                _cs99.pop("web_to_case_active", None)
+                _immunity_target.combat_state = _cs99
+                card_effect_result = {"card_number": card.number, "applied": False, "blocked_by": "web_to_case"}
+            # Card 100: block cards of the immune type targeting this player
+            elif _immunity_target.combat_state.get("preference_immunity_type") == card.card_type:
+                original_cancelled = True
+                _cs100 = dict(_immunity_target.combat_state)
+                _cs100.pop("preference_immunity_type", None)
+                _immunity_target.combat_state = _cs100
+                card_effect_result = {"card_number": card.number, "applied": False, "blocked_by": "preference_center"}
+
     # ── Effetto carta originale (a meno che non sia stato annullato) ──────────
-    card_effect_result: dict = {}
+    if not card_effect_result:
+        card_effect_result = {}
     if card and card_approved and not original_cancelled:
         card_effect_result = apply_action_card_effect(
             card, player, game, db,
@@ -471,6 +493,10 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
 
     player.licenze -= cost
     player.pending_addon_cost_penalty = 0  # penalty consumed on first purchase (boss 26)
+    # Card 87 (Block Pricing): track cumulative addon spend for payout calculation
+    cs_spend = dict(player.combat_state or {})
+    cs_spend["total_addon_licenze_spent"] = cs_spend.get("total_addon_licenze_spent", 0) + cost
+    player.combat_state = cs_spend
     # Consume addon price modifiers
     if _price_fixed is not None or (player.combat_state or {}).get("next_addon_price_discount", 0):
         cs_addon = dict(player.combat_state or {})

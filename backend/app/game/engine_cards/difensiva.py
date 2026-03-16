@@ -1,4 +1,4 @@
-"""Carte Difensive — cura, protezioni, HP (carte 19–25, 55–58)."""
+"""Carte Difensive — cura, protezioni, HP (carte 19–25, 55–58, 96–100)."""
 from app.models.game import TurnPhase
 
 
@@ -171,6 +171,80 @@ def _card_58(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "entitlement_process_until_round": until_round}
 
 
+def _card_96(player, game, db, *, target_player_id=None) -> dict:
+    """Review App — Primo round: soglia dado boss -2.
+
+    Stores review_app_active=True in combat_state.
+    combat.py: if flag set and current_round == 1, threshold -= 2, then clears flag.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["review_app_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "review_app_active": True}
+
+
+def _card_97(player, game, db, *, target_player_id=None) -> dict:
+    """Fault Path — Quando fallisci un tiro dado, guadagni 1L invece di perdere HP (per questo combat).
+
+    Stores fault_path_active=True in combat_state.
+    combat.py miss branch: if flag set, +1L and skip HP damage (flag persists for whole combat).
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["fault_path_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "fault_path_active": True}
+
+
+def _card_98(player, game, db, *, target_player_id=None) -> dict:
+    """Pause Element — Round neutro: né tu né il boss perdete HP.
+
+    Stores pause_element_rounds_remaining=1 in combat_state.
+    combat.py: if flag > 0, acts as round_nullified, decrements flag.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["pause_element_rounds_remaining"] = cs.get("pause_element_rounds_remaining", 0) + 1
+    player.combat_state = cs
+    return {"applied": True, "pause_element_rounds_remaining": cs["pause_element_rounds_remaining"]}
+
+
+def _card_99(player, game, db, *, target_player_id=None) -> dict:
+    """Web-to-Case — La prossima azione offensiva contro di te viene annullata (bloccata prima di colpirti).
+
+    Stores web_to_case_active=True in combat_state.
+    turn.py _handle_play_card: if target has this flag and card is Offensiva, blocks the effect.
+    """
+    cs = dict(player.combat_state or {})
+    cs["web_to_case_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "web_to_case_active": True}
+
+
+def _card_100(player, game, db, *, target_player_id=None) -> dict:
+    """Preference Center — Immunità a 1 tipo di carta (Offensiva/Economica/Manipolazione dado) per questo turno.
+
+    Client signals type choice via target_player_id:
+      1 → immune to "Offensiva"
+      2 → immune to "Economica"
+      3 → immune to "Manipolazione dado"
+    Stores preference_immunity_type=<card_type> in combat_state.
+    turn.py _handle_play_card: if card type == immune type and player is the target, blocks effect.
+    """
+    type_map = {1: "Offensiva", 2: "Economica", 3: "Manipolazione dado"}
+    immune_type = type_map.get(target_player_id)
+    if not immune_type:
+        return {"applied": False, "reason": "send 1=Offensiva, 2=Economica, 3=Manipolazione dado as target_player_id"}
+    cs = dict(player.combat_state or {})
+    cs["preference_immunity_type"] = immune_type
+    player.combat_state = cs
+    return {"applied": True, "preference_immunity_type": immune_type}
+
+
 DIFENSIVA: dict = {
     19: _card_19,
     20: _card_20,
@@ -183,4 +257,9 @@ DIFENSIVA: dict = {
     56: _card_56,
     57: _card_57,
     58: _card_58,
+    96:  _card_96,
+    97:  _card_97,
+    98:  _card_98,
+    99:  _card_99,
+    100: _card_100,
 }

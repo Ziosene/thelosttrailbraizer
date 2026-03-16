@@ -1,4 +1,4 @@
-"""Carte Offensive — danno a boss o avversari (carte 9–18, 49–54)."""
+"""Carte Offensive — danno a boss o avversari (carte 9–18, 49–54, 89–95)."""
 import random
 
 from sqlalchemy.orm import Session
@@ -231,6 +231,120 @@ def _card_54(player, game, db, *, target_player_id=None) -> dict:
     return result
 
 
+def _card_89(player, game, db, *, target_player_id=None) -> dict:
+    """Constraint Rule — Soglia dado boss -2 permanente per il resto del combattimento (a tuo vantaggio).
+
+    Stacks with card 13 (Debug Exploit) by incrementing boss_threshold_reduction.
+    combat.py: threshold -= combat_state["boss_threshold_reduction"]
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["boss_threshold_reduction"] = cs.get("boss_threshold_reduction", 0) + 2
+    player.combat_state = cs
+    return {"applied": True, "boss_threshold_reduction": cs["boss_threshold_reduction"]}
+
+
+def _card_90(player, game, db, *, target_player_id=None) -> dict:
+    """Configuration Attribute — Boss HP massimi -1 (riduce HP correnti di 1 per il resto del combat)."""
+    if not player.is_in_combat or player.current_boss_hp is None:
+        return {"applied": False, "reason": "not_in_combat"}
+    player.current_boss_hp = max(0, player.current_boss_hp - 1)
+    return {"applied": True, "boss_hp_reduced_by": 1, "boss_hp_remaining": player.current_boss_hp}
+
+
+def _card_91(player, game, db, *, target_player_id=None) -> dict:
+    """Guided Selling — Soglia dado -1 per 2 round (su se stesso).
+
+    Reuses consulting_hours keys in own combat_state.
+    combat.py: subtracts consulting_hours_threshold_reduction while consulting_hours_until_round >= current_round.
+    Stacks with card 38 (Consulting Hours from ally) by adding to existing reduction.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    current_round = (player.combat_round or 0) + 1
+    until_round = current_round + 1  # applies to current round + next (2 rounds total)
+    cs = dict(player.combat_state or {})
+    # Stack with existing consulting_hours if already active
+    existing_red = cs.get("consulting_hours_threshold_reduction", 0) if cs.get("consulting_hours_until_round", 0) >= current_round else 0
+    cs["consulting_hours_until_round"] = max(cs.get("consulting_hours_until_round", 0), until_round)
+    cs["consulting_hours_threshold_reduction"] = existing_red + 1
+    player.combat_state = cs
+    return {"applied": True, "threshold_reduction": 1, "until_round": until_round}
+
+
+def _card_92(player, game, db, *, target_player_id=None) -> dict:
+    """Case Escalation — Boss -1HP. Se il boss ti ha già colpito: -2HP e abilità disabilitata 1 round.
+
+    Checks combat_boss_hits_received in combat_state (incremented in combat.py on player damage).
+    combat.py: increments combat_boss_hits_received when player takes damage (miss branch).
+    """
+    if not player.is_in_combat or player.current_boss_hp is None:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = player.combat_state or {}
+    boss_has_hit = cs.get("combat_boss_hits_received", 0) > 0
+    damage = 2 if boss_has_hit else 1
+    player.current_boss_hp = max(0, player.current_boss_hp - damage)
+    result: dict = {"applied": True, "boss_hp_damage": damage, "boss_has_hit": boss_has_hit}
+    if boss_has_hit:
+        # Also disable boss ability for 1 round
+        current_round = (player.combat_round or 0) + 1
+        new_cs = dict(cs)
+        new_cs["boss_ability_disabled_until_round"] = current_round
+        player.combat_state = new_cs
+        result["boss_ability_disabled_until_round"] = current_round
+    return result
+
+
+def _card_93(player, game, db, *, target_player_id=None) -> dict:
+    """Live Message — Un avversario perde 2 Licenze.
+
+    Simplified: steal 2L (recovery mechanic requires async client interaction — TODO).
+    TODO: offer target the option to give 1 card to recover the 2L.
+    """
+    from .helpers import get_target
+    target = get_target(game, player, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "no_target"}
+    stolen = min(2, target.licenze)
+    target.licenze -= stolen
+    return {"applied": True, "target_player_id": target.id, "licenze_stolen": stolen}
+
+
+def _card_94(player, game, db, *, target_player_id=None) -> dict:
+    """Territory Assignment Rule — Assegna il prossimo boss al target (deve combatterlo o -2L).
+
+    Same mechanism as card 74 (Routing Configuration) but from the Offensiva category.
+    Stores routing_assigned + routing_assigned_boss_id in target's combat_state.
+    TODO: turn.py _handle_draw_card: enforce by checking routing_assigned flag.
+    """
+    from .helpers import get_target
+    target = get_target(game, player, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "no_target"}
+    boss_id = (game.boss_deck_1 or [None])[0] or (game.boss_deck_2 or [None])[0]
+    cs = dict(target.combat_state or {})
+    cs["routing_assigned"] = True
+    if boss_id:
+        cs["routing_assigned_boss_id"] = boss_id
+    target.combat_state = cs
+    return {"applied": True, "target_player_id": target.id, "routing_assigned_boss_id": boss_id}
+
+
+def _card_95(player, game, db, *, target_player_id=None) -> dict:
+    """Heroku CI — Se boss HP ≤ 2, il prossimo hit lo sconfigge istantaneamente.
+
+    Stores heroku_ci_active=True in combat_state.
+    combat.py hit branch: if flag set and current_boss_hp <= 2, sets boss hp = 0 immediately.
+    """
+    if not player.is_in_combat or player.current_boss_hp is None:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["heroku_ci_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "heroku_ci_active": True, "current_boss_hp": player.current_boss_hp}
+
+
 OFFENSIVA: dict = {
     9:  _card_9,
     10: _card_10,
@@ -248,4 +362,11 @@ OFFENSIVA: dict = {
     52: _card_52,
     53: _card_53,
     54: _card_54,
+    89: _card_89,
+    90: _card_90,
+    91: _card_91,
+    92: _card_92,
+    93: _card_93,
+    94: _card_94,
+    95: _card_95,
 }
