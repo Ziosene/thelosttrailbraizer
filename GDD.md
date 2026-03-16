@@ -127,31 +127,49 @@ I ruoli sono organizzati per track certificativo Salesforce.
 ## 4. Struttura del Turno
 
 ```
-INIZIO TURNO
-  └─ L'HP del giocatore si resetta al valore base del personaggio
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FASE INIZIALE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1. UNTAP: tutti gli AddOn tappati del giocatore si ricaricano (untap)
+  2. ABILITÀ "INIZIO TURNO": si attivano le abilità dei personaggi/AddOn
+     con effetto "all'inizio del tuo turno"
+  3. PESCA: il giocatore pesca 1 carta obbligatoria dal mazzo Azione
+     (se la mano è già a 10 carte, non pesca)
 
-FASE AZIONE
-  └─ Pesca obbligatoria di 1 carta dal mazzo Azione
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FASE AZIONI
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Il giocatore può svolgere, in qualsiasi ordine, fino a:
+  ├─ 1 ATTACCO: scegli quale boss affrontare
+  │    (mercato A/B o pesca blind dal mazzo A/B)
+  ├─ 1 ACQUISTO: acquista un AddOn
+  │    (mercato A/B o pesca blind dal mazzo A/B) — non durante il combattimento
+  └─ CARTE AZIONE: gioca 0–2 carte dalla propria mano
+       (prima, durante o dopo il combattimento)
 
-FASE DECISIONALE (azioni disponibili, una volta ciascuna per turno)
-  ├─ A) COMBATTI: scegli quale boss affrontare (mercato A/B o pesca dal mazzo A/B)
-  ├─ B) ACQUISTA: acquista un AddOn (mercato A/B o pesca dal mazzo A/B)
-  └─ C) PASSA: termina il turno senza combattere né acquistare
+  Il giocatore dichiara esplicitamente la fine del proprio turno
+  per passare alla Fase Finale.
 
-FASE CARTE
-  └─ Gioca 0–2 carte dalla propria mano in qualsiasi momento del turno
-     (prima, durante o dopo il combattimento)
-
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 FUORI DAL PROPRIO TURNO (reazione)
-  └─ Se un avversario gioca una carta che ti colpisce direttamente,
-     puoi rispondere con una carta "Fuori dal proprio turno" (interferenza)
-     entro 8 secondi dalla notifica del server
-     ├─ Puoi reagire solo se non hai ancora esaurito il tuo budget di 2 carte
-     │  (budget condiviso tra carte in-turno e carte di reazione)
-     └─ Puoi sempre passare la reazione (nessuna penalità)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Se un avversario gioca una carta che ti colpisce direttamente,
+  puoi rispondere con una carta "Fuori dal proprio turno" (interferenza)
+  entro 8 secondi dalla notifica del server
+  ├─ Puoi reagire solo se non hai ancora esaurito il tuo budget di 2 carte
+  │  (budget condiviso tra carte in-turno e carte di reazione)
+  └─ Puoi sempre passare la reazione (nessuna penalità)
 
-FINE TURNO
-  └─ Il giocatore dichiara esplicitamente la fine del proprio turno
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FASE FINALE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1. ABILITÀ "FINE TURNO": si attivano le abilità dei personaggi/AddOn
+     con effetto "alla fine del tuo turno"
+  2. SCARTO ECCESSO: se il giocatore ha più di 10 carte in mano,
+     deve scartare fino a raggiungere il limite di 10
+  3. SCADENZA EFFETTI: tutti gli effetti "fino a fine turno" terminano
+  4. RESET HP: l'HP del giocatore si resetta al valore base del personaggio
+  5. Il turno passa al giocatore successivo
 ```
 
 > *Salvo possesso di una carta azione che permette la ritirata dal combattimento.
@@ -459,12 +477,9 @@ SETUP
   └─ Ogni giocatore pesca 3 carte iniziali e riceve 3 Licenze
 
 LOOP DI PARTITA (turni in ordine)
-  └─ Inizio turno → reset HP
-  └─ Pesca 1 carta azione
-  └─ Scelta: combatti boss OPPURE passa
-  └─ Carte azione giocabili liberamente (max 2 per turno)
-  └─ Dichiarazione fine turno
-  └─ Turno passa al giocatore successivo
+  └─ Fase Iniziale: untap AddOn → abilità "inizio turno" → pesca 1 carta
+  └─ Fase Azioni: attacca boss (opz.) + acquista AddOn (opz.) + gioca carte (max 2)
+  └─ Fase Finale: abilità "fine turno" → scarta eccesso → reset HP → passa turno
 
 VITTORIA
   └─ Un giocatore raggiunge 5 Certificazioni → partita terminata
