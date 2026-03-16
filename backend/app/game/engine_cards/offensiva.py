@@ -345,33 +345,6 @@ def _card_95(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "heroku_ci_active": True, "current_boss_hp": player.current_boss_hp}
 
 
-OFFENSIVA: dict = {
-    9:  _card_9,
-    10: _card_10,
-    11: _card_11,
-    12: _card_12,
-    13: _card_13,
-    14: _card_14,
-    15: _card_15,
-    16: _card_16,
-    17: _card_17,
-    18: _card_18,
-    49: _card_49,
-    50: _card_50,
-    51: _card_51,
-    52: _card_52,
-    53: _card_53,
-    54: _card_54,
-    89: _card_89,
-    90: _card_90,
-    91: _card_91,
-    92: _card_92,
-    93: _card_93,
-    94: _card_94,
-    95: _card_95,
-}
-
-
 def _card_126(player, game, db, *, target_player_id=None) -> dict:
     """Case Assignment Rule — Assegna il boss a un altro giocatore; tu esci e tieni la ricompensa.
 
@@ -461,7 +434,30 @@ def _card_130(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "protected_this_round": current_round, "double_damage_next_round": current_round + 1}
 
 
-OFFENSIVA_126: dict = {
+OFFENSIVA: dict = {
+    9:   _card_9,
+    10:  _card_10,
+    11:  _card_11,
+    12:  _card_12,
+    13:  _card_13,
+    14:  _card_14,
+    15:  _card_15,
+    16:  _card_16,
+    17:  _card_17,
+    18:  _card_18,
+    49:  _card_49,
+    50:  _card_50,
+    51:  _card_51,
+    52:  _card_52,
+    53:  _card_53,
+    54:  _card_54,
+    89:  _card_89,
+    90:  _card_90,
+    91:  _card_91,
+    92:  _card_92,
+    93:  _card_93,
+    94:  _card_94,
+    95:  _card_95,
     126: _card_126,
     127: _card_127,
     128: _card_128,

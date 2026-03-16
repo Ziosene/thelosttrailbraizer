@@ -380,33 +380,6 @@ def _card_120(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "target_player_id": target.id, "event_monitoring_remaining": 2}
 
 
-INTERFERENZA: dict = {
-    38: _card_38,
-    39: _card_39,
-    40: _card_40,
-    70: _card_70,
-    71: _card_71,
-    72: _card_72,
-    73: _card_73,
-    74: _card_74,
-    75: _card_75,
-    76: _card_76,
-    77: _card_77,
-    78: _card_78,
-    79: _card_79,
-    111: _card_111,
-    112: _card_112,
-    113: _card_113,
-    114: _card_114,
-    115: _card_115,
-    116: _card_116,
-    117: _card_117,
-    118: _card_118,
-    119: _card_119,
-    120: _card_120,
-}
-
-
 def _card_139(player, game, db, *, target_player_id=None) -> dict:
     """Prospect Lifecycle — Imponi un lifecycle a un avversario: non può acquistare AddOn finché non sconfigge il prossimo boss.
 
@@ -437,4 +410,30 @@ def _card_140(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "campaign_influence_remaining": 3}
 
 
-INTERFERENZA_139: dict = {139: _card_139, 140: _card_140}
+INTERFERENZA: dict = {
+    38:  _card_38,
+    39:  _card_39,
+    40:  _card_40,
+    70:  _card_70,
+    71:  _card_71,
+    72:  _card_72,
+    73:  _card_73,
+    74:  _card_74,
+    75:  _card_75,
+    76:  _card_76,
+    77:  _card_77,
+    78:  _card_78,
+    79:  _card_79,
+    111: _card_111,
+    112: _card_112,
+    113: _card_113,
+    114: _card_114,
+    115: _card_115,
+    116: _card_116,
+    117: _card_117,
+    118: _card_118,
+    119: _card_119,
+    120: _card_120,
+    139: _card_139,
+    140: _card_140,
+}

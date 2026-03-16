@@ -231,24 +231,6 @@ def _card_105(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "message_transformation_active": True}
 
 
-MANIPOLAZIONE: dict = {
-    26: _card_26,
-    27: _card_27,
-    28: _card_28,
-    29: _card_29,
-    30: _card_30,
-    59: _card_59,
-    60: _card_60,
-    61: _card_61,
-    62: _card_62,
-    101: _card_101,
-    102: _card_102,
-    103: _card_103,
-    104: _card_104,
-    105: _card_105,
-}
-
-
 def _card_136(player, game, db, *, target_player_id=None) -> dict:
     """Service Forecast — Usa il valore medio (= soglia) invece di tirare il dado.
 
@@ -264,4 +246,20 @@ def _card_136(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "service_forecast_use_threshold": True}
 
 
-MANIPOLAZIONE_136: dict = {136: _card_136}
+MANIPOLAZIONE: dict = {
+    26:  _card_26,
+    27:  _card_27,
+    28:  _card_28,
+    29:  _card_29,
+    30:  _card_30,
+    59:  _card_59,
+    60:  _card_60,
+    61:  _card_61,
+    62:  _card_62,
+    101: _card_101,
+    102: _card_102,
+    103: _card_103,
+    104: _card_104,
+    105: _card_105,
+    136: _card_136,
+}

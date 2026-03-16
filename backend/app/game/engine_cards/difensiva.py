@@ -245,26 +245,6 @@ def _card_100(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "preference_immunity_type": immune_type}
 
 
-DIFENSIVA: dict = {
-    19: _card_19,
-    20: _card_20,
-    21: _card_21,
-    22: _card_22,
-    23: _card_23,
-    24: _card_24,
-    25: _card_25,
-    55: _card_55,
-    56: _card_56,
-    57: _card_57,
-    58: _card_58,
-    96:  _card_96,
-    97:  _card_97,
-    98:  _card_98,
-    99:  _card_99,
-    100: _card_100,
-}
-
-
 def _card_131(player, game, db, *, target_player_id=None) -> dict:
     """SLA Policy — Per 3 round il boss non può infliggerti >1HP per round.
 
@@ -339,7 +319,23 @@ def _card_135(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "boss_ability_disabled_until_round": until_round}
 
 
-DIFENSIVA_131: dict = {
+DIFENSIVA: dict = {
+    19:  _card_19,
+    20:  _card_20,
+    21:  _card_21,
+    22:  _card_22,
+    23:  _card_23,
+    24:  _card_24,
+    25:  _card_25,
+    55:  _card_55,
+    56:  _card_56,
+    57:  _card_57,
+    58:  _card_58,
+    96:  _card_96,
+    97:  _card_97,
+    98:  _card_98,
+    99:  _card_99,
+    100: _card_100,
     131: _card_131,
     132: _card_132,
     133: _card_133,

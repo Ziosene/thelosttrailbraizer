@@ -296,34 +296,6 @@ def _card_88(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "licenze_gained": 3, "poorest_player_drew": bool(others)}
 
 
-ECONOMICA: dict = {
-    1: _card_1,
-    2: _card_2,
-    3: _card_3,
-    4: _card_4,
-    5: _card_5,
-    6: _card_6,
-    7: _card_7,
-    8: _card_8,
-    41: _card_41,
-    42: _card_42,
-    43: _card_43,
-    44: _card_44,
-    45: _card_45,
-    46: _card_46,
-    47: _card_47,
-    48: _card_48,
-    81: _card_81,
-    82: _card_82,
-    83: _card_83,
-    84: _card_84,
-    85: _card_85,
-    86: _card_86,
-    87: _card_87,
-    88: _card_88,
-}
-
-
 def _card_121(player, game, db, *, target_player_id=None) -> dict:
     """Lead Score — +1L per carta in mano (max 5)."""
     if player.is_in_combat:
@@ -381,7 +353,31 @@ def _card_125(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "licenze_gained": 4}
 
 
-ECONOMICA_121: dict = {
+ECONOMICA: dict = {
+    1:   _card_1,
+    2:   _card_2,
+    3:   _card_3,
+    4:   _card_4,
+    5:   _card_5,
+    6:   _card_6,
+    7:   _card_7,
+    8:   _card_8,
+    41:  _card_41,
+    42:  _card_42,
+    43:  _card_43,
+    44:  _card_44,
+    45:  _card_45,
+    46:  _card_46,
+    47:  _card_47,
+    48:  _card_48,
+    81:  _card_81,
+    82:  _card_82,
+    83:  _card_83,
+    84:  _card_84,
+    85:  _card_85,
+    86:  _card_86,
+    87:  _card_87,
+    88:  _card_88,
     121: _card_121,
     122: _card_122,
     123: _card_123,

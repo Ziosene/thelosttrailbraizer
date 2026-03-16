@@ -460,30 +460,6 @@ def _card_110(player, game, db, *, target_player_id=None) -> dict:
     }
 
 
-UTILITA: dict = {
-    31: _card_31,
-    32: _card_32,
-    33: _card_33,
-    34: _card_34,
-    35: _card_35,
-    36: _card_36,
-    37: _card_37,
-    63: _card_63,
-    64: _card_64,
-    65: _card_65,
-    66: _card_66,
-    67: _card_67,
-    68: _card_68,
-    69: _card_69,
-    80: _card_80,
-    106: _card_106,
-    107: _card_107,
-    108: _card_108,
-    109: _card_109,
-    110: _card_110,
-}
-
-
 def _card_137(player, game, db, *, target_player_id=None) -> dict:
     """CPQ Rules Engine — Cerca le prime 5 carte del mazzo azione e aggiungine 1 alla mano; rimetti le altre nell'ordine originale.
 
@@ -528,4 +504,27 @@ def _card_138(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "pardot_form_handler_remaining": 2}
 
 
-UTILITA_137: dict = {137: _card_137, 138: _card_138}
+UTILITA: dict = {
+    31:  _card_31,
+    32:  _card_32,
+    33:  _card_33,
+    34:  _card_34,
+    35:  _card_35,
+    36:  _card_36,
+    37:  _card_37,
+    63:  _card_63,
+    64:  _card_64,
+    65:  _card_65,
+    66:  _card_66,
+    67:  _card_67,
+    68:  _card_68,
+    69:  _card_69,
+    80:  _card_80,
+    106: _card_106,
+    107: _card_107,
+    108: _card_108,
+    109: _card_109,
+    110: _card_110,
+    137: _card_137,
+    138: _card_138,
+}
