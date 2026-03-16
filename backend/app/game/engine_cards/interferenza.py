@@ -405,3 +405,36 @@ INTERFERENZA: dict = {
     119: _card_119,
     120: _card_120,
 }
+
+
+def _card_139(player, game, db, *, target_player_id=None) -> dict:
+    """Prospect Lifecycle — Imponi un lifecycle a un avversario: non può acquistare AddOn finché non sconfigge il prossimo boss.
+
+    Stores addons_blocked_until_boss_defeat=True in target's combat_state.
+    turn.py buy_addon: if flag active on player, block purchase.
+    combat.py boss defeated branch: clears addons_blocked_until_boss_defeat from combat_state.
+    """
+    target = get_target(game, player, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "no_target"}
+    cs = dict(target.combat_state or {})
+    cs["addons_blocked_until_boss_defeat"] = True
+    target.combat_state = cs
+    return {"applied": True, "target_player_id": target.id, "addons_blocked_until_boss_defeat": True}
+
+
+def _card_140(player, game, db, *, target_player_id=None) -> dict:
+    """Campaign Influence — Ogni Licenza guadagnata da qualsiasi giocatore in questo round ti dà 1L (max 3 totali).
+
+    Stores campaign_influence_remaining=3 in player's combat_state.
+    turn.py / wherever licenze are gained: after awarding L to any player, check all others for
+    campaign_influence_remaining > 0 and award 1L, decrement counter.
+    Simplified fallback: +3L immediately (hook provides dynamic upside).
+    """
+    cs = dict(player.combat_state or {})
+    cs["campaign_influence_remaining"] = 3
+    player.combat_state = cs
+    return {"applied": True, "campaign_influence_remaining": 3}
+
+
+INTERFERENZA_139: dict = {139: _card_139, 140: _card_140}

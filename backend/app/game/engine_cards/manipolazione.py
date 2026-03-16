@@ -247,3 +247,21 @@ MANIPOLAZIONE: dict = {
     104: _card_104,
     105: _card_105,
 }
+
+
+def _card_136(player, game, db, *, target_player_id=None) -> dict:
+    """Service Forecast — Usa il valore medio (= soglia) invece di tirare il dado.
+
+    Stores service_forecast_use_threshold=True in combat_state.
+    combat.py: after computing threshold, if flag set, roll=threshold (guaranteed hit/miss at border),
+    then clears the flag.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["service_forecast_use_threshold"] = True
+    player.combat_state = cs
+    return {"applied": True, "service_forecast_use_threshold": True}
+
+
+MANIPOLAZIONE_136: dict = {136: _card_136}

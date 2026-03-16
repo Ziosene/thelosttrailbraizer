@@ -1,4 +1,4 @@
-"""Carte Difensive — cura, protezioni, HP (carte 19–25, 55–58, 96–100)."""
+"""Carte Difensive — cura, protezioni, HP (carte 19–25, 55–58, 96–100, 131–135)."""
 from app.models.game import TurnPhase
 
 
@@ -262,4 +262,87 @@ DIFENSIVA: dict = {
     98:  _card_98,
     99:  _card_99,
     100: _card_100,
+}
+
+
+def _card_131(player, game, db, *, target_player_id=None) -> dict:
+    """SLA Policy — Per 3 round il boss non può infliggerti >1HP per round.
+
+    Reuses entitlement_process_until_round (same as card 58) — cap player damage to 1.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    current_round = (player.combat_round or 0) + 1
+    until_round = current_round + 2  # this round + next 2 = 3 rounds total
+    cs = dict(player.combat_state or {})
+    cs["entitlement_process_until_round"] = max(cs.get("entitlement_process_until_round", 0), until_round)
+    player.combat_state = cs
+    return {"applied": True, "entitlement_process_until_round": until_round}
+
+
+def _card_132(player, game, db, *, target_player_id=None) -> dict:
+    """Escalation Rule — Quando subisci ≥2HP in un round, la metà viene assorbita.
+
+    Stores escalation_rule_active=True in combat_state.
+    combat.py: before applying multi-HP damage (e.g. queue_routing_double), absorb half (floor).
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["escalation_rule_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "escalation_rule_active": True}
+
+
+def _card_133(player, game, db, *, target_player_id=None) -> dict:
+    """Contact Center Integration — Per 2 round, ogni HP perso → pesca 1 carta.
+
+    Stores contact_center_until_round=current_round+2 in combat_state.
+    combat.py miss branch (actual HP damage): if flag active, draw 1 action card.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    current_round = (player.combat_round or 0) + 1
+    until_round = current_round + 1  # this round + next = 2 rounds total
+    cs = dict(player.combat_state or {})
+    cs["contact_center_until_round"] = max(cs.get("contact_center_until_round", 0), until_round)
+    player.combat_state = cs
+    return {"applied": True, "contact_center_until_round": until_round}
+
+
+def _card_134(player, game, db, *, target_player_id=None) -> dict:
+    """Macro Builder — Il prossimo tiro dado si esegue automaticamente (ottimizza timing = +1 al dado).
+
+    Reuses einstein_sto_next_roll_bonus (same as card 60): +1 to next roll.
+    The "automatic execution" is a client-side UX signal only — server-side: +1 bonus.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["einstein_sto_next_roll_bonus"] = cs.get("einstein_sto_next_roll_bonus", 0) + 1
+    player.combat_state = cs
+    return {"applied": True, "einstein_sto_next_roll_bonus": cs["einstein_sto_next_roll_bonus"]}
+
+
+def _card_135(player, game, db, *, target_player_id=None) -> dict:
+    """Omni Supervisor — Boss non può usare la propria abilità speciale per 2 round.
+
+    Reuses boss_ability_disabled_until_round (same as cards 10/21/102).
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    current_round = (player.combat_round or 0) + 1
+    until_round = current_round + 1  # this round + next = 2 rounds
+    cs = dict(player.combat_state or {})
+    cs["boss_ability_disabled_until_round"] = max(cs.get("boss_ability_disabled_until_round", 0), until_round)
+    player.combat_state = cs
+    return {"applied": True, "boss_ability_disabled_until_round": until_round}
+
+
+DIFENSIVA_131: dict = {
+    131: _card_131,
+    132: _card_132,
+    133: _card_133,
+    134: _card_134,
+    135: _card_135,
 }

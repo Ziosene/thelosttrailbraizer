@@ -1,4 +1,4 @@
-"""Carte Offensive — danno a boss o avversari (carte 9–18, 49–54, 89–95)."""
+"""Carte Offensive — danno a boss o avversari (carte 9–18, 49–54, 89–95, 126–130)."""
 import random
 
 from sqlalchemy.orm import Session
@@ -369,4 +369,102 @@ OFFENSIVA: dict = {
     93: _card_93,
     94: _card_94,
     95: _card_95,
+}
+
+
+def _card_126(player, game, db, *, target_player_id=None) -> dict:
+    """Case Assignment Rule — Assegna il boss a un altro giocatore; tu esci e tieni la ricompensa.
+
+    Simplified: player escapes combat immediately and receives the boss's licenze reward.
+    The boss is removed from play (discarded); target player assignment not enforced.
+    TODO: actually reassign boss to target player.
+    """
+    if not player.is_in_combat or not player.current_boss_id:
+        return {"applied": False, "reason": "not_in_combat"}
+    from app.models.card import BossCard as _BC126
+    boss = db.get(_BC126, player.current_boss_id)
+    reward = boss.reward_licenze if boss else 0
+    player.licenze += reward
+    player.is_in_combat = False
+    player.current_boss_id = None
+    player.current_boss_hp = None
+    player.current_boss_source = None
+    player.combat_round = 0
+    return {"applied": True, "licenze_gained": reward, "combat_escaped": True}
+
+
+def _card_127(player, game, db, *, target_player_id=None) -> dict:
+    """Omni-Channel — Per questo round, ogni hit infligge 1HP aggiuntivo al boss.
+
+    Stores omni_channel_next_hit_bonus=1 in combat_state.
+    combat.py hit branch: if flag set, _hit_damage += 1, clear flag.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["omni_channel_next_hit_bonus"] = 1
+    player.combat_state = cs
+    return {"applied": True, "omni_channel_next_hit_bonus": 1}
+
+
+def _card_128(player, game, db, *, target_player_id=None) -> dict:
+    """Einstein Case Classification — Boss classificato "critico": soglia dado -2 per 3 round.
+
+    Reuses consulting_hours keys (same as card 38/91) but for 3 rounds.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    current_round = (player.combat_round or 0) + 1
+    until_round = current_round + 2  # this round + next 2 = 3 rounds total
+    cs = dict(player.combat_state or {})
+    existing_red = cs.get("consulting_hours_threshold_reduction", 0) if cs.get("consulting_hours_until_round", 0) >= current_round else 0
+    cs["consulting_hours_until_round"] = max(cs.get("consulting_hours_until_round", 0), until_round)
+    cs["consulting_hours_threshold_reduction"] = existing_red + 2
+    player.combat_state = cs
+    return {"applied": True, "threshold_reduction": 2, "until_round": until_round}
+
+
+def _card_129(player, game, db, *, target_player_id=None) -> dict:
+    """Boss Dossier — Studia il boss: rivela la sua abilità speciale, poi infliggi 1HP."""
+    if not player.is_in_combat or player.current_boss_hp is None:
+        return {"applied": False, "reason": "not_in_combat"}
+    from app.models.card import BossCard as _BC129
+    boss = db.get(_BC129, player.current_boss_id)
+    boss_info = {}
+    if boss:
+        boss_info = {
+            "id": boss.id,
+            "name": boss.name,
+            "hp": boss.hp,
+            "threshold": boss.dice_threshold,
+            "reward_licenze": boss.reward_licenze,
+            "has_certification": boss.has_certification,
+        }
+    player.current_boss_hp = max(0, player.current_boss_hp - 1)
+    return {"applied": True, "boss_info": boss_info, "boss_hp_damage": 1}
+
+
+def _card_130(player, game, db, *, target_player_id=None) -> dict:
+    """Queue-Based Routing — Salta l'attacco boss questo round; doppio danno nel prossimo.
+
+    Sets force_field_until_round=current_round (same as card 30: no player damage this round).
+    Sets queue_routing_double_damage_round=current_round+1 for next round.
+    combat.py miss branch: if queue_routing_double_damage_round == current_round, player.hp -= 2.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    current_round = (player.combat_round or 0) + 1
+    cs = dict(player.combat_state or {})
+    cs["force_field_until_round"] = current_round
+    cs["queue_routing_double_damage_round"] = current_round + 1
+    player.combat_state = cs
+    return {"applied": True, "protected_this_round": current_round, "double_damage_next_round": current_round + 1}
+
+
+OFFENSIVA_126: dict = {
+    126: _card_126,
+    127: _card_127,
+    128: _card_128,
+    129: _card_129,
+    130: _card_130,
 }

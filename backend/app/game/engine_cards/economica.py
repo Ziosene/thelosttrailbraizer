@@ -1,4 +1,4 @@
-"""Carte Economiche — guadagna/ruba Licenze o Certificazioni (carte 1–8, 41–48, 81–88)."""
+"""Carte Economiche — guadagna/ruba Licenze o Certificazioni (carte 1–8, 41–48, 81–88, 121–125)."""
 from .helpers import get_target
 
 
@@ -321,4 +321,70 @@ ECONOMICA: dict = {
     86: _card_86,
     87: _card_87,
     88: _card_88,
+}
+
+
+def _card_121(player, game, db, *, target_player_id=None) -> dict:
+    """Lead Score — +1L per carta in mano (max 5)."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    gain = min(5, len(list(player.hand)))
+    player.licenze += gain
+    return {"applied": True, "licenze_gained": gain, "hand_size": len(list(player.hand))}
+
+
+def _card_122(player, game, db, *, target_player_id=None) -> dict:
+    """Marketing Automation — Per 2 turni, ogni carta che giochi +1L aggiuntiva.
+
+    Stores marketing_automation_turns_remaining=2 in combat_state.
+    turn.py play_card: after card is played, if flag > 0, player +1L.
+    turn.py end_turn: decrements marketing_automation_turns_remaining.
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["marketing_automation_turns_remaining"] = 2
+    player.combat_state = cs
+    return {"applied": True, "marketing_automation_turns_remaining": 2}
+
+
+def _card_123(player, game, db, *, target_player_id=None) -> dict:
+    """Product Catalog — +3L (o +5L se possiedi già ≥2 AddOn)."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    gain = 5 if len(list(player.addons)) >= 2 else 3
+    player.licenze += gain
+    return {"applied": True, "licenze_gained": gain, "addons_owned": len(list(player.addons))}
+
+
+def _card_124(player, game, db, *, target_player_id=None) -> dict:
+    """Price Book — Il prossimo AddOn costa la metà (floor, min 5 Licenze).
+
+    Stores next_addon_price_half=True in combat_state.
+    turn.py buy_addon: if flag set, halve the final cost (floor, min 5), clear flag.
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["next_addon_price_half"] = True
+    player.combat_state = cs
+    return {"applied": True, "next_addon_price_half": True}
+
+
+def _card_125(player, game, db, *, target_player_id=None) -> dict:
+    """Approval Process — Se hai già ≥10 Licenze, guadagna 4 Licenze extra."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    if player.licenze < 10:
+        return {"applied": False, "reason": "need_at_least_10_licenze"}
+    player.licenze += 4
+    return {"applied": True, "licenze_gained": 4}
+
+
+ECONOMICA_121: dict = {
+    121: _card_121,
+    122: _card_122,
+    123: _card_123,
+    124: _card_124,
+    125: _card_125,
 }

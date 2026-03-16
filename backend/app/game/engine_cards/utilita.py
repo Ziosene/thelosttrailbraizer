@@ -482,3 +482,50 @@ UTILITA: dict = {
     109: _card_109,
     110: _card_110,
 }
+
+
+def _card_137(player, game, db, *, target_player_id=None) -> dict:
+    """CPQ Rules Engine — Cerca le prime 5 carte del mazzo azione e aggiungine 1 alla mano; rimetti le altre nell'ordine originale.
+
+    Draws top 5, keeps first (auto-selected; TODO: accept chosen_id from client).
+    Returns the remaining 4 to top of deck in their original order.
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    from app.models.game import PlayerHandCard as _PHC137
+    drawn_ids = []
+    for _ in range(5):
+        if game.action_deck_1:
+            drawn_ids.append(game.action_deck_1.pop(0))
+        elif game.action_deck_2:
+            drawn_ids.append(game.action_deck_2.pop(0))
+    if not drawn_ids:
+        return {"applied": False, "reason": "action_deck_empty"}
+    # Keep first, return the rest in original order to top of deck
+    if len(list(player.hand)) < engine.MAX_HAND_SIZE:
+        db.add(_PHC137(player_id=player.id, action_card_id=drawn_ids[0]))
+        kept = 1
+        returned = drawn_ids[1:]
+    else:
+        kept = 0
+        returned = drawn_ids
+    game.action_deck_1 = returned + (game.action_deck_1 or [])
+    return {"applied": True, "cards_kept": kept, "cards_returned": len(returned)}
+
+
+def _card_138(player, game, db, *, target_player_id=None) -> dict:
+    """Pardot Form Handler — Ogni volta che un avversario pesca una carta in questo turno, pesca 1 anche tu (max 2).
+
+    Stores pardot_form_handler_remaining=2 in player's combat_state.
+    turn.py draw_card: after each opponent draw, if any other player has this flag active
+    (non-current-turn player), award them 1 draw and decrement the counter.
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["pardot_form_handler_remaining"] = 2
+    player.combat_state = cs
+    return {"applied": True, "pardot_form_handler_remaining": 2}
+
+
+UTILITA_137: dict = {137: _card_137, 138: _card_138}

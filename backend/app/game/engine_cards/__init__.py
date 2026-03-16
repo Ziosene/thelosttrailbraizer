@@ -12,12 +12,12 @@ Ogni categoria ha il suo modulo:
 Ogni modulo espone un dict {card_number: handler_fn}.
 apply_action_card_effect è l'unico entry-point pubblico.
 """
-from .economica import ECONOMICA
-from .offensiva import OFFENSIVA
-from .difensiva import DIFENSIVA
-from .manipolazione import MANIPOLAZIONE
-from .utilita import UTILITA
-from .interferenza import INTERFERENZA
+from .economica import ECONOMICA, ECONOMICA_121
+from .offensiva import OFFENSIVA, OFFENSIVA_126
+from .difensiva import DIFENSIVA, DIFENSIVA_131
+from .manipolazione import MANIPOLAZIONE, MANIPOLAZIONE_136
+from .utilita import UTILITA, UTILITA_137
+from .interferenza import INTERFERENZA, INTERFERENZA_139
 
 _HANDLERS: dict = {
     **ECONOMICA,
@@ -26,6 +26,12 @@ _HANDLERS: dict = {
     **MANIPOLAZIONE,
     **UTILITA,
     **INTERFERENZA,
+    **ECONOMICA_121,
+    **OFFENSIVA_126,
+    **DIFENSIVA_131,
+    **MANIPOLAZIONE_136,
+    **UTILITA_137,
+    **INTERFERENZA_139,
 }
 
 

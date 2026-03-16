@@ -114,6 +114,22 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
     if not jinxed:
         db.add(PlayerHandCard(player_id=player.id, action_card_id=drawn[0]))
 
+    # Card 138 (Pardot Form Handler): when ANY player draws, other players watching earn a mirror draw (max 2)
+    from app.models.game import PlayerHandCard as _PHC138
+    for _watcher in game.players:
+        if _watcher.id != player.id and not _watcher.is_in_combat:
+            _pf = (_watcher.combat_state or {}).get("pardot_form_handler_remaining", 0)
+            if _pf > 0 and len(list(_watcher.hand)) < engine.MAX_HAND_SIZE:
+                _pf_src = game.action_deck_1 if game.action_deck_1 else game.action_deck_2
+                if _pf_src:
+                    db.add(_PHC138(player_id=_watcher.id, action_card_id=_pf_src.pop(0)))
+            if _pf > 0:
+                _wc = dict(_watcher.combat_state)
+                _wc["pardot_form_handler_remaining"] = _pf - 1
+                if _wc["pardot_form_handler_remaining"] <= 0:
+                    _wc.pop("pardot_form_handler_remaining", None)
+                _watcher.combat_state = _wc
+
     # Boss 92 (Einstein Copilot Seraph): every card drawn during combat costs 1 HP
     if player.is_in_combat and player.current_boss_id:
         hp_cost = engine.boss_draw_costs_hp(player.current_boss_id)
@@ -438,6 +454,10 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
             "original_cancelled": original_cancelled,
             "reaction_effect": reaction_card_result,
         })
+    # Card 122 (Marketing Automation): while active, caster earns +1L each time they play a card
+    if (player.combat_state or {}).get("marketing_automation_turns_remaining", 0) > 0:
+        player.licenze += 1
+
     # Card 120 (Event Monitoring): watchers earn 1L each time this player plays a card (max 2)
     for _watcher in game.players:
         if _watcher.id != player.id and (_watcher.combat_state or {}).get("event_monitoring_target_id") == player.id:
@@ -506,6 +526,11 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
         await _error(game.code, user_id, "Addon purchases blocked this turn (Org Takeover)")
         return
 
+    # Card 139 (Prospect Lifecycle): addon purchases blocked until next boss defeat
+    if (player.combat_state or {}).get("addons_blocked_until_boss_defeat"):
+        await _error(game.code, user_id, "Addon purchases blocked until you defeat a boss (Prospect Lifecycle)")
+        return
+
     # Boss 60 (Connected App Infiltrator): addon purchases are blocked during this combat
     if player.is_in_combat and player.current_boss_id:
         if engine.boss_blocks_addon_purchase(player.current_boss_id):
@@ -521,6 +546,9 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
         # Card 48 (Price Rule): reduce next addon cost by N
         _price_discount = (player.combat_state or {}).get("next_addon_price_discount", 0)
         cost = max(0, cost - _price_discount)
+        # Card 124 (Price Book): halve next addon cost (floor, min 5)
+        if (player.combat_state or {}).get("next_addon_price_half"):
+            cost = max(5, cost // 2)
     if player.licenze < cost:
         await _error(game.code, user_id, f"Need {cost} Licenze (have {player.licenze})")
         return
@@ -532,10 +560,12 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
     cs_spend["total_addon_licenze_spent"] = cs_spend.get("total_addon_licenze_spent", 0) + cost
     player.combat_state = cs_spend
     # Consume addon price modifiers
-    if _price_fixed is not None or (player.combat_state or {}).get("next_addon_price_discount", 0):
-        cs_addon = dict(player.combat_state or {})
+    _cs_price = player.combat_state or {}
+    if _price_fixed is not None or _cs_price.get("next_addon_price_discount", 0) or _cs_price.get("next_addon_price_half"):
+        cs_addon = dict(_cs_price)
         cs_addon.pop("next_addon_price_fixed", None)
         cs_addon.pop("next_addon_price_discount", None)
+        cs_addon.pop("next_addon_price_half", None)
         player.combat_state = cs_addon
 
     # Bought addons are tracked as owned by player; market slot gets refilled
@@ -686,6 +716,14 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
     if player.combat_state and player.combat_state.get("api_rate_limit_max_cards") is not None:
         cs = dict(player.combat_state)
         cs.pop("api_rate_limit_max_cards", None)
+        player.combat_state = cs
+
+    # Card 122 (Marketing Automation): decrement turns counter at turn end
+    if player.combat_state and player.combat_state.get("marketing_automation_turns_remaining", 0) > 0:
+        cs = dict(player.combat_state)
+        cs["marketing_automation_turns_remaining"] -= 1
+        if cs["marketing_automation_turns_remaining"] <= 0:
+            cs.pop("marketing_automation_turns_remaining", None)
         player.combat_state = cs
 
     # Card 112 (Visitor Activity): decrement the mandatory-declaration counter at turn end

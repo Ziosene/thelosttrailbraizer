@@ -615,6 +615,13 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         player.combat_state = cs
     threshold = max(1, threshold)  # can't go below 1
 
+    # Card 136 (Service Forecast): use threshold as roll instead of the random result (guaranteed border hit)
+    if (player.combat_state or {}).get("service_forecast_use_threshold"):
+        roll = threshold
+        cs = dict(player.combat_state)
+        cs.pop("service_forecast_use_threshold", None)
+        player.combat_state = cs
+
     # ── Card 27 (Lucky Roll): post-roll reaction window ───────────────────────
     # The player sees the roll result before deciding. Open a window only if:
     #   1. Card 27 is in hand, AND
@@ -707,6 +714,12 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
     # Card 28 (Critical System): roll of exactly 10 deals 3 HP to boss (overrides all other modifiers)
     if (player.combat_state or {}).get("critical_system_until_round", 0) >= current_round and roll == 10:
         _hit_damage = 3
+    # Card 127 (Omni-Channel): next hit deals +1 HP to boss (stacks with other bonuses unless critical_system)
+    if (player.combat_state or {}).get("omni_channel_next_hit_bonus") and _hit_damage < 3:
+        _hit_damage += 1
+        cs = dict(player.combat_state)
+        cs.pop("omni_channel_next_hit_bonus", None)
+        player.combat_state = cs
 
     if round_nullified:
         # No damage in either direction this round
@@ -762,8 +775,25 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                 target_redir = random.choice(opponents_redir)
                 target_redir.hp = max(0, target_redir.hp - 1)
         else:
-            player.hp -= 1
+            _player_hp_damage = 1
+            # Card 130 (Queue-Based Routing): double damage on the designated round (2HP)
+            if (player.combat_state or {}).get("queue_routing_double_damage_round") == current_round:
+                _player_hp_damage = 2
+                cs = dict(player.combat_state)
+                cs.pop("queue_routing_double_damage_round", None)
+                player.combat_state = cs
+            # Card 132 (Escalation Rule): if taking ≥2HP, absorb half (floor)
+            if _player_hp_damage >= 2 and (player.combat_state or {}).get("escalation_rule_active"):
+                _player_hp_damage = _player_hp_damage - (_player_hp_damage // 2)
+            player.hp = max(0, player.hp - _player_hp_damage)
             player_took_damage = True
+            # Card 133 (Contact Center Integration): on HP loss, draw 1 card
+            if (player.combat_state or {}).get("contact_center_until_round", 0) >= current_round:
+                from app.models.game import PlayerHandCard as _PHC133
+                if game.action_deck_1:
+                    db.add(_PHC133(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+                elif game.action_deck_2:
+                    db.add(_PHC133(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
             # Card 92 (Case Escalation): track boss hits for escalation bonus
             cs92 = dict(player.combat_state or {})
             cs92["combat_boss_hits_received"] = cs92.get("combat_boss_hits_received", 0) + 1
@@ -1042,6 +1072,11 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         if player.combat_state and player.combat_state.get("petrified_card_ids"):
             cs = dict(player.combat_state)
             cs.pop("petrified_card_ids", None)
+            player.combat_state = cs
+        # Card 139 (Prospect Lifecycle): boss defeat lifts the addon purchase block
+        if player.combat_state and player.combat_state.get("addons_blocked_until_boss_defeat"):
+            cs = dict(player.combat_state)
+            cs.pop("addons_blocked_until_boss_defeat", None)
             player.combat_state = cs
         # Boss 55 / Boss 74: also apply shadow copy's on_boss_defeated effects
         if copy_boss_id:

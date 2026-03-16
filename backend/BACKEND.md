@@ -135,15 +135,15 @@ backend/
 │       ├── __init__.py           ✅
 │       ├── engine.py             ✅ funzioni pure core (~165 righe): roll, combat, deck, death, ELO + re-export engine_boss
 │       ├── engine_boss.py        ✅ boss ability system (~1000 righe): tutti i 100 boss, query helper, apply_boss_ability
-│       └── engine_cards/         ✅ effetti carte azione (120/300 implementate)
+│       └── engine_cards/         ✅ effetti carte azione (140/300 implementate)
 │           ├── __init__.py       ✅ dispatcher apply_action_card_effect
 │           ├── helpers.py        ✅ get_target()
-│           ├── economica.py      ✅ carte 1–8, 41–48, 81–88
-│           ├── offensiva.py      ✅ carte 9–18, 49–54, 89–95
-│           ├── difensiva.py      ✅ carte 19–25, 55–58, 96–100
-│           ├── manipolazione.py  ✅ carte 26–30, 59–62, 101–105 (dice manipulation)
-│           ├── utilita.py        ✅ carte 31–37, 63–69, 80, 106–110 (draw, discard, deck mgmt)
-│           └── interferenza.py   ✅ carte 38–40, 70–79, 111–120 (out-of-turn interference)
+│           ├── economica.py      ✅ carte 1–8, 41–48, 81–88, 121–125
+│           ├── offensiva.py      ✅ carte 9–18, 49–54, 89–95, 126–130
+│           ├── difensiva.py      ✅ carte 19–25, 55–58, 96–100, 131–135
+│           ├── manipolazione.py  ✅ carte 26–30, 59–62, 101–105, 136 (dice manipulation)
+│           ├── utilita.py        ✅ carte 31–37, 63–69, 80, 106–110, 137–138 (draw, discard, deck mgmt)
+│           └── interferenza.py   ✅ carte 38–40, 70–79, 111–120, 139–140 (out-of-turn interference)
 ├── scripts/
 │   └── seed_cards.py             ✅ parser .md → insert DB (idempotente, safe re-run)
 └── tests/
@@ -278,7 +278,7 @@ Client (React)
 | current_boss_hp | INT | HP attuale del boss in combattimento |
 | current_boss_source | VARCHAR(10) | `market_1` / `market_2` / `deck_1` / `deck_2` — determina logica vittoria/sconfitta |
 | combat_round | INT | round corrente di combattimento |
-| combat_state | JSON nullable | stato transiente per-combat: `resurrection_used`, `necromancer_resurrected`, `locked_addon_id`, `stolen_addon_id`, `petrified_card_ids`, `doomsayer_prediction_cap`, `loyalty_points` — resettato a `{}` ad ogni nuovo combattimento |
+| combat_state | JSON nullable | stato transiente per-combat. Chiavi chiave: `resurrection_used`, `necromancer_resurrected`, `locked_addon_id`, `stolen_addon_id`, `petrified_card_ids`, `doomsayer_prediction_cap`, `loyalty_points`, `boss_ability_disabled_until_round`, `boss_threshold_reduction`, `double_damage_until_round`, `force_field_until_round`, `try_scope_until_round`, `entitlement_process_until_round`, `disaster_recovery_ready`, `on_error_continue_ready`, `fault_path_active`, `transform_element_active`, `pause_element_rounds_remaining`, `dynamic_content_reroll`, `chaos_mode_next_roll`, `einstein_sto_next_roll_bonus`, `next_roll_forced`, `critical_system_until_round`, `predictive_model_prediction`, `message_transformation_active`, `service_forecast_use_threshold`, `omni_channel_next_hit_bonus`, `queue_routing_double_damage_round`, `escalation_rule_active`, `contact_center_until_round`, `marketing_automation_turns_remaining`, `next_addon_price_half`, `addons_blocked_until_boss_defeat`, `campaign_influence_remaining`, `pardot_form_handler_remaining` — resettato a `{}` ad ogni nuovo combattimento (tranne flag cross-turn) |
 | pending_addon_cost_penalty | INT | extra costo licenze sul prossimo acquisto addon (boss 26); resettato dopo il primo acquisto |
 | score / bosses_defeated | INT | per ELO |
 
@@ -537,7 +537,7 @@ MORTE DEL GIOCATORE
 
 ### ⬜ Da fare
 
-- [ ] **Effetti carte azione (carte 41–300)** — 40/300 implementate. Pattern: aggiungere funzione + chiave al dict del modulo della categoria. Per le nuove categorie creare modulo + aggiornare `__init__.py`. Vedere `cards/action_cards.md` batch 2+ (41–300).
+- [ ] **Effetti carte azione (carte 141–300)** — 140/300 implementate. Pattern: aggiungere funzione + chiave al dict del modulo della categoria (secondary dict pattern per carte oltre la 120). Vedere `cards/action_cards.md` batch 4+ (141–300).
   - **Validazione timing** — ogni carta ha un campo `Quando` che va verificato prima di giocarla (es. "durante combattimento", "fuori dal combattimento"). Da implementare in `can_play_card(card, game)` e chiamare in `_handle_play_card`.
   - **Knowledge Article (32)** — il riordino delle top 3 carte richiede un messaggio client follow-up con l'ordine preferito (non ancora implementato; attualmente solo preview).
 
@@ -573,6 +573,17 @@ MORTE DEL GIOCATORE
   - Nuovi query helper: `boss_card_declared_before_roll()` (boss 33), `boss_cancels_next_card()` (boss 38), `boss_roll_mode` → `"second_of_2"` (boss 39).
   - `apply_boss_ability` ora accetta `current_hp` per effetti basati sulla fase (boss 37).
   - Handler da aggiornare: `lock_addon` (flag `combat_locked_addon_id`), `bonus_chaos_roll` (dado extra d10 → penalità casuale), `boss_revive_to_deck` (flag `batch_necromancer_resurrected`), `boss_cancels_next_card` (flag `cancel_next_card_this_round`), `boss_card_declared_before_roll` (campo `declared_card_id` nel combat state).
+
+- [x] **Carte azione 121–140 — Batch 6 (Marketing Cloud & MuleSoft cont., Service Cloud, Pardot)**
+  - **Economica 121–125**: Lead Score (121, +1L/carta in mano max5), Marketing Automation (122, +1L per carta giocata per 2 turni), Product Catalog (123, +3L o +5L con ≥2 addon), Price Book (124, prossimo addon a metà prezzo, min5), Approval Process (125, +4L se ≥10L).
+  - **Offensiva 126–130**: Case Assignment Rule (126, escape + reward_licenze immediate), Omni-Channel (127, prossimo hit +1HP al boss), Einstein Case Classification (128, threshold -2 per 3 round), Boss Dossier (129, reveal boss + -1HP immediato), Queue-Based Routing (130, round neutro ora + 2HP al round dopo).
+  - **Difensiva 131–135**: SLA Policy (131, entitlement_process 3 round), Escalation Rule (132, danno ≥2HP assorbe metà), Contact Center Integration (133, su HP perso pesca 1 carta per 2 round), Macro Builder (134, +1 al dado), Omni Supervisor (135, boss ability disabilitata 2 round).
+  - **Manipolazione 136**: Service Forecast (136, usa soglia come risultato dado garantito).
+  - **Utilità 137–138**: CPQ Rules Engine (137, guarda top 5 tieni 1 altri rimangono in ordine), Pardot Form Handler (138, mirror draw quando avversario pesca, max 2).
+  - **Interferenza 139–140**: Prospect Lifecycle (139, target non può acquistare addon fino alla prossima sconfitta boss), Campaign Influence (140, per ogni Licenza guadagnata da chiunque +1L, max 3).
+  - **Pattern secondary dict**: ECONOMICA_121, OFFENSIVA_126, DIFENSIVA_131, MANIPOLAZIONE_136, UTILITA_137, INTERFERENZA_139 — tutti esportati e importati da `__init__.py`.
+  - **combat.py hooks aggiunti**: `service_forecast_use_threshold` (roll=threshold), `omni_channel_next_hit_bonus` (+1 _hit_damage), `queue_routing_double_damage_round` (2HP in miss branch), `escalation_rule_active` (assorbe metà su ≥2HP), `contact_center_until_round` (draw 1 carta su HP loss), `addons_blocked_until_boss_defeat` (clear su boss defeat).
+  - **turn.py hooks aggiunti**: `marketing_automation_turns_remaining` (+1L in play_card; decrement in end_turn), `next_addon_price_half` (halve cost in buy_addon), `addons_blocked_until_boss_defeat` (block in buy_addon), `pardot_form_handler_remaining` (mirror draw in draw_card).
 
 - [ ] **Rate limiting WS** — un utente non dovrebbe poter inviare messaggi troppo veloci.
 
