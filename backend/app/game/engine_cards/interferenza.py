@@ -410,6 +410,195 @@ def _card_140(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "campaign_influence_remaining": 3}
 
 
+def _card_181(player, game, db, *, target_player_id=None) -> dict:
+    """Communications Cloud — Un avversario deve giocare 1 carta specifica al suo prossimo turno.
+
+    Stores forced_card_id=<card_id> in target's combat_state.
+    turn.py play_card: if forced_card_id set, require the player to play that card first.
+    Simplified: forces the first card in target's hand.
+    """
+    target = get_target(game, player, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "no_target"}
+    hand = list(target.hand)
+    if not hand:
+        return {"applied": False, "reason": "target_hand_empty"}
+    forced_card_id = hand[0].action_card_id
+    cs = dict(target.combat_state or {})
+    cs["forced_card_id"] = forced_card_id
+    target.combat_state = cs
+    return {"applied": True, "target_id": target.id, "forced_card_id": forced_card_id}
+
+
+def _card_182(player, game, db, *, target_player_id=None) -> dict:
+    """Interaction Studio — Il prossimo boss di un avversario ha la sua abilità disabilitata.
+
+    Stores next_boss_ability_disabled=True in target's combat_state.
+    combat.py _handle_start_combat: if flag active, skip boss ability activation, clear flag.
+    """
+    target = get_target(game, player, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "no_target"}
+    cs = dict(target.combat_state or {})
+    cs["next_boss_ability_disabled"] = True
+    target.combat_state = cs
+    return {"applied": True, "target_id": target.id, "next_boss_ability_disabled": True}
+
+
+def _card_183(player, game, db, *, target_player_id=None) -> dict:
+    """Code Review — Blocca 1 carta dalla mano di un avversario fino al suo prossimo turno.
+
+    Stores code_review_blocked_card_ids=[card_id] in target's combat_state.
+    turn.py play_card: if card.id in list, reject with 'card_blocked_by_code_review'.
+    turn.py end_turn: clears code_review_blocked_card_ids.
+    Simplified: blocks the first card in target's hand.
+    """
+    target = get_target(game, player, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "no_target"}
+    hand = list(target.hand)
+    if not hand:
+        return {"applied": False, "reason": "target_hand_empty"}
+    blocked_id = hand[0].action_card_id
+    cs = dict(target.combat_state or {})
+    blocked = list(cs.get("code_review_blocked_card_ids") or [])
+    blocked.append(blocked_id)
+    cs["code_review_blocked_card_ids"] = blocked
+    target.combat_state = cs
+    return {"applied": True, "target_id": target.id, "blocked_card_id": blocked_id}
+
+
+def _card_184(player, game, db, *, target_player_id=None) -> dict:
+    """Amendment Quote — Riduce di 1 il bonus principale di un AddOn avversario per 1 turno.
+
+    Stores amendment_quote_active=True in target's combat_state.
+    turn.py use_addon: if flag active, reduce addon bonus by 1.
+    turn.py end_turn: clears amendment_quote_active.
+    """
+    target = get_target(game, player, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "no_target"}
+    cs = dict(target.combat_state or {})
+    cs["amendment_quote_active"] = True
+    target.combat_state = cs
+    return {"applied": True, "target_id": target.id, "amendment_quote_active": True}
+
+
+def _card_185(player, game, db, *, target_player_id=None) -> dict:
+    """Record Triggered Flow — Guadagni 1L ogni volta che un avversario usa un AddOn attivo.
+
+    Stores record_triggered_flow_watcher_id=player.id and record_triggered_flow_remaining=3
+    in player's combat_state.
+    turn.py use_addon (used by an opponent): checks all other players for this flag,
+    awards 1L to each watcher, decrements the counter; clears when 0.
+    """
+    cs = dict(player.combat_state or {})
+    cs["record_triggered_flow_watcher_id"] = player.id
+    cs["record_triggered_flow_remaining"] = 3
+    player.combat_state = cs
+    return {"applied": True, "record_triggered_flow_remaining": 3}
+
+
+def _card_186(player, game, db, *, target_player_id=None) -> dict:
+    """Push Notification — Forza un avversario a giocare immediatamente 1 carta dalla sua mano.
+
+    Simplified: target discards 1 card (simulates forced discard without full WS routing).
+    Full implementation: WS handler routes a forced play_card event for the target.
+    """
+    target = get_target(game, player, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "no_target"}
+    hand = list(target.hand)
+    if not hand:
+        return {"applied": False, "reason": "target_hand_empty"}
+    discarded = hand[0]
+    discard = list(game.action_discard or [])
+    discard.append(discarded.action_card_id)
+    game.action_discard = discard
+    db.delete(discarded)
+    return {"applied": True, "target_id": target.id, "discarded_card_id": discarded.action_card_id}
+
+
+def _card_187(player, game, db, *, target_player_id=None) -> dict:
+    """API Manager — Un avversario può fare solo 1 azione per turno per i prossimi 2 turni.
+
+    Stores api_rate_limit_turns_remaining=2 and api_rate_limit_max_cards=1 in target's cs.
+    turn.py play_card: if api_rate_limit_max_cards and cards_played_this_turn >= limit, reject.
+    turn.py end_turn: decrements api_rate_limit_turns_remaining; clears both keys when 0.
+    """
+    target = get_target(game, player, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "no_target"}
+    cs = dict(target.combat_state or {})
+    cs["api_rate_limit_turns_remaining"] = 2
+    cs["api_rate_limit_max_cards"] = 1
+    target.combat_state = cs
+    return {"applied": True, "target_id": target.id, "api_rate_limit_turns_remaining": 2}
+
+
+def _card_188(player, game, db, *, target_player_id=None) -> dict:
+    """Update Records — L'effetto di un AddOn avversario si riduce di 1 per 2 turni.
+
+    Simplified: drains 1L from target each time they draw a card, for 2 turns.
+    Stores update_records_licenze_drain_turns=2 in target's combat_state.
+    turn.py draw_card: if flag > 0, drain 1L from that player.
+    turn.py end_turn: decrements flag, clears when 0.
+    """
+    target = get_target(game, player, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "no_target"}
+    cs = dict(target.combat_state or {})
+    cs["update_records_licenze_drain_turns"] = 2
+    target.combat_state = cs
+    return {"applied": True, "target_id": target.id, "update_records_licenze_drain_turns": 2}
+
+
+def _card_189(player, game, db, *, target_player_id=None) -> dict:
+    """Delete Records — Elimina 1 AddOn avversario; lui non può riacquistarlo per 3 turni.
+
+    Removes the first addon from target's inventory, returns it to addon_deck_1.
+    Stores deleted_addon_blocked_ids=[addon_id] and deleted_addon_block_turns_remaining=3
+    in target's combat_state.
+    turn.py buy_addon: if addon_id in deleted_addon_blocked_ids, reject purchase.
+    turn.py end_turn: decrements deleted_addon_block_turns_remaining; clears both when 0.
+    """
+    target = get_target(game, player, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "no_target"}
+    addons = list(target.addons)
+    if not addons:
+        return {"applied": False, "reason": "target_has_no_addons"}
+    removed = addons[0]
+    removed_addon_id = removed.addon_id
+    db.delete(removed)
+    deck = list(game.addon_deck_1 or [])
+    deck.append(removed_addon_id)
+    game.addon_deck_1 = deck
+    cs = dict(target.combat_state or {})
+    blocked = list(cs.get("deleted_addon_blocked_ids") or [])
+    blocked.append(removed_addon_id)
+    cs["deleted_addon_blocked_ids"] = blocked
+    cs["deleted_addon_block_turns_remaining"] = 3
+    target.combat_state = cs
+    return {"applied": True, "target_id": target.id, "removed_addon_id": removed_addon_id}
+
+
+def _card_190(player, game, db, *, target_player_id=None) -> dict:
+    """Unification Rule — Per 1 turno, tutti i giocatori possono usare solo 1 tipo di carta.
+
+    Broadcasts unification_rule_active=True and unification_rule_card_type=<type> to all players.
+    turn.py play_card: if rule active for the playing player, reject cards of wrong type.
+    turn.py end_turn: clears both flags for the current-turn player.
+    Default enforced type: 'Offensiva' (client should specify via a future param).
+    """
+    for gp in game.players:
+        cs = dict(gp.combat_state or {})
+        cs["unification_rule_active"] = True
+        cs["unification_rule_card_type"] = "Offensiva"
+        gp.combat_state = cs
+    return {"applied": True, "unification_rule_card_type": "Offensiva", "affected_players": len(list(game.players))}
+
+
 INTERFERENZA: dict = {
     38:  _card_38,
     39:  _card_39,
@@ -436,4 +625,14 @@ INTERFERENZA: dict = {
     120: _card_120,
     139: _card_139,
     140: _card_140,
+    181: _card_181,
+    182: _card_182,
+    183: _card_183,
+    184: _card_184,
+    185: _card_185,
+    186: _card_186,
+    187: _card_187,
+    188: _card_188,
+    189: _card_189,
+    190: _card_190,
 }

@@ -72,16 +72,28 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
         k: _old_cs[k] for k in (
             "object_store_licenze", "drip_program_remaining",
             "next_addon_price_fixed", "next_addon_price_discount",
+            "next_boss_ability_disabled",   # Card 182 (Interaction Studio): cross-turn flag
+            "runtime_manager_ready",        # Card 158 (Runtime Manager): cross-turn survival flag
         ) if k in _old_cs
     }
     player.combat_state = {**_persist_cs, "fought_this_turn": True}
     game.current_phase = TurnPhase.combat
+
+    # Card 182 (Interaction Studio): next boss ability disabled — consume the flag
+    _next_boss_ability_disabled = bool((player.combat_state or {}).get("next_boss_ability_disabled"))
+    if _next_boss_ability_disabled:
+        cs = dict(player.combat_state)
+        cs.pop("next_boss_ability_disabled", None)
+        player.combat_state = cs
 
     # Boss 68 (Schema Builder Monstrosity): boss HP increases by 1 for each addon the combatant owns
     if engine.apply_boss_ability(boss_id, "on_combat_start")["bonus_hp_per_player_addon"]:
         player.current_boss_hp = boss.hp + len(player.addons)
 
     start_effect = engine.apply_boss_ability(boss_id, "on_combat_start")
+    if _next_boss_ability_disabled:
+        # Neutralize all boss on_combat_start effects
+        start_effect = {k: (0 if isinstance(v, int) else False) for k, v in start_effect.items()}
 
     # Boss 7 (SOQL Vampire) / Boss 61 (Nonprofit Cloud Blight): steal licenze at combat start
     if start_effect["steal_licenze"] > 0:
@@ -561,6 +573,14 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         cs.pop("message_transformation_active", None)
         player.combat_state = cs
 
+    # Card 142 (Automotive Cloud): take the best of 2 rolls for N rounds
+    if (player.combat_state or {}).get("best_of_2_until_round", 0) >= current_round:
+        roll = max(roll, engine.roll_d10())
+
+    # Card 171 (Copilot Studio): all numeric values +1 this round — apply to roll
+    if (player.combat_state or {}).get("copilot_studio_boost_active"):
+        roll = min(10, roll + 1)
+
     # Card 26 (Dice Optimizer) / Card 62 (DataWeave Script) / Card 104 (Flow Variable): force next roll
     _forced_roll = (player.combat_state or {}).get("next_roll_forced")
     if _forced_roll is not None:
@@ -599,9 +619,12 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
     ) + threshold_bonus
     # Card 13 (Debug Exploit): persistent threshold reduction for rest of combat
     threshold -= (player.combat_state or {}).get("boss_threshold_reduction", 0)
+    # Card 151 (Hyperforce Migration): suppress boss threshold bonuses and boss ability for N rounds
+    _hyperforce_until = (player.combat_state or {}).get("hyperforce_until_round", 0)
+    _hyperforce_active = _hyperforce_until >= current_round
     # Card 15 (Scope Creep): opponent raised threshold for this roll only
     _scope_creep_until = (player.combat_state or {}).get("boss_threshold_increase_until_round", 0)
-    if _scope_creep_until >= current_round:
+    if _scope_creep_until >= current_round and not _hyperforce_active:
         threshold += 2
     # Card 38 (Consulting Hours) / Card 91 (Guided Selling): threshold reduction for N rounds
     _consulting_until = (player.combat_state or {}).get("consulting_hours_until_round", 0)
@@ -744,6 +767,15 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                 # Double boss damage if prediction was "hit" and correct (boss 53)
                 if prediction == "hit":
                     player.current_boss_hp -= 1  # prediction bonus: always 1
+        # Card 148 (Loop Element): track hits dealt for damage scaling
+        _cs_hit = dict(player.combat_state or {})
+        _cs_hit["combat_hits_dealt"] = _cs_hit.get("combat_hits_dealt", 0) + 1
+        player.combat_state = _cs_hit
+        # Card 169 (Model Builder): reset consecutive miss counter on hit
+        if (player.combat_state or {}).get("model_builder_active"):
+            _cs_mb_hit = dict(player.combat_state)
+            _cs_mb_hit["consecutive_misses"] = 0
+            player.combat_state = _cs_mb_hit
         # Card 95 (Heroku CI): if boss HP ≤ 2 before this hit, finish the boss immediately
         if (player.combat_state or {}).get("heroku_ci_active") and (player.current_boss_hp or 0) <= 2:
             player.current_boss_hp = 0
@@ -785,8 +817,29 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             # Card 132 (Escalation Rule): if taking ≥2HP, absorb half (floor)
             if _player_hp_damage >= 2 and (player.combat_state or {}).get("escalation_rule_active"):
                 _player_hp_damage = _player_hp_damage - (_player_hp_damage // 2)
+            # Card 153 (Environment Branch): skip HP damage once, then clear
+            if _player_hp_damage > 0 and (player.combat_state or {}).get("environment_branch_active"):
+                _player_hp_damage = 0
+                _cs_eb = dict(player.combat_state)
+                _cs_eb.pop("environment_branch_active", None)
+                player.combat_state = _cs_eb
+            # Card 156 (Travel Time Calc): if roll exactly == threshold-1, skip damage
+            elif _player_hp_damage > 0 and (player.combat_state or {}).get("travel_time_calc_active") and roll == threshold - 1:
+                _player_hp_damage = 0
+                _cs_tt = dict(player.combat_state)
+                _cs_tt.pop("travel_time_calc_active", None)
+                player.combat_state = _cs_tt
             player.hp = max(0, player.hp - _player_hp_damage)
             player_took_damage = True
+            if _player_hp_damage > 0:
+                # Card 152 (Net Zero Commitment): +1L per HP lost
+                if (player.combat_state or {}).get("net_zero_commitment_active"):
+                    player.licenze += _player_hp_damage
+                # Card 154 (Sustainability Cloud): accumulate HP lost for addon discount
+                if (player.combat_state or {}).get("sustainability_discount_pending"):
+                    _cs_sus = dict(player.combat_state)
+                    _cs_sus["sustainability_hp_lost"] = _cs_sus.get("sustainability_hp_lost", 0) + _player_hp_damage
+                    player.combat_state = _cs_sus
             # Card 133 (Contact Center Integration): on HP loss, draw 1 card
             if (player.combat_state or {}).get("contact_center_until_round", 0) >= current_round:
                 from app.models.game import PlayerHandCard as _PHC133
@@ -810,6 +863,9 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         if _ampscript_until >= current_round and miss_effect["extra_damage"] > 0:
             player.current_boss_hp = max(0, (player.current_boss_hp or 0) - 1)
             miss_effect = {**miss_effect, "extra_damage": 0}  # absorb the extra_damage
+        # Card 151 (Hyperforce Migration): suppress boss after_miss ability
+        if _hyperforce_active:
+            miss_effect = {k: (0 if isinstance(v, int) else False) for k, v in miss_effect.items()}
         if miss_effect["extra_damage"] > 0 and not _entitlement_active:
             player.hp = max(0, player.hp - miss_effect["extra_damage"])
             # Double player damage if prediction was "miss" and correct (boss 53)
@@ -833,6 +889,15 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                 if hc_33 and hc_33.player_id == player.id:
                     game.action_discard = (game.action_discard or []) + [hc_33.action_card_id]
                     db.delete(hc_33)
+
+    # Card 169 (Model Builder): track consecutive misses; after 3, force next roll = 10
+    if result == "miss" and (player.combat_state or {}).get("model_builder_active"):
+        _cs_mb = dict(player.combat_state)
+        _cs_mb["consecutive_misses"] = _cs_mb.get("consecutive_misses", 0) + 1
+        if _cs_mb["consecutive_misses"] >= 3:
+            _cs_mb["next_roll_forced"] = 10
+            _cs_mb["consecutive_misses"] = 0
+        player.combat_state = _cs_mb
 
     # Clear boss 33 declaration after every roll (hit or miss)
     if engine.boss_card_declared_before_roll(boss.id) and player.combat_state:
@@ -939,6 +1004,13 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         player.licenze = max(0, player.licenze - 3)
         cs = dict(player.combat_state)
         cs.pop("on_error_continue_ready", None)
+        player.combat_state = cs
+
+    # Card 158 (Runtime Manager): cross-turn survival flag — survive fatal blow with 1 HP
+    if player.hp <= 0 and (player.combat_state or {}).get("runtime_manager_ready"):
+        player.hp = 1
+        cs = dict(player.combat_state)
+        cs.pop("runtime_manager_ready", None)
         player.combat_state = cs
 
     boss_defeated = player.current_boss_hp is not None and player.current_boss_hp <= 0

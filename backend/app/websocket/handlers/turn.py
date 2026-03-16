@@ -130,6 +130,25 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
                     _wc.pop("pardot_form_handler_remaining", None)
                 _watcher.combat_state = _wc
 
+    # Card 188 (Update Records): drain 1L on each draw while flag active
+    _ur_drain = (player.combat_state or {}).get("update_records_licenze_drain_turns", 0)
+    if _ur_drain > 0:
+        player.licenze = max(0, player.licenze - 1)
+
+    # Card 178 (VM Queue): deliver next queued card to hand at draw time
+    _vm_queue = list((player.combat_state or {}).get("vm_queue_card_ids") or [])
+    if _vm_queue:
+        _vm_card_id = _vm_queue.pop(0)
+        from app.models.game import PlayerHandCard as _PHCVM
+        if len(list(player.hand)) < engine.MAX_HAND_SIZE:
+            db.add(_PHCVM(player_id=player.id, action_card_id=_vm_card_id))
+        _cs_vm = dict(player.combat_state)
+        if _vm_queue:
+            _cs_vm["vm_queue_card_ids"] = _vm_queue
+        else:
+            _cs_vm.pop("vm_queue_card_ids", None)
+        player.combat_state = _cs_vm
+
     # Boss 92 (Einstein Copilot Seraph): every card drawn during combat costs 1 HP
     if player.is_in_combat and player.current_boss_id:
         hp_cost = engine.boss_draw_costs_hp(player.current_boss_id)
@@ -255,6 +274,18 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
         return
 
     card = db.get(ActionCard, hc.action_card_id)
+
+    # Card 183 (Code Review): blocked cards cannot be played until next turn
+    if card and card.id in list((player.combat_state or {}).get("code_review_blocked_card_ids") or []):
+        await _error(game.code, user_id, "card_blocked_by_code_review")
+        return
+
+    # Card 190 (Unification Rule): only cards of the mandated type may be played
+    _unification_type = (player.combat_state or {}).get("unification_rule_card_type")
+    if _unification_type and (player.combat_state or {}).get("unification_rule_active"):
+        if card and card.card_type != _unification_type:
+            await _error(game.code, user_id, f"unification_rule: only {_unification_type} cards allowed this turn")
+            return
 
     # Card 27 (Lucky Roll): reaction-only — must be played via the post-roll reaction window,
     # not via play_card. Guard here prevents the card from being consumed without effect.
@@ -458,6 +489,15 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
     if (player.combat_state or {}).get("marketing_automation_turns_remaining", 0) > 0:
         player.licenze += 1
 
+    # Card 146 (Digital HQ): track distinct card types played this turn
+    if card and card.card_type:
+        _cs_ct = dict(player.combat_state or {})
+        _types_played = list(_cs_ct.get("card_types_played_this_turn") or [])
+        if card.card_type not in _types_played:
+            _types_played.append(card.card_type)
+            _cs_ct["card_types_played_this_turn"] = _types_played
+            player.combat_state = _cs_ct
+
     # Card 120 (Event Monitoring): watchers earn 1L each time this player plays a card (max 2)
     for _watcher in game.players:
         if _watcher.id != player.id and (_watcher.combat_state or {}).get("event_monitoring_target_id") == player.id:
@@ -531,6 +571,12 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
         await _error(game.code, user_id, "Addon purchases blocked until you defeat a boss (Prospect Lifecycle)")
         return
 
+    # Card 189 (Delete Records): specific addon IDs blocked from repurchase for N turns
+    _blocked_addon_ids = list((player.combat_state or {}).get("deleted_addon_blocked_ids") or [])
+    if addon_id in _blocked_addon_ids:
+        await _error(game.code, user_id, "This addon was deleted and cannot be repurchased yet (Delete Records)")
+        return
+
     # Boss 60 (Connected App Infiltrator): addon purchases are blocked during this combat
     if player.is_in_combat and player.current_boss_id:
         if engine.boss_blocks_addon_purchase(player.current_boss_id):
@@ -549,6 +595,17 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
         # Card 124 (Price Book): halve next addon cost (floor, min 5)
         if (player.combat_state or {}).get("next_addon_price_half"):
             cost = max(5, cost // 2)
+        # Card 161 (Promotions Engine): -2L addon cost for N turns
+        if (player.combat_state or {}).get("promotions_engine_turns_remaining", 0) > 0:
+            cost = max(1, cost - 2)
+        # Card 154 (Sustainability Cloud): discount = HP lost since card played
+        _sus_hp_lost = (player.combat_state or {}).get("sustainability_hp_lost", 0)
+        if _sus_hp_lost > 0 and (player.combat_state or {}).get("sustainability_discount_pending"):
+            cost = max(1, cost - _sus_hp_lost)
+            _cs_sus_buy = dict(player.combat_state)
+            _cs_sus_buy.pop("sustainability_discount_pending", None)
+            _cs_sus_buy.pop("sustainability_hp_lost", None)
+            player.combat_state = _cs_sus_buy
     if player.licenze < cost:
         await _error(game.code, user_id, f"Need {cost} Licenze (have {player.licenze})")
         return
@@ -577,6 +634,11 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
 
     from app.models.game import PlayerAddon
     db.add(PlayerAddon(player_id=player.id, addon_id=addon_id))
+
+    # Card 160 (Storefront Reference): mark that this player bought an addon this turn
+    _cs_bat = dict(player.combat_state or {})
+    _cs_bat["bought_addon_this_turn"] = True
+    player.combat_state = _cs_bat
 
     # TODO: triggherare gli addon passivi con trigger "quando acquisti un addon" (sia il nuovo che quelli già posseduti).
     # Alcuni addon esistenti danno bonus al momento dell'acquisto di un nuovo addon.
@@ -644,6 +706,19 @@ async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Ses
             return
 
     pa.is_tapped = True
+
+    # Card 185 (Record Triggered Flow): other players watching earn 1L when this player uses an addon
+    for _watcher in game.players:
+        if _watcher.id != player.id:
+            _rtf = (_watcher.combat_state or {}).get("record_triggered_flow_remaining", 0)
+            if _rtf > 0:
+                _watcher.licenze += 1
+                _wc_rtf = dict(_watcher.combat_state)
+                _wc_rtf["record_triggered_flow_remaining"] = _rtf - 1
+                if _wc_rtf["record_triggered_flow_remaining"] <= 0:
+                    _wc_rtf.pop("record_triggered_flow_remaining", None)
+                    _wc_rtf.pop("record_triggered_flow_watcher_id", None)
+                _watcher.combat_state = _wc_rtf
 
     # Boss 49 (Managed Package Leech): boss heals 1 HP every time combatant activates an addon
     if player.is_in_combat and player.current_boss_id:
@@ -745,6 +820,58 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
                 db.delete(pa_ft)
         cs = dict(player.combat_state)
         cs.pop("free_trial_addon_player_addon_ids", None)
+        player.combat_state = cs
+
+    # Batch 7 end-of-turn cleanups (single cs mutation for performance)
+    if player.combat_state:
+        cs = dict(player.combat_state)
+        # Card 160 (Storefront Reference): clear per-turn addon-bought flag
+        cs.pop("bought_addon_this_turn", None)
+        # Card 161 (Promotions Engine): decrement turns counter
+        _pe = cs.get("promotions_engine_turns_remaining", 0)
+        if _pe > 0:
+            _pe -= 1
+            if _pe <= 0:
+                cs.pop("promotions_engine_turns_remaining", None)
+            else:
+                cs["promotions_engine_turns_remaining"] = _pe
+        # Card 183 (Code Review): blocked card IDs expire after one turn
+        cs.pop("code_review_blocked_card_ids", None)
+        # Card 184 (Amendment Quote): one-turn nerf expires
+        cs.pop("amendment_quote_active", None)
+        # Card 187 (API Manager): decrement rate-limit turns; clear both when done
+        _ar = cs.get("api_rate_limit_turns_remaining", 0)
+        if _ar > 0:
+            _ar -= 1
+            if _ar <= 0:
+                cs.pop("api_rate_limit_turns_remaining", None)
+                cs.pop("api_rate_limit_max_cards", None)
+            else:
+                cs["api_rate_limit_turns_remaining"] = _ar
+        # Card 188 (Update Records): decrement licenze-drain turns
+        _ur = cs.get("update_records_licenze_drain_turns", 0)
+        if _ur > 0:
+            _ur -= 1
+            if _ur <= 0:
+                cs.pop("update_records_licenze_drain_turns", None)
+            else:
+                cs["update_records_licenze_drain_turns"] = _ur
+        # Card 189 (Delete Records): decrement blocked-addon-repurchase turns
+        _db_turns = cs.get("deleted_addon_block_turns_remaining", 0)
+        if _db_turns > 0:
+            _db_turns -= 1
+            if _db_turns <= 0:
+                cs.pop("deleted_addon_block_turns_remaining", None)
+                cs.pop("deleted_addon_blocked_ids", None)
+            else:
+                cs["deleted_addon_block_turns_remaining"] = _db_turns
+        # Card 190 (Unification Rule): one-turn rule expires
+        cs.pop("unification_rule_active", None)
+        cs.pop("unification_rule_card_type", None)
+        # Card 146 (Digital HQ): clear per-turn card-types list
+        cs.pop("card_types_played_this_turn", None)
+        # Card 171 (Copilot Studio): clear per-round boost
+        cs.pop("copilot_studio_boost_active", None)
         player.combat_state = cs
 
     player.cards_played_this_turn = 0

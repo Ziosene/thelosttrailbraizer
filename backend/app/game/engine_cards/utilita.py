@@ -504,6 +504,142 @@ def _card_138(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "pardot_form_handler_remaining": 2}
 
 
+def _card_172(player, game, db, *, target_player_id=None) -> dict:
+    """Tableau Dashboard — Pesca 2 carte e guarda le prime 2 del mazzo boss (info)."""
+    from app.models.game import PlayerHandCard as _PHC172
+    drew = 0
+    for deck in (game.action_deck_1, game.action_deck_2):
+        if deck and drew < 2:
+            db.add(_PHC172(player_id=player.id, action_card_id=deck.pop(0)))
+            drew += 1
+    next_boss_ids = (game.boss_deck_1 or game.boss_deck_2 or [])[:2]
+    return {"applied": True, "cards_drawn": drew, "next_boss_card_ids": next_boss_ids}
+
+
+def _card_173(player, game, db, *, target_player_id=None) -> dict:
+    """CRM Analytics — Riordina le prime 4 carte del mazzo azione nell'ordine preferito.
+
+    Stores crm_analytics_reorder_pending=True; the WS handler should prompt the client
+    to provide an ordered list of top-4 card IDs, then commit the reorder via a follow-up event.
+    Fallback: no-op (ordering unchanged) until WS hook implemented.
+    """
+    cs = dict(player.combat_state or {})
+    cs["crm_analytics_reorder_pending"] = True
+    player.combat_state = cs
+    top4 = (game.action_deck_1 or game.action_deck_2 or [])[:4]
+    return {"applied": True, "crm_analytics_reorder_pending": True, "top4_card_ids": top4}
+
+
+def _card_174(player, game, db, *, target_player_id=None) -> dict:
+    """App Analytics — Tra gli ultimi 5 scarti azione, recupera 1 carta (la più recente).
+
+    Simplified: recovers the most recent card from game.action_discard.
+    Full implementation requires client to select from last 5 discards.
+    """
+    from app.models.game import PlayerHandCard as _PHC174
+    discard = list(game.action_discard or [])
+    if not discard:
+        return {"applied": False, "reason": "discard_empty"}
+    recovered_id = discard.pop()
+    game.action_discard = discard
+    db.add(_PHC174(player_id=player.id, action_card_id=recovered_id))
+    return {"applied": True, "recovered_card_id": recovered_id}
+
+
+def _card_175(player, game, db, *, target_player_id=None) -> dict:
+    """Profile Explorer — Vedi AddOn, HP e Licenze di tutti i giocatori per 1 turno (info broadcast)."""
+    snapshot = [
+        {
+            "player_id": p.id,
+            "hp": p.hp,
+            "licenze": p.licenze,
+            "addon_count": len(list(p.addons)),
+        }
+        for p in game.players
+    ]
+    return {"applied": True, "player_snapshots": snapshot}
+
+
+def _card_176(player, game, db, *, target_player_id=None) -> dict:
+    """Customer 360 — Vedi mano, AddOn, HP e Licenze di tutti i giocatori per 1 turno intero.
+
+    Stores customer_360_active=True; WS handler may expose extra info this turn.
+    """
+    cs = dict(player.combat_state or {})
+    cs["customer_360_active"] = True
+    player.combat_state = cs
+    snapshot = [
+        {
+            "player_id": p.id,
+            "hp": p.hp,
+            "licenze": p.licenze,
+            "hand_size": len(list(p.hand)),
+            "addon_count": len(list(p.addons)),
+        }
+        for p in game.players
+    ]
+    return {"applied": True, "customer_360_active": True, "player_snapshots": snapshot}
+
+
+def _card_177(player, game, db, *, target_player_id=None) -> dict:
+    """Database Connector — Cerca tra gli ultimi 10 scarti e recupera 1 carta specifica.
+
+    Simplified: recovers the most recent card from game.action_discard (last 10 pool).
+    Full implementation requires client to specify the target card ID from the last 10.
+    """
+    from app.models.game import PlayerHandCard as _PHC177
+    discard = list(game.action_discard or [])
+    if not discard:
+        return {"applied": False, "reason": "discard_empty"}
+    recovered_id = discard.pop()
+    game.action_discard = discard
+    db.add(_PHC177(player_id=player.id, action_card_id=recovered_id))
+    return {"applied": True, "recovered_card_id": recovered_id}
+
+
+def _card_178(player, game, db, *, target_player_id=None) -> dict:
+    """VM Queue — Metti fino a 3 carte in coda; si giocano automaticamente 1 per turno.
+
+    Stores vm_queue_card_ids=[id1, id2, id3] in combat_state; removes queued cards from hand.
+    turn.py start_of_turn (or draw phase): if vm_queue_card_ids not empty, pop first and auto-play.
+    Simplified: queues the first 3 cards from the player's current hand.
+    """
+    hand_cards = list(player.hand)[:3]
+    if not hand_cards:
+        return {"applied": False, "reason": "no_cards_in_hand"}
+    queued_ids = []
+    for hc in hand_cards:
+        queued_ids.append(hc.action_card_id)
+        db.delete(hc)
+    cs = dict(player.combat_state or {})
+    cs["vm_queue_card_ids"] = cs.get("vm_queue_card_ids", []) + queued_ids
+    player.combat_state = cs
+    return {"applied": True, "vm_queue_card_ids": queued_ids}
+
+
+def _card_179(player, game, db, *, target_player_id=None) -> dict:
+    """API Autodiscovery — Rivela l'abilità dei prossimi 2 boss senza pescarli (info)."""
+    next_boss_ids = ((game.boss_deck_1 or []) + (game.boss_deck_2 or []))[:2]
+    return {"applied": True, "next_boss_card_ids": next_boss_ids}
+
+
+def _card_180(player, game, db, *, target_player_id=None) -> dict:
+    """Related Attribute — Collega 2 tuoi AddOn; quando uno si attiva l'altro ha +1 al suo effetto.
+
+    Stores related_attribute_pair=[addon_id_a, addon_id_b] in combat_state.
+    turn.py use_addon: if used addon is in pair, set related_attribute_boost_addon_id for partner.
+    Simplified: takes the first 2 addons owned by the player.
+    """
+    addons = list(player.addons)[:2]
+    if len(addons) < 2:
+        return {"applied": False, "reason": "need_at_least_2_addons"}
+    pair_ids = [addons[0].addon_id, addons[1].addon_id]
+    cs = dict(player.combat_state or {})
+    cs["related_attribute_pair"] = pair_ids
+    player.combat_state = cs
+    return {"applied": True, "related_attribute_pair": pair_ids}
+
+
 UTILITA: dict = {
     31:  _card_31,
     32:  _card_32,
@@ -527,4 +663,13 @@ UTILITA: dict = {
     110: _card_110,
     137: _card_137,
     138: _card_138,
+    172: _card_172,
+    173: _card_173,
+    174: _card_174,
+    175: _card_175,
+    176: _card_176,
+    177: _card_177,
+    178: _card_178,
+    179: _card_179,
+    180: _card_180,
 }

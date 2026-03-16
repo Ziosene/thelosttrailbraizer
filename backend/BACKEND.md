@@ -135,15 +135,15 @@ backend/
 │       ├── __init__.py           ✅
 │       ├── engine.py             ✅ funzioni pure core (~165 righe): roll, combat, deck, death, ELO + re-export engine_boss
 │       ├── engine_boss.py        ✅ boss ability system (~1000 righe): tutti i 100 boss, query helper, apply_boss_ability
-│       └── engine_cards/         ✅ effetti carte azione (140/300 implementate)
+│       └── engine_cards/         ✅ effetti carte azione (190/300 implementate)
 │           ├── __init__.py       ✅ dispatcher apply_action_card_effect
 │           ├── helpers.py        ✅ get_target()
-│           ├── economica.py      ✅ carte 1–8, 41–48, 81–88, 121–125
-│           ├── offensiva.py      ✅ carte 9–18, 49–54, 89–95, 126–130
-│           ├── difensiva.py      ✅ carte 19–25, 55–58, 96–100, 131–135
-│           ├── manipolazione.py  ✅ carte 26–30, 59–62, 101–105, 136 (dice manipulation)
-│           ├── utilita.py        ✅ carte 31–37, 63–69, 80, 106–110, 137–138 (draw, discard, deck mgmt)
-│           └── interferenza.py   ✅ carte 38–40, 70–79, 111–120, 139–140 (out-of-turn interference)
+│           ├── economica.py      ✅ carte 1–8, 41–48, 81–88, 121–125, 159–168
+│           ├── offensiva.py      ✅ carte 9–18, 49–54, 89–95, 126–130, 141–150
+│           ├── difensiva.py      ✅ carte 19–25, 55–58, 96–100, 131–135, 151–158
+│           ├── manipolazione.py  ✅ carte 26–30, 59–62, 101–105, 136, 169–171
+│           ├── utilita.py        ✅ carte 31–37, 63–69, 80, 106–110, 137–138, 172–180
+│           └── interferenza.py   ✅ carte 38–40, 70–79, 111–120, 139–140, 181–190
 ├── scripts/
 │   └── seed_cards.py             ✅ parser .md → insert DB (idempotente, safe re-run)
 └── tests/
@@ -175,7 +175,7 @@ Client (React)
 - **WebSocket** gestisce: tutto il gameplay in tempo reale (ogni messaggio è un JSON `{action: "...", ...}`).
 - **engine.py** (core, ~165 righe): funzioni pure testabili (roll, combat, deck, death, ELO). Re-esporta tutto da `engine_boss`.
 - **engine_boss.py** (~1000 righe): sistema boss completo — tutti i 100 boss, query helper, `apply_boss_ability`. Separato per leggibilità; nessuna modifica al callee.
-- **engine_cards/** (package): effetti carte azione. Entry-point: `apply_action_card_effect(card, player, game, db, *, target_player_id)`. Un modulo per categoria: `economica` (1–8, 41–48, 81–88), `offensiva` (9–18, 49–54, 89–95), `difensiva` (19–25, 55–58, 96–100), `manipolazione` (26–30, 59–62), `utilita` (31–37, 63–69, 80), `interferenza` (38–40, 70–79). Per aggiungere carte: apri il modulo della categoria, aggiungi una funzione e la chiave al dict esposto. `__init__.py` unisce tutti i dict e fa il dispatch per numero carta.
+- **engine_cards/** (package): effetti carte azione. Entry-point: `apply_action_card_effect(card, player, game, db, *, target_player_id)`. Un modulo per categoria: `economica` (1–8, 41–48, 81–88, 121–125, 159–168), `offensiva` (9–18, 49–54, 89–95, 126–130, 141–150), `difensiva` (19–25, 55–58, 96–100, 131–135, 151–158), `manipolazione` (26–30, 59–62, 101–105, 136, 169–171), `utilita` (31–37, 63–69, 80, 106–110, 137–138, 172–180), `interferenza` (38–40, 70–79, 111–120, 139–140, 181–190). Per aggiungere carte: definisci la funzione `_card_N` PRIMA del dict `MODULO: dict = {…}`, poi aggiungi `N: _card_N` al dict. `__init__.py` unisce tutti i dict e fa il dispatch per numero carta.
 - **game_handler.py** (thin router, 65 righe): routing WS. Tutta la logica è in `handlers/` e `game_helpers.py`.
 - **handlers/lobby.py**: join, select_character, start_game.
 - **handlers/turn.py**: draw_card, play_card, buy_addon, use_addon, end_turn.
@@ -584,6 +584,17 @@ MORTE DEL GIOCATORE
   - **Pattern secondary dict**: ECONOMICA_121, OFFENSIVA_126, DIFENSIVA_131, MANIPOLAZIONE_136, UTILITA_137, INTERFERENZA_139 — tutti esportati e importati da `__init__.py`.
   - **combat.py hooks aggiunti**: `service_forecast_use_threshold` (roll=threshold), `omni_channel_next_hit_bonus` (+1 _hit_damage), `queue_routing_double_damage_round` (2HP in miss branch), `escalation_rule_active` (assorbe metà su ≥2HP), `contact_center_until_round` (draw 1 carta su HP loss), `addons_blocked_until_boss_defeat` (clear su boss defeat).
   - **turn.py hooks aggiunti**: `marketing_automation_turns_remaining` (+1L in play_card; decrement in end_turn), `next_addon_price_half` (halve cost in buy_addon), `addons_blocked_until_boss_defeat` (block in buy_addon), `pardot_form_handler_remaining` (mirror draw in draw_card).
+
+- [x] **Carte azione 141–190 — Batch 7 (Industries, Agentforce, Flows, AI, Interferenze avanzate)**
+  - **Offensiva 141–150**: Manufacturing Cloud (141, 1HP/addon passivo max4), Automotive Cloud (142, best-of-2 roll per 2 round), Industries Cloud (143, 1HP/Certificazione), Appointment Bundle (144, 1HP/carta giocata questo turno), Service Territory (145, 1HP; 2HP se boss_graveyard>0), Digital HQ (146, 1HP/tipo carta distinto giocato max4), Agentforce Action (147, 2HP; 3HP se addon Leggendario), Loop Element (148, 1HP/hit precedente max3), Activation Target (149, disabilita boss ability permanentemente), Orchestration Flow (150, Leggendario — untap tutti gli addon).
+  - **Difensiva 151–158**: Hyperforce Migration (151, disabilita threshold bonus e boss ability per N round), Net Zero Commitment (152, +1L per HP perso in combattimento), Environment Branch (153, assorbe il prossimo danno HP una volta), Sustainability Cloud (154, sconto addon pari a HP persi), Public Sector Solutions (155, immune a danno HP da carte per 1 turno), Travel Time Calc (156, se roll==soglia-1 skip danno), Resource Leveling (157, trasferisci 2L dal giocatore più ricco al più povero), Runtime Manager (158, sopravvivi con 1HP alla morte — flag cross-turno).
+  - **Economica 159–168**: Service Report (159, +1L/boss sconfitto max7), Storefront Reference (160, +2L +1L per giocatore che ha comprato addon questo turno), Promotions Engine (161, -2L costo addon per 2 turni), Coupon Code (162, +3L), Inventory Availability (163, +1L per tipo addon assente nei mazzi), Revenue Dashboard (164, +1L/turno trascorso max6), Deal Insights (165, +hp×2 L), Financial Services Cloud (166, +1L per 10L possedute max3), Nonprofit Cloud (167, dona 2L a target; +3L e pesca 1), Consumer Goods Cloud (168, +1L per giocatore in partita).
+  - **Manipolazione 169–171**: Model Builder (169, dopo 3 miss consecutivi next roll=10), RAG Pipeline (170, 1HP al boss + guarda top card boss/azione), Copilot Studio (171, roll+1 e tutti i valori +1 per il round).
+  - **Utilità 172–180**: Tableau Dashboard (172, pesca 2 + guarda top2 boss deck), CRM Analytics (173, riordina top4 deck), App Analytics (174, recupera 1 carta dallo scarto), Profile Explorer (175, snapshot pubblico tutti i giocatori), Customer 360 (176, snapshot completo inclusa mano), Database Connector (177, recupera 1 carta dagli ultimi 10 scarti), VM Queue (178, code 3 carte fuori mano, si giocano 1/turno), API Autodiscovery (179, rivela next2 boss senza pescarli), Related Attribute (180, lega 2 addon +1 effetto quando uno si attiva).
+  - **Interferenza 181–190**: Communications Cloud (181, forza target a giocare una carta specifica), Interaction Studio (182, disabilita boss ability del prossimo combattimento del target), Code Review (183, blocca 1 carta nella mano del target per 1 turno), Amendment Quote (184, -1 effetto addon target per 1 turno), Record Triggered Flow (185, +1L ogni volta che il target usa un addon, max3), Push Notification (186, forza target a giocare 1 carta immediatamente), API Manager (187, rate limit 1 azione/turno per 2 turni), Update Records (188, -1L al target per ogni pesca per 2 turni), Delete Records (189, rimuove 1 addon del target e lo blocca dal riacquisto per 3 turni), Unification Rule (190, tutti devono giocare solo un tipo di carta per 1 turno).
+  - **combat.py hooks aggiunti (batch 7)**: `best_of_2_until_round` (max di 2 roll), `copilot_studio_boost_active` (roll+1), `_hyperforce_active` (sopprime scope_creep e boss ability in miss branch), `combat_hits_dealt` (incremento in hit branch), `model_builder_active`+`consecutive_misses` (traccia miss consecutive → next_roll_forced=10 dopo 3), `environment_branch_active` (skip HP damage una volta), `travel_time_calc_active` (roll==soglia-1 → skip danno), `net_zero_commitment_active` (+1L per HP perso), `sustainability_hp_lost` (contatore), `runtime_manager_ready` (sopravvivi con 1HP), `next_boss_ability_disabled` (persiste in `_persist_cs`, neutralizza start_effect).
+  - **turn.py hooks aggiunti (batch 7)**: `update_records_licenze_drain_turns` (draw_card: -1L), `vm_queue_card_ids` (draw_card: consegna prima carta in coda), `code_review_blocked_card_ids` (play_card: blocca carta), `unification_rule_active`+`unification_rule_card_type` (play_card: solo il tipo mandato), `card_types_played_this_turn` (play_card: aggiorna lista tipi), `record_triggered_flow_remaining` (use_addon: +1L ai watcher), `deleted_addon_blocked_ids` (buy_addon: blocca riacquisto), `promotions_engine_turns_remaining` (buy_addon: -2L costo), `sustainability_discount_pending`+`sustainability_hp_lost` (buy_addon: sconto pari a HP persi), `bought_addon_this_turn` (buy_addon: flag per Storefront Reference). End_turn: pulizia di tutti i nuovi flag con decrement/clear appropriato.
+  - **Pattern**: dict unico per modulo (no secondary dict); tutte le funzioni definite prima del dict `MODULO: dict = {...}`.
 
 - [ ] **Rate limiting WS** — un utente non dovrebbe poter inviare messaggi troppo veloci.
 

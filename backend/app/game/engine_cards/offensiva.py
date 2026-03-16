@@ -434,6 +434,141 @@ def _card_130(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "protected_this_round": current_round, "double_damage_next_round": current_round + 1}
 
 
+def _card_141(player, game, db, *, target_player_id=None) -> dict:
+    """Manufacturing Cloud — 1HP al boss per ogni AddOn Passivo posseduto (max 4)."""
+    if not player.is_in_combat or player.current_boss_hp is None:
+        return {"applied": False, "reason": "not_in_combat"}
+    from app.models.card import AddonCard as _ADC141
+    passive_count = sum(
+        1 for pa in player.addons
+        if (a := db.get(_ADC141, pa.addon_id)) and a.addon_type.value == "Passivo"
+    )
+    damage = min(4, passive_count)
+    player.current_boss_hp = max(0, player.current_boss_hp - damage)
+    return {"applied": True, "boss_damage": damage, "passive_addons_counted": passive_count}
+
+
+def _card_142(player, game, db, *, target_player_id=None) -> dict:
+    """Automotive Cloud — Per 2 round, tira il dado 2 volte e prendi il risultato più alto.
+
+    Stores best_of_2_until_round in combat_state.
+    combat.py: after base roll, if flag active, roll again and keep the higher result.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    current_round = (player.combat_round or 0) + 1
+    until_round = current_round + 1  # this round + next = 2 rounds total
+    cs = dict(player.combat_state or {})
+    cs["best_of_2_until_round"] = max(cs.get("best_of_2_until_round", 0), until_round)
+    player.combat_state = cs
+    return {"applied": True, "best_of_2_until_round": until_round}
+
+
+def _card_143(player, game, db, *, target_player_id=None) -> dict:
+    """Industries Cloud — Il boss subisce 1HP per ogni Certificazione posseduta."""
+    if not player.is_in_combat or player.current_boss_hp is None:
+        return {"applied": False, "reason": "not_in_combat"}
+    damage = max(0, player.certificazioni)
+    player.current_boss_hp = max(0, player.current_boss_hp - damage)
+    return {"applied": True, "boss_damage": damage, "certificazioni": player.certificazioni}
+
+
+def _card_144(player, game, db, *, target_player_id=None) -> dict:
+    """Appointment Bundle — 1HP al boss per ogni carta giocata questo turno (inclusa questa)."""
+    if not player.is_in_combat or player.current_boss_hp is None:
+        return {"applied": False, "reason": "not_in_combat"}
+    # cards_played_this_turn already incremented before handler is called
+    damage = max(1, player.cards_played_this_turn)
+    player.current_boss_hp = max(0, player.current_boss_hp - damage)
+    return {"applied": True, "boss_damage": damage, "cards_played_this_turn": player.cards_played_this_turn}
+
+
+def _card_145(player, game, db, *, target_player_id=None) -> dict:
+    """Service Territory — 1HP al boss; 2HP se il boss ha già colpito un altro giocatore in partita.
+
+    Simplified proxy: 2HP if any player has bosses_defeated > 0 (fights have happened → boss hit players).
+    """
+    if not player.is_in_combat or player.current_boss_hp is None:
+        return {"applied": False, "reason": "not_in_combat"}
+    any_fight = any(p.bosses_defeated > 0 for p in game.players)
+    damage = 2 if any_fight else 1
+    player.current_boss_hp = max(0, player.current_boss_hp - damage)
+    return {"applied": True, "boss_damage": damage, "double_damage": any_fight}
+
+
+def _card_146(player, game, db, *, target_player_id=None) -> dict:
+    """Digital HQ — 1HP al boss per ogni tipo di carta diverso già giocato questo turno (max 4).
+
+    Reads card_types_played_this_turn list from combat_state (populated by turn.py after each play).
+    Fallback: uses cards_played_this_turn count when tracking data is unavailable.
+    """
+    if not player.is_in_combat or player.current_boss_hp is None:
+        return {"applied": False, "reason": "not_in_combat"}
+    types_played = (player.combat_state or {}).get("card_types_played_this_turn", [])
+    if types_played:
+        damage = min(4, len(set(types_played)))
+    else:
+        damage = min(4, max(1, player.cards_played_this_turn))
+    player.current_boss_hp = max(0, player.current_boss_hp - damage)
+    return {"applied": True, "boss_damage": damage, "distinct_types": len(set(types_played))}
+
+
+def _card_147(player, game, db, *, target_player_id=None) -> dict:
+    """Agentforce Action — 2HP al boss; 3HP se possiedi almeno 1 AddOn Leggendario."""
+    if not player.is_in_combat or player.current_boss_hp is None:
+        return {"applied": False, "reason": "not_in_combat"}
+    from app.models.card import AddonCard as _ADC147
+    has_legendary = any(
+        (a := db.get(_ADC147, pa.addon_id)) and a.addon_type.value == "Leggendario"
+        for pa in player.addons
+    )
+    damage = 3 if has_legendary else 2
+    player.current_boss_hp = max(0, player.current_boss_hp - damage)
+    return {"applied": True, "boss_damage": damage, "legendary_bonus": has_legendary}
+
+
+def _card_148(player, game, db, *, target_player_id=None) -> dict:
+    """Loop Element — 1HP aggiuntivo per ogni round vinto (hit) finora in questo combat (max 3).
+
+    Reads combat_hits_dealt from combat_state (updated in combat.py hit branch).
+    """
+    if not player.is_in_combat or player.current_boss_hp is None:
+        return {"applied": False, "reason": "not_in_combat"}
+    hits_dealt = (player.combat_state or {}).get("combat_hits_dealt", 0)
+    damage = min(3, hits_dealt)
+    player.current_boss_hp = max(0, player.current_boss_hp - damage)
+    return {"applied": True, "boss_damage": damage, "hits_dealt_so_far": hits_dealt}
+
+
+def _card_149(player, game, db, *, target_player_id=None) -> dict:
+    """Activation Target — Boss designato: abilità speciale disabilitata per tutto il combat.
+
+    Sets boss_ability_disabled_until_round=9999 (same mechanism as cards 21/135).
+    Intended for use at combat start.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["boss_ability_disabled_until_round"] = 9999
+    player.combat_state = cs
+    return {"applied": True, "boss_ability_permanently_disabled": True}
+
+
+def _card_150(player, game, db, *, target_player_id=None) -> dict:
+    """Orchestration Flow — Leggendaria. Tutti gli AddOn si attivano simultaneamente (anche tappati).
+
+    Since apply_addon_effect is not yet implemented, untaps all addons as a proxy
+    (player can re-activate them manually this turn).
+    TODO: trigger all addon effects via apply_addon_effect when available.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    count = sum(1 for pa in player.addons if pa.is_tapped)
+    for pa in player.addons:
+        pa.is_tapped = False
+    return {"applied": True, "addons_untapped": count}
+
+
 OFFENSIVA: dict = {
     9:   _card_9,
     10:  _card_10,
@@ -463,4 +598,14 @@ OFFENSIVA: dict = {
     128: _card_128,
     129: _card_129,
     130: _card_130,
+    141: _card_141,
+    142: _card_142,
+    143: _card_143,
+    144: _card_144,
+    145: _card_145,
+    146: _card_146,
+    147: _card_147,
+    148: _card_148,
+    149: _card_149,
+    150: _card_150,
 }

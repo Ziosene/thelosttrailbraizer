@@ -353,6 +353,135 @@ def _card_125(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "licenze_gained": 4}
 
 
+def _card_159(player, game, db, *, target_player_id=None) -> dict:
+    """Service Report — +1L per boss sconfitto in questa partita (max 7)."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    bosses_defeated = len(game.boss_graveyard or [])
+    gain = min(7, bosses_defeated)
+    player.licenze += gain
+    return {"applied": True, "licenze_gained": gain, "bosses_defeated": bosses_defeated}
+
+
+def _card_160(player, game, db, *, target_player_id=None) -> dict:
+    """Storefront Reference — +2L + 1L per ogni altro giocatore che ha acquistato un AddOn nel round corrente."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    buyers = sum(
+        1 for p in game.players
+        if p.id != player.id and (p.combat_state or {}).get("bought_addon_this_turn")
+    )
+    gain = 2 + buyers
+    player.licenze += gain
+    return {"applied": True, "licenze_gained": gain, "addon_buyers_this_round": buyers}
+
+
+def _card_161(player, game, db, *, target_player_id=None) -> dict:
+    """Promotions Engine — Per 2 turni il costo degli AddOn è ridotto di 2L per il giocatore.
+
+    Stores promotions_engine_turns_remaining=2 in combat_state.
+    turn.py buy_addon: if flag > 0, subtract 2 from addon cost (min 1).
+    turn.py end_turn: decrements flag, clears when 0.
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["promotions_engine_turns_remaining"] = 2
+    player.combat_state = cs
+    return {"applied": True, "promotions_engine_turns_remaining": 2}
+
+
+def _card_162(player, game, db, *, target_player_id=None) -> dict:
+    """Coupon Code — Riscatta un coupon: guadagna 3 Licenze.
+
+    Simplified: immediate +3L (2-use mechanic not tracked at card instance level).
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    player.licenze += 3
+    return {"applied": True, "licenze_gained": 3}
+
+
+def _card_163(player, game, db, *, target_player_id=None) -> dict:
+    """Inventory Availability — +1L per tipo AddOn con 0 copie rimaste nei mazzi AddOn.
+
+    Approximated: checks addon_deck_1 + addon_deck_2 for distinct types present.
+    Types absent from remaining decks each yield +1L.
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    from app.models.card import AddonCard as _ADC163
+    remaining_ids = set((game.addon_deck_1 or []) + (game.addon_deck_2 or []))
+    present_types: set = set()
+    for aid in remaining_ids:
+        addon = db.get(_ADC163, aid)
+        if addon:
+            present_types.add(addon.addon_type.value)
+    all_types = {"Passivo", "Attivo", "Leggendario"}
+    missing_types = all_types - present_types
+    gain = len(missing_types)
+    player.licenze += gain
+    return {"applied": True, "licenze_gained": gain, "missing_addon_types": list(missing_types)}
+
+
+def _card_164(player, game, db, *, target_player_id=None) -> dict:
+    """Revenue Dashboard — +1L per turno già trascorso (max 6)."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    gain = min(6, max(0, game.turn_number - 1))
+    player.licenze += gain
+    return {"applied": True, "licenze_gained": gain, "turns_elapsed": game.turn_number - 1}
+
+
+def _card_165(player, game, db, *, target_player_id=None) -> dict:
+    """Deal Insights — Guadagna Licenze pari agli HP rimasti × 2."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    gain = player.hp * 2
+    player.licenze += gain
+    return {"applied": True, "licenze_gained": gain, "hp_remaining": player.hp}
+
+
+def _card_166(player, game, db, *, target_player_id=None) -> dict:
+    """Financial Services Cloud — +1L per ogni 10L possedute (max +3)."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    gain = min(3, player.licenze // 10)
+    player.licenze += gain
+    return {"applied": True, "licenze_gained": gain}
+
+
+def _card_167(player, game, db, *, target_player_id=None) -> dict:
+    """Nonprofit Cloud — Dona 2L a un avversario; guadagni 3L e peschi 1 carta."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    from app.models.game import PlayerHandCard as _PHC167
+    target = get_target(game, player, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "no_target"}
+    donated = min(2, player.licenze)
+    player.licenze -= donated
+    target.licenze += donated
+    player.licenze += 3
+    drew = False
+    if game.action_deck_1:
+        db.add(_PHC167(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+        drew = True
+    elif game.action_deck_2:
+        db.add(_PHC167(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+        drew = True
+    return {"applied": True, "licenze_donated": donated, "licenze_gained": 3, "drew_card": drew}
+
+
+def _card_168(player, game, db, *, target_player_id=None) -> dict:
+    """Consumer Goods Cloud — +1L per ogni giocatore in partita (incluso te)."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    player_count = len(list(game.players))
+    player.licenze += player_count
+    return {"applied": True, "licenze_gained": player_count, "player_count": player_count}
+
+
 ECONOMICA: dict = {
     1:   _card_1,
     2:   _card_2,
@@ -383,4 +512,14 @@ ECONOMICA: dict = {
     123: _card_123,
     124: _card_124,
     125: _card_125,
+    159: _card_159,
+    160: _card_160,
+    161: _card_161,
+    162: _card_162,
+    163: _card_163,
+    164: _card_164,
+    165: _card_165,
+    166: _card_166,
+    167: _card_167,
+    168: _card_168,
 }

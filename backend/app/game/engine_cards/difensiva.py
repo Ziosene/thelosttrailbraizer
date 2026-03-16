@@ -319,6 +319,129 @@ def _card_135(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "boss_ability_disabled_until_round": until_round}
 
 
+def _card_151(player, game, db, *, target_player_id=None) -> dict:
+    """Hyperforce Migration — Per 1 round: boss non può alzare la soglia dado né usare la sua abilità.
+
+    Stores hyperforce_until_round=current_round+1.
+    combat.py: if active, clear threshold_bonus from boss and treat boss ability as disabled.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    current_round = (player.combat_round or 0) + 1
+    until_round = current_round + 1
+    cs = dict(player.combat_state or {})
+    cs["hyperforce_until_round"] = max(cs.get("hyperforce_until_round", 0), until_round)
+    player.combat_state = cs
+    return {"applied": True, "hyperforce_until_round": until_round}
+
+
+def _card_152(player, game, db, *, target_player_id=None) -> dict:
+    """Net Zero Commitment — Ogni HP perso questo turno → +1 Licenza.
+
+    Stores net_zero_commitment_active=True.
+    combat.py miss branch: on actual HP loss, award +1L per HP taken, while flag is set.
+    """
+    cs = dict(player.combat_state or {})
+    cs["net_zero_commitment_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "net_zero_commitment_active": True}
+
+
+def _card_153(player, game, db, *, target_player_id=None) -> dict:
+    """Environment Branch — Il prossimo danno HP che subisci viene annullato (una volta).
+
+    Stores environment_branch_active=True.
+    combat.py miss branch: before applying HP damage, if flag set, skip damage once and clear flag.
+    """
+    cs = dict(player.combat_state or {})
+    cs["environment_branch_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "environment_branch_active": True}
+
+
+def _card_154(player, game, db, *, target_player_id=None) -> dict:
+    """Sustainability Cloud — Ogni HP perso questo turno riduce di 1 il costo del prossimo AddOn (max -3).
+
+    Stores sustainability_discount_pending=True + sustainability_hp_lost=0.
+    combat.py miss branch: if flag active, sustainability_hp_lost += _player_hp_damage (capped at 3).
+    turn.py buy_addon: apply min(3, sustainability_hp_lost) as extra discount, clear both flags.
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "cannot_use_in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["sustainability_discount_pending"] = True
+    cs.setdefault("sustainability_hp_lost", 0)
+    player.combat_state = cs
+    return {"applied": True, "sustainability_discount_pending": True}
+
+
+def _card_155(player, game, db, *, target_player_id=None) -> dict:
+    """Public Sector Solutions — Per questo turno nessuna carta avversaria può ridurre i tuoi HP.
+
+    Stores public_sector_hp_immune=True.
+    turn.py play_card immunity block: if target has this flag and card is Offensiva, block HP damage.
+    Flag is cleared in end_turn (single-turn effect).
+    """
+    cs = dict(player.combat_state or {})
+    cs["public_sector_hp_immune"] = True
+    player.combat_state = cs
+    return {"applied": True, "public_sector_hp_immune": True}
+
+
+def _card_156(player, game, db, *, target_player_id=None) -> dict:
+    """Travel Time Calc — Se manchi per 1 punto dalla soglia (roll == threshold-1), eviti il danno.
+
+    Stores travel_time_calc_active=True.
+    combat.py miss branch: before HP damage, if roll == threshold - 1, skip damage, clear flag.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["travel_time_calc_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "travel_time_calc_active": True}
+
+
+def _card_157(player, game, db, *, target_player_id=None) -> dict:
+    """Resource Leveling — Il giocatore con più Licenze dà 2L al giocatore con meno.
+
+    If the caster is the poorest, they receive. No-op if all tied or single player.
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "cannot_use_in_combat"}
+    all_players = list(game.players)
+    if len(all_players) < 2:
+        return {"applied": True, "note": "only_one_player"}
+    richest = max(all_players, key=lambda p: p.licenze)
+    poorest = min(all_players, key=lambda p: p.licenze)
+    if richest.id == poorest.id:
+        return {"applied": True, "note": "all_equal_licenze"}
+    transfer = min(2, richest.licenze)
+    richest.licenze -= transfer
+    poorest.licenze += transfer
+    return {
+        "applied": True,
+        "from_player_id": richest.id,
+        "to_player_id": poorest.id,
+        "licenze_transferred": transfer,
+    }
+
+
+def _card_158(player, game, db, *, target_player_id=None) -> dict:
+    """Runtime Manager — Nel prossimo combattimento, se muori sopravvivi con 1HP (una volta).
+
+    Stores runtime_manager_ready=True in combat_state (cross-turn flag, persists across turns).
+    combat.py death check: if player.hp <= 0 and flag set, hp=1, clear flag.
+    Similar to card 23 (Disaster Recovery) but activated outside combat.
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "cannot_use_in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["runtime_manager_ready"] = True
+    player.combat_state = cs
+    return {"applied": True, "runtime_manager_ready": True}
+
+
 DIFENSIVA: dict = {
     19:  _card_19,
     20:  _card_20,
@@ -341,4 +464,12 @@ DIFENSIVA: dict = {
     133: _card_133,
     134: _card_134,
     135: _card_135,
+    151: _card_151,
+    152: _card_152,
+    153: _card_153,
+    154: _card_154,
+    155: _card_155,
+    156: _card_156,
+    157: _card_157,
+    158: _card_158,
 }

@@ -246,6 +246,54 @@ def _card_136(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "service_forecast_use_threshold": True}
 
 
+def _card_169(player, game, db, *, target_player_id=None) -> dict:
+    """Model Builder — Dopo 3 miss consecutivi il prossimo tiro è automaticamente 10.
+
+    Stores model_builder_active=True and consecutive_misses=0 in combat_state.
+    combat.py miss branch: if model_builder_active, increment consecutive_misses;
+      when consecutive_misses >= 3, set next_roll_forced=10 and reset counter.
+    combat.py hit branch: reset consecutive_misses to 0.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["model_builder_active"] = True
+    cs.setdefault("consecutive_misses", 0)
+    player.combat_state = cs
+    return {"applied": True, "model_builder_active": True}
+
+
+def _card_170(player, game, db, *, target_player_id=None) -> dict:
+    """RAG Pipeline — Boss subisce 1HP + guarda la prossima carta del mazzo boss o azione (info)."""
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    player.current_boss_hp = max(0, player.current_boss_hp - 1)
+    next_boss_id = (game.boss_deck_1 or game.boss_deck_2 or [None])[0]
+    next_action_id = (game.action_deck_1 or game.action_deck_2 or [None])[0]
+    return {
+        "applied": True,
+        "boss_damage": 1,
+        "next_boss_card_id": next_boss_id,
+        "next_action_card_id": next_action_id,
+    }
+
+
+def _card_171(player, game, db, *, target_player_id=None) -> dict:
+    """Copilot Studio — Per questo round tutti i valori numerici nelle azioni aumentano di 1.
+
+    Stores copilot_studio_boost_active=True in combat_state.
+    combat.py: if flag active, roll += 1 before threshold comparison.
+    turn.py play_card: if flag active, +1 to L/HP granted by cards (per-card hook).
+    Cleared at end of round in combat.py or end_turn in turn.py.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["copilot_studio_boost_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "copilot_studio_boost_active": True}
+
+
 MANIPOLAZIONE: dict = {
     26:  _card_26,
     27:  _card_27,
@@ -262,4 +310,7 @@ MANIPOLAZIONE: dict = {
     104: _card_104,
     105: _card_105,
     136: _card_136,
+    169: _card_169,
+    170: _card_170,
+    171: _card_171,
 }
