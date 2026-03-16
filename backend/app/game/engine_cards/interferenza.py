@@ -1,4 +1,4 @@
-"""Carte Interferenza — giocabili durante il turno altrui (carte 38–40, 70–79)."""
+"""Carte Interferenza — giocabili durante il turno altrui (carte 38–40, 70–79, 111–120)."""
 from app.models.card import BossCard
 from .helpers import get_target
 
@@ -219,6 +219,167 @@ def _card_79(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "target_player_id": target.id, "target_hp_damage": 1}
 
 
+def _card_111(player, game, db, *, target_player_id=None) -> dict:
+    """Tracking Pixel — Monitora un avversario per 3 turni (mano e Licenze sempre visibili).
+
+    Returns target's current hand and licenze (one-time reveal).
+    Stores tracking_pixel_target_id + tracking_pixel_turns=3 for future hook.
+    TODO: hook into _send_hand_state to continuously send target's info to this player.
+    """
+    from app.models.card import ActionCard as _AC111
+    target = get_target(game, player, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "no_target"}
+    hand_info = []
+    for hc in target.hand:
+        c = db.get(_AC111, hc.action_card_id)
+        if c:
+            hand_info.append({"id": c.id, "number": c.number, "name": c.name})
+    cs = dict(player.combat_state or {})
+    cs["tracking_pixel_target_id"] = target.id
+    cs["tracking_pixel_turns"] = 3
+    player.combat_state = cs
+    return {
+        "applied": True,
+        "target_player_id": target.id,
+        "target_licenze": target.licenze,
+        "target_hand": hand_info,
+        "tracking_turns": 3,
+    }
+
+
+def _card_112(player, game, db, *, target_player_id=None) -> dict:
+    """Visitor Activity — Per 1 turno, un avversario deve dichiarare ogni carta prima di giocarla.
+
+    Stores visitor_activity_turns=1 in target's combat_state (client-side enforcement signal).
+    turn.py draw_card: decrements visitor_activity_turns at start of affected turn.
+    """
+    target = get_target(game, player, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "no_target"}
+    cs = dict(target.combat_state or {})
+    cs["visitor_activity_turns"] = 1
+    target.combat_state = cs
+    return {"applied": True, "target_player_id": target.id, "visitor_activity_turns": 1}
+
+
+def _card_113(player, game, db, *, target_player_id=None) -> dict:
+    """Bounce Management — La prossima carta offensiva diretta a te rimbalza con effetto doppio sull'attaccante.
+
+    Stores bounce_management_active=True in player's combat_state.
+    turn.py play_card: if target has this flag and card is Offensiva, cancel original,
+    steal 2L from attacker (approximating "double effect"), clear flag.
+    """
+    cs = dict(player.combat_state or {})
+    cs["bounce_management_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "bounce_management_active": True}
+
+
+def _card_114(player, game, db, *, target_player_id=None) -> dict:
+    """Salesforce Engage — Un avversario deve giocare 1 carta subito o scartarla.
+
+    Simplified: auto-discards a random card from target's hand.
+    TODO: give target the option to play the card instead via a reaction window.
+    """
+    target = get_target(game, player, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "no_target"}
+    hand = list(target.hand)
+    if not hand:
+        return {"applied": True, "target_player_id": target.id, "cards_discarded": 0, "note": "target_hand_empty"}
+    import random as _rnd114
+    hc = _rnd114.choice(hand)
+    discarded_id = hc.action_card_id
+    game.action_discard = (game.action_discard or []) + [discarded_id]
+    db.delete(hc)
+    return {"applied": True, "target_player_id": target.id, "discarded_card_id": discarded_id}
+
+
+def _card_115(player, game, db, *, target_player_id=None) -> dict:
+    """HTTP Connector — "Richiedi" 1L a un avversario. Se rifiuta, perde 2L.
+
+    Simplified: take 1L from target (they auto-comply).
+    TODO: offer target a choice to comply (1L) or refuse (2L) via reaction window.
+    """
+    target = get_target(game, player, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "no_target"}
+    stolen = min(1, target.licenze)
+    target.licenze -= stolen
+    player.licenze += stolen
+    return {"applied": True, "target_player_id": target.id, "licenze_transferred": stolen}
+
+
+def _card_116(player, game, db, *, target_player_id=None) -> dict:
+    """API Rate Limiting — Un avversario può giocare solo 1 carta nel suo prossimo turno.
+
+    Stores api_rate_limit_max_cards=1 in target's combat_state.
+    turn.py play_card: reads api_rate_limit_max_cards as upper bound for max_cards.
+    turn.py end_turn: clears api_rate_limit_max_cards from combat_state.
+    """
+    target = get_target(game, player, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "no_target"}
+    cs = dict(target.combat_state or {})
+    cs["api_rate_limit_max_cards"] = 1
+    target.combat_state = cs
+    return {"applied": True, "target_player_id": target.id, "api_rate_limit_max_cards": 1}
+
+
+def _card_117(player, game, db, *, target_player_id=None) -> dict:
+    """JMS Connector — La prossima carta che un avversario gioca contro di te ha un ritardo di 1 turno.
+
+    Simplified: blocks the next card targeting this player regardless of type (broader than web_to_case).
+    Stores jms_delay_active=True in player's combat_state.
+    turn.py play_card: if target has jms_delay_active, block the card effect, clear flag.
+    """
+    cs = dict(player.combat_state or {})
+    cs["jms_delay_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "jms_delay_active": True}
+
+
+def _card_118(player, game, db, *, target_player_id=None) -> dict:
+    """Spike Control — Per 2 turni, danno max da una singola fonte = 1HP o 2L.
+
+    Stores spike_control_turns_remaining=2 in player's combat_state.
+    combat.py miss branch: no change needed (miss damage is already 1HP).
+    turn.py play_card: TODO cap licenze stolen at 2 when target has this flag.
+    """
+    cs = dict(player.combat_state or {})
+    cs["spike_control_turns_remaining"] = 2
+    player.combat_state = cs
+    return {"applied": True, "spike_control_turns_remaining": 2}
+
+
+def _card_119(player, game, db, *, target_player_id=None) -> dict:
+    """Connect Channel — Per 2 turni, ogni L che un avversario guadagna tu ne guadagni 1 anche tu.
+
+    Simplified: +2L immediately (expected value: 2 turns × 1L/turn).
+    TODO: store connect_channel_target_id + turns; hook into all licenza gains.
+    """
+    player.licenze += 2
+    return {"applied": True, "licenze_gained": 2, "note": "simplified_expected_value"}
+
+
+def _card_120(player, game, db, *, target_player_id=None) -> dict:
+    """Event Monitoring — Ogni carta che un avversario gioca nel suo turno ti dà 1L (max 2).
+
+    Stores event_monitoring_target_id + event_monitoring_remaining=2 in player's combat_state.
+    turn.py play_card: after each card is played, checks all players for event_monitoring on the
+    current player and awards 1L (decrementing the counter).
+    """
+    target = get_target(game, player, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "no_target"}
+    cs = dict(player.combat_state or {})
+    cs["event_monitoring_target_id"] = target.id
+    cs["event_monitoring_remaining"] = 2
+    player.combat_state = cs
+    return {"applied": True, "target_player_id": target.id, "event_monitoring_remaining": 2}
+
+
 INTERFERENZA: dict = {
     38: _card_38,
     39: _card_39,
@@ -233,4 +394,14 @@ INTERFERENZA: dict = {
     77: _card_77,
     78: _card_78,
     79: _card_79,
+    111: _card_111,
+    112: _card_112,
+    113: _card_113,
+    114: _card_114,
+    115: _card_115,
+    116: _card_116,
+    117: _card_117,
+    118: _card_118,
+    119: _card_119,
+    120: _card_120,
 }

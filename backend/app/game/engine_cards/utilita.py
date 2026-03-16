@@ -1,4 +1,4 @@
-"""Carte Utilità — gestione mano, mazzo e risorse (carte 31–37, 63–69, 80)."""
+"""Carte Utilità — gestione mano, mazzo e risorse (carte 31–37, 63–69, 80, 106–110)."""
 import random
 
 from app.game import engine
@@ -346,6 +346,120 @@ def _card_80(player, game, db, *, target_player_id=None) -> dict:
         return {"applied": True, "choice": "B", "licenze_gained": 2}
 
 
+def _card_106(player, game, db, *, target_player_id=None) -> dict:
+    """Anypoint Studio — Pesca 3 carte, tieni 2, la 3ª torna in cima al mazzo (fuori da combattimento).
+
+    Draws 3: keeps first 2, puts 3rd back on top of action_deck_1.
+    TODO: accept discard_id from client to choose which card to return.
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    from app.models.game import PlayerHandCard as _PHC106
+    drawn_ids = []
+    for _ in range(3):
+        if game.action_deck_1:
+            drawn_ids.append(game.action_deck_1.pop(0))
+        elif game.action_deck_2:
+            drawn_ids.append(game.action_deck_2.pop(0))
+        elif game.action_discard:
+            new_deck = engine.shuffle_deck(game.action_discard)
+            game.action_deck_1, game.action_deck_2 = engine.split_deck(new_deck)
+            game.action_discard = []
+            if game.action_deck_1:
+                drawn_ids.append(game.action_deck_1.pop(0))
+    for cid in drawn_ids[:2]:
+        db.add(_PHC106(player_id=player.id, action_card_id=cid))
+    if len(drawn_ids) == 3:
+        game.action_deck_1 = [drawn_ids[2]] + (game.action_deck_1 or [])
+    return {"applied": True, "cards_kept": min(2, len(drawn_ids)), "cards_returned": 1 if len(drawn_ids) == 3 else 0}
+
+
+def _card_107(player, game, db, *, target_player_id=None) -> dict:
+    """Flow Designer — Guarda e riordina le prime 3 carte del mazzo azione (fuori da combattimento).
+
+    Returns top 3 action deck card info. Reordering requires follow-up client message.
+    TODO: accept preferred_order from client to reorder action_deck_1[:3].
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    from app.models.card import ActionCard as _AC107
+    preview = []
+    for cid in (game.action_deck_1 or [])[:3]:
+        c = db.get(_AC107, cid)
+        if c:
+            preview.append({"id": c.id, "number": c.number, "name": c.name})
+    return {"applied": True, "revealed_top_cards": preview, "note": "reorder_requires_client_followup"}
+
+
+def _card_108(player, game, db, *, target_player_id=None) -> dict:
+    """Design Center — Guarda le prime 4 carte del mazzo azione e tienine 2; le altre tornano mescolate.
+
+    Draws 4: keeps first 2, shuffles other 2 back into deck.
+    TODO: accept chosen IDs from client for real player choice.
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    from app.models.game import PlayerHandCard as _PHC108
+    drawn_ids = []
+    for _ in range(4):
+        if game.action_deck_1:
+            drawn_ids.append(game.action_deck_1.pop(0))
+        elif game.action_deck_2:
+            drawn_ids.append(game.action_deck_2.pop(0))
+        elif game.action_discard:
+            new_deck = engine.shuffle_deck(game.action_discard)
+            game.action_deck_1, game.action_deck_2 = engine.split_deck(new_deck)
+            game.action_discard = []
+            if game.action_deck_1:
+                drawn_ids.append(game.action_deck_1.pop(0))
+    for cid in drawn_ids[:2]:
+        if len(list(player.hand)) < engine.MAX_HAND_SIZE:
+            db.add(_PHC108(player_id=player.id, action_card_id=cid))
+        else:
+            drawn_ids.append(cid)  # can't keep, return it
+    returned = drawn_ids[2:]
+    if returned:
+        shuffled = engine.shuffle_deck(returned)
+        game.action_deck_1 = (game.action_deck_1 or []) + shuffled
+    return {"applied": True, "cards_kept": min(2, len(drawn_ids)), "cards_returned": len(returned)}
+
+
+def _card_109(player, game, db, *, target_player_id=None) -> dict:
+    """Checkout Flow — Gioca 1 carta azione extra che non conta nel limite (fuori da combattimento).
+
+    Decrements cards_played_this_turn by 1 to cancel the +1 applied before this call.
+    The addon purchase is handled separately via buy_addon.
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    player.cards_played_this_turn = max(0, player.cards_played_this_turn - 1)
+    return {"applied": True, "card_did_not_count": True, "note": "buy addon separately via buy_addon action"}
+
+
+def _card_110(player, game, db, *, target_player_id=None) -> dict:
+    """Return Order — Restituisci 1 tuo AddOn al mazzo e recupera 8 Licenze (fuori da combattimento).
+
+    Removes the most recently acquired addon and returns it to addon_deck_1, +8 Licenze.
+    TODO: accept addon_id from client for real player choice.
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    addons = list(player.addons)
+    if not addons:
+        return {"applied": False, "reason": "no_addons_to_return"}
+    from app.models.card import AddonCard as _ADC110
+    pa = addons[-1]  # most recently acquired (last in relationship list)
+    addon = db.get(_ADC110, pa.addon_id)
+    game.addon_deck_1 = [pa.addon_id] + (game.addon_deck_1 or [])
+    db.delete(pa)
+    player.licenze += 8
+    return {
+        "applied": True,
+        "returned_addon": {"id": pa.addon_id, "name": addon.name if addon else None},
+        "licenze_gained": 8,
+    }
+
+
 UTILITA: dict = {
     31: _card_31,
     32: _card_32,
@@ -362,4 +476,9 @@ UTILITA: dict = {
     68: _card_68,
     69: _card_69,
     80: _card_80,
+    106: _card_106,
+    107: _card_107,
+    108: _card_108,
+    109: _card_109,
+    110: _card_110,
 }

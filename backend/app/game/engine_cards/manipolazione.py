@@ -1,4 +1,4 @@
-"""Carte Manipolazione Dado — modificano i tiri di dado (carte 26–30, 59–62).
+"""Carte Manipolazione Dado — modificano i tiri di dado (carte 26–30, 59–62, 101–105).
 
 Tutte le carte di questa categoria lavorano tramite flag in combat_state.
 combat.py (_handle_roll_dice) legge e consuma i flag prima/durante il tiro.
@@ -141,6 +141,96 @@ def _card_62(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "next_roll_forced": 7}
 
 
+def _card_101(player, game, db, *, target_player_id=None) -> dict:
+    """Next Best Offer — Pesca 3 carte (tieni 1, le altre 2 tornano in cima) + +1 al prossimo tiro.
+
+    Draws 3 from action deck: keeps first, returns other 2 to top of action_deck_1.
+    Also sets einstein_sto_next_roll_bonus=1 for the +1 to next roll.
+    Simplified: client receives all 3 drawn to choose from; auto-keeps first, returns 2.
+    TODO: accept chosen card ID from client for real player choice.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    from app.models.game import PlayerHandCard as _PHC101
+    drawn_ids = []
+    for _ in range(3):
+        if game.action_deck_1:
+            drawn_ids.append(game.action_deck_1.pop(0))
+        elif game.action_deck_2:
+            drawn_ids.append(game.action_deck_2.pop(0))
+    if not drawn_ids:
+        return {"applied": False, "reason": "action_deck_empty"}
+    # Keep first, return remainder to top of deck_1
+    db.add(_PHC101(player_id=player.id, action_card_id=drawn_ids[0]))
+    if len(drawn_ids) > 1:
+        game.action_deck_1 = drawn_ids[1:] + (game.action_deck_1 or [])
+    # +1 to next roll
+    cs = dict(player.combat_state or {})
+    cs["einstein_sto_next_roll_bonus"] = cs.get("einstein_sto_next_roll_bonus", 0) + 1
+    player.combat_state = cs
+    return {"applied": True, "cards_drawn": 1, "cards_returned": len(drawn_ids) - 1, "roll_bonus": 1}
+
+
+def _card_102(player, game, db, *, target_player_id=None) -> dict:
+    """Einstein Intent — "Leggi l'intenzione" del boss — disabilita la sua abilità per 1 round.
+
+    Stores boss_ability_disabled_until_round = current_round in combat_state.
+    Same mechanism as cards 10/21 (enemy ability disabling).
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    current_round = (player.combat_round or 0) + 1
+    cs = dict(player.combat_state or {})
+    cs["boss_ability_disabled_until_round"] = current_round
+    player.combat_state = cs
+    return {"applied": True, "boss_ability_disabled_until_round": current_round}
+
+
+def _card_103(player, game, db, *, target_player_id=None) -> dict:
+    """Transform Element — Il prossimo miss non toglie HP ma 1 Licenza invece.
+
+    Stores transform_element_active=True in combat_state.
+    combat.py miss branch: if flag set, player.licenze -= 1 instead of player.hp -= 1, clears flag.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["transform_element_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "transform_element_active": True}
+
+
+def _card_104(player, game, db, *, target_player_id=None) -> dict:
+    """Flow Variable — Assegna un valore fisso al dado: scegli 5, 7 o 9.
+
+    target_player_id is repurposed as the chosen value (must be 5, 7, or 9).
+    Sets next_roll_forced=N — same mechanism as cards 26/62.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    value = target_player_id
+    if value not in (5, 7, 9):
+        return {"applied": False, "reason": "invalid_value: send 5, 7, or 9 as target_player_id"}
+    cs = dict(player.combat_state or {})
+    cs["next_roll_forced"] = value
+    player.combat_state = cs
+    return {"applied": True, "next_roll_forced": value}
+
+
+def _card_105(player, game, db, *, target_player_id=None) -> dict:
+    """Message Transformation — Se il dado è ≤ 3, diventa 6 automaticamente (una sola volta per combat).
+
+    Stores message_transformation_active=True in combat_state.
+    combat.py: after base roll (before forced_roll check), if flag and roll <= 3, roll = 6, clears flag.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["message_transformation_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "message_transformation_active": True}
+
+
 MANIPOLAZIONE: dict = {
     26: _card_26,
     27: _card_27,
@@ -151,4 +241,9 @@ MANIPOLAZIONE: dict = {
     60: _card_60,
     61: _card_61,
     62: _card_62,
+    101: _card_101,
+    102: _card_102,
+    103: _card_103,
+    104: _card_104,
+    105: _card_105,
 }

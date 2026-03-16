@@ -146,6 +146,10 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
         if player.is_in_combat and player.current_boss_id
         else engine.MAX_CARDS_PER_TURN
     )
+    # Card 116 (API Rate Limiting): opponent imposed a lower card-play limit for this turn
+    _api_limit = (player.combat_state or {}).get("api_rate_limit_max_cards")
+    if _api_limit is not None:
+        max_cards = min(max_cards, _api_limit)
     if player.cards_played_this_turn >= max_cards:
         await _error(game.code, user_id, "Card limit reached this turn")
         return
@@ -393,6 +397,21 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
                 _cs100.pop("preference_immunity_type", None)
                 _immunity_target.combat_state = _cs100
                 card_effect_result = {"card_number": card.number, "applied": False, "blocked_by": "preference_center"}
+            # Card 113 (Bounce Management): Offensiva ricochets back at attacker with double Licenze steal
+            elif _immunity_target.combat_state.get("bounce_management_active") and card.card_type == "Offensiva":
+                original_cancelled = True
+                _cs113 = dict(_immunity_target.combat_state)
+                _cs113.pop("bounce_management_active", None)
+                _immunity_target.combat_state = _cs113
+                player.licenze = max(0, player.licenze - 2)  # double-effect approximation
+                card_effect_result = {"card_number": card.number, "applied": False, "blocked_by": "bounce_management", "attacker_licenze_lost": 2}
+            # Card 117 (JMS Connector): delay any card targeting this player (block it once)
+            elif _immunity_target.combat_state.get("jms_delay_active"):
+                original_cancelled = True
+                _cs117 = dict(_immunity_target.combat_state)
+                _cs117.pop("jms_delay_active", None)
+                _immunity_target.combat_state = _cs117
+                card_effect_result = {"card_number": card.number, "applied": False, "blocked_by": "jms_delay"}
 
     # ── Effetto carta originale (a meno che non sia stato annullato) ──────────
     if not card_effect_result:
@@ -419,6 +438,21 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
             "original_cancelled": original_cancelled,
             "reaction_effect": reaction_card_result,
         })
+    # Card 120 (Event Monitoring): watchers earn 1L each time this player plays a card (max 2)
+    for _watcher in game.players:
+        if _watcher.id != player.id and (_watcher.combat_state or {}).get("event_monitoring_target_id") == player.id:
+            _em = _watcher.combat_state.get("event_monitoring_remaining", 0)
+            if _em > 0:
+                _watcher.licenze += 1
+                _wc = dict(_watcher.combat_state)
+                if _em <= 1:
+                    _wc.pop("event_monitoring_target_id", None)
+                    _wc.pop("event_monitoring_remaining", None)
+                else:
+                    _wc["event_monitoring_remaining"] = _em - 1
+                _watcher.combat_state = _wc
+    db.commit()
+
     await _broadcast_state(game, db)
     await _send_hand_state(game.code, player, db)
     if reaction_target:
@@ -646,6 +680,20 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
     if player.combat_state and player.combat_state.get("addons_blocked_next_turn"):
         cs = dict(player.combat_state)
         cs.pop("addons_blocked_next_turn")
+        player.combat_state = cs
+
+    # Card 116 (API Rate Limiting): clear the rate limit after the affected turn ends
+    if player.combat_state and player.combat_state.get("api_rate_limit_max_cards") is not None:
+        cs = dict(player.combat_state)
+        cs.pop("api_rate_limit_max_cards", None)
+        player.combat_state = cs
+
+    # Card 112 (Visitor Activity): decrement the mandatory-declaration counter at turn end
+    if player.combat_state and player.combat_state.get("visitor_activity_turns", 0) > 0:
+        cs = dict(player.combat_state)
+        cs["visitor_activity_turns"] = cs["visitor_activity_turns"] - 1
+        if cs["visitor_activity_turns"] <= 0:
+            cs.pop("visitor_activity_turns", None)
         player.combat_state = cs
 
     # Card 37 (Free Trial): remove free trial addons at end of turn

@@ -554,7 +554,14 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         elif roll_mode == "second_of_2":
             roll = engine.roll_d10()
 
-    # Card 26 (Dice Optimizer) / Card 62 (DataWeave Script): force next roll to a fixed value
+    # Card 105 (Message Transformation): auto-upgrade low rolls ≤ 3 to 6 (once per combat)
+    if (player.combat_state or {}).get("message_transformation_active") and roll <= 3:
+        roll = 6
+        cs = dict(player.combat_state)
+        cs.pop("message_transformation_active", None)
+        player.combat_state = cs
+
+    # Card 26 (Dice Optimizer) / Card 62 (DataWeave Script) / Card 104 (Flow Variable): force next roll
     _forced_roll = (player.combat_state or {}).get("next_roll_forced")
     if _forced_roll is not None:
         roll = _forced_roll
@@ -739,6 +746,12 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         _entitlement_active = _entitlement_until >= current_round
         if _force_field_until >= current_round or _try_scope_until >= current_round:
             pass  # neutral round — no player damage
+        # Card 103 (Transform Element): next miss → -1L instead of -1HP (one-time)
+        elif (player.combat_state or {}).get("transform_element_active"):
+            player.licenze = max(0, player.licenze - 1)
+            cs = dict(player.combat_state)
+            cs.pop("transform_element_active", None)
+            player.combat_state = cs
         # Card 97 (Fault Path): on miss gain 1L instead of taking HP damage (for whole combat)
         elif (player.combat_state or {}).get("fault_path_active"):
             player.licenze += 1
