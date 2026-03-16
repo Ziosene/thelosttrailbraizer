@@ -66,7 +66,15 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
     player.current_boss_source = source
     player.current_boss_hp = boss.hp
     player.combat_round = 0
-    player.combat_state = {}  # reset per-combat state for every new fight
+    # Reset per-combat state; preserve cross-turn flags set by action cards
+    _old_cs = player.combat_state or {}
+    _persist_cs = {
+        k: _old_cs[k] for k in (
+            "object_store_licenze", "drip_program_remaining",
+            "next_addon_price_fixed", "next_addon_price_discount",
+        ) if k in _old_cs
+    }
+    player.combat_state = {**_persist_cs, "fought_this_turn": True}
     game.current_phase = TurnPhase.combat
 
     # Boss 68 (Schema Builder Monstrosity): boss HP increases by 1 for each addon the combatant owns
@@ -550,6 +558,14 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             cs.pop("chaos_mode_next_roll", None)
             player.combat_state = cs
 
+    # Card 60 (Einstein STO): +1 to roll for timing optimization, capped at 10
+    _einstein_bonus = (player.combat_state or {}).get("einstein_sto_next_roll_bonus", 0)
+    if _einstein_bonus:
+        roll = min(10, roll + _einstein_bonus)
+        cs = dict(player.combat_state)
+        cs.pop("einstein_sto_next_roll_bonus", None)
+        player.combat_state = cs
+
     # Boss 67 (Developer Console Glitch): roll 1 or 2 → entire round is nullified
     round_nullified = engine.boss_nullifies_round_on_low_roll(boss.id) and roll <= 2
 
@@ -628,6 +644,15 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                                 "new_roll": roll,
                             })
 
+    # Card 59 (Dynamic Content): auto-reroll once on a miss (player played this proactively)
+    if (player.combat_state or {}).get("dynamic_content_reroll"):
+        cs = dict(player.combat_state)
+        cs.pop("dynamic_content_reroll", None)
+        player.combat_state = cs
+        if engine.resolve_combat_round(roll, threshold) != "hit":
+            roll = engine.roll_d10()
+            round_nullified = engine.boss_nullifies_round_on_low_roll(boss.id) and roll <= 2
+
     result = engine.resolve_combat_round(roll, threshold)
     player.combat_round += 1
 
@@ -663,9 +688,13 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                 if prediction == "hit":
                     player.current_boss_hp -= 1  # prediction bonus: always 1
     else:
-        # Card 30 (Force Field): player immune to boss roll damage for 1 round
+        # Card 30 (Force Field) / Card 55 (Try Scope): player immune to boss roll damage for 1 round
         _force_field_until = (player.combat_state or {}).get("force_field_until_round", 0)
-        if _force_field_until >= current_round:
+        _try_scope_until = (player.combat_state or {}).get("try_scope_until_round", 0)
+        # Card 58 (Entitlement Process): boss deals max 1 damage per round for N rounds
+        _entitlement_until = (player.combat_state or {}).get("entitlement_process_until_round", 0)
+        _entitlement_active = _entitlement_until >= current_round
+        if _force_field_until >= current_round or _try_scope_until >= current_round:
             pass  # neutral round — no player damage
         # Boss 95 (Identity & Access Heretic): player damage redirected to random opponent
         elif engine.boss_redirects_damage_to_opponent(boss.id):
@@ -683,7 +712,12 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             combat_round=current_round,
             current_hp=player.current_boss_hp or 0,
         )
-        if miss_effect["extra_damage"] > 0:
+        # Card 53 (AMPscript Block): boss ability reflected — extra_damage redirected as boss HP loss
+        _ampscript_until = (player.combat_state or {}).get("ampscript_reflected_until_round", 0)
+        if _ampscript_until >= current_round and miss_effect["extra_damage"] > 0:
+            player.current_boss_hp = max(0, (player.current_boss_hp or 0) - 1)
+            miss_effect = {**miss_effect, "extra_damage": 0}  # absorb the extra_damage
+        if miss_effect["extra_damage"] > 0 and not _entitlement_active:
             player.hp = max(0, player.hp - miss_effect["extra_damage"])
             # Double player damage if prediction was "miss" and correct (boss 53)
             if prediction == "miss":
@@ -804,6 +838,14 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         player.hp = 1
         cs = dict(player.combat_state)
         cs.pop("disaster_recovery_ready", None)
+        player.combat_state = cs
+
+    # Card 56 (On Error Continue): survive death at cost of 3 Licenze
+    if player.hp <= 0 and (player.combat_state or {}).get("on_error_continue_ready"):
+        player.hp = 1
+        player.licenze = max(0, player.licenze - 3)
+        cs = dict(player.combat_state)
+        cs.pop("on_error_continue_ready", None)
         player.combat_state = cs
 
     boss_defeated = player.current_boss_hp is not None and player.current_boss_hp <= 0

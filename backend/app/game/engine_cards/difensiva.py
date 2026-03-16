@@ -1,4 +1,4 @@
-"""Carte Difensive — cura, protezioni, HP (carte 19–25)."""
+"""Carte Difensive — cura, protezioni, HP (carte 19–25, 55–58)."""
 from app.models.game import TurnPhase
 
 
@@ -115,6 +115,62 @@ def _card_25(player, game, db, *, target_player_id=None) -> dict:
     return result
 
 
+def _card_55(player, game, db, *, target_player_id=None) -> dict:
+    """Try Scope — Per il prossimo round di combattimento, se fallisci non perdi HP.
+
+    Stores try_scope_until_round in combat_state.
+    combat.py: if flag active on a miss, skips player damage (same mechanic as force_field_until_round).
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    current_round = (player.combat_round or 0) + 1
+    cs = dict(player.combat_state or {})
+    cs["try_scope_until_round"] = current_round
+    player.combat_state = cs
+    return {"applied": True, "try_scope_until_round": current_round}
+
+
+def _card_56(player, game, db, *, target_player_id=None) -> dict:
+    """On Error Continue — Invece di morire, sopravvivi con 1HP perdendo 3L.
+
+    Stores on_error_continue_ready=True in combat_state.
+    combat.py: if player.hp <= 0 and flag set, hp=1, licenze -= 3, clear flag.
+    Unlike card 23 (Disaster Recovery), this costs 3 Licenze.
+    """
+    cs = dict(player.combat_state or {})
+    cs["on_error_continue_ready"] = True
+    player.combat_state = cs
+    return {"applied": True, "on_error_continue_ready": True}
+
+
+def _card_57(player, game, db, *, target_player_id=None) -> dict:
+    """API Proxy — La prossima carta offensiva avversaria contro di te perde 1 punto di effetto.
+
+    Stores api_proxy_active=True in combat_state.
+    TODO: offensive card handlers targeting a player check this flag and reduce effect by 1.
+    """
+    cs = dict(player.combat_state or {})
+    cs["api_proxy_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "api_proxy_active": True}
+
+
+def _card_58(player, game, db, *, target_player_id=None) -> dict:
+    """Entitlement Process — Per 3 round, il boss non può infliggerti più di 1 danno per round.
+
+    Stores entitlement_process_until_round in combat_state.
+    combat.py: caps player HP damage from boss miss to 1 per round while flag is active.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    current_round = (player.combat_round or 0) + 1
+    until_round = current_round + 2  # this round + next 2 = 3 rounds total
+    cs = dict(player.combat_state or {})
+    cs["entitlement_process_until_round"] = until_round
+    player.combat_state = cs
+    return {"applied": True, "entitlement_process_until_round": until_round}
+
+
 DIFENSIVA: dict = {
     19: _card_19,
     20: _card_20,
@@ -123,4 +179,8 @@ DIFENSIVA: dict = {
     23: _card_23,
     24: _card_24,
     25: _card_25,
+    55: _card_55,
+    56: _card_56,
+    57: _card_57,
+    58: _card_58,
 }

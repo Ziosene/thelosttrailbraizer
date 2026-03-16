@@ -228,8 +228,14 @@ Il combattimento termina quando:
 - **Disaster Recovery (23)**: giocata proattivamente, salva il giocatore dalla morte con 1 HP (il flag viene consumato al momento fatale).
 - **Quick Action (33)**: non conta come carta giocata, non scala il budget di 2 per turno.
 - **Free Trial (37)**: crea un addon temporaneo dalla cima del mazzo addon; rimosso automaticamente a fine turno.
-- **Consulting Hours (38)**: abbassa la soglia dado di un alleato in combattimento (−2 per 2 round).
+- **Consulting Hours (38)**: abbassa la soglia dato di un alleato in combattimento (−2 per 2 round).
 - **Budget carte out-of-turn**: una carta Interferenza/Difensiva giocata fuori turno scala lo stesso budget di 2 carte condiviso dall'inizio del turno all'inizio del turno successivo.
+- **Drip Program (43)**: effetto a rilascio lento — +1L subito, +1L all'inizio dei prossimi 2 turni (FASE INIZIALE). Il combattimento interrompe le rate future.
+- **Object Store (44)**: deposita fino a 3L in storage protetto (non rubabili durante il turno). Le licenze vengono restituite automaticamente all'inizio del turno successivo (FASE INIZIALE).
+- **Contracted Price (47) / Price Rule (48)**: modificatori costo addon. Vengono consumati al prossimo acquisto addon e sopravvivono all'ingresso in combattimento.
+- **On Error Continue (56)**: sopravvivi alla morte con 1 HP perdendo 3 Licenze. Diverso da Disaster Recovery (23) che salva senza costi.
+- **Dynamic Content (59)**: giocata proattivamente in combattimento, attiva un auto-reroll sul prossimo miss (prende automaticamente il secondo risultato).
+- **Einstein STO (60)**: ottimizzazione timing — +1 al prossimo tiro dado (capped a 10).
 
 ### 5.3.1 Modificatori al combattimento
 

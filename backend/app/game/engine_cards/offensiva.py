@@ -1,4 +1,4 @@
-"""Carte Offensive — danno a boss o avversari (carte 9–18)."""
+"""Carte Offensive — danno a boss o avversari (carte 9–18, 49–54)."""
 import random
 
 from sqlalchemy.orm import Session
@@ -149,6 +149,88 @@ def _card_18(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "target_player_id": target.id}
 
 
+def _card_49(player, game, db, *, target_player_id=None) -> dict:
+    """DataWeave Transform — Boss -2HP immediato."""
+    if not player.is_in_combat or player.current_boss_hp is None:
+        return {"applied": False, "reason": "not_in_combat"}
+    player.current_boss_hp = max(0, player.current_boss_hp - 2)
+    return {"applied": True, "boss_damage": 2}
+
+
+def _card_50(player, game, db, *, target_player_id=None) -> dict:
+    """Scatter-Gather — Boss -1HP; tira dado: se ≥6, altri -1HP.
+
+    The bonus roll is a dedicated roll independent from the combat round roll.
+    """
+    if not player.is_in_combat or player.current_boss_hp is None:
+        return {"applied": False, "reason": "not_in_combat"}
+    player.current_boss_hp = max(0, player.current_boss_hp - 1)
+    bonus_roll = engine.roll_d10()
+    bonus_hit = bonus_roll >= 6
+    if bonus_hit:
+        player.current_boss_hp = max(0, player.current_boss_hp - 1)
+    return {
+        "applied": True,
+        "boss_damage": 2 if bonus_hit else 1,
+        "bonus_roll": bonus_roll,
+        "bonus_hit": bonus_hit,
+    }
+
+
+def _card_51(player, game, db, *, target_player_id=None) -> dict:
+    """CloudHub Worker — Boss -1HP per AddOn posseduto (max 3)."""
+    if not player.is_in_combat or player.current_boss_hp is None:
+        return {"applied": False, "reason": "not_in_combat"}
+    damage = min(len(player.addons), 3)
+    player.current_boss_hp = max(0, player.current_boss_hp - damage)
+    return {"applied": True, "boss_damage": damage, "addon_count": len(player.addons)}
+
+
+def _card_52(player, game, db, *, target_player_id=None) -> dict:
+    """Product Rule — Boss -2HP se ha >3HP rimasti, altrimenti -1HP."""
+    if not player.is_in_combat or player.current_boss_hp is None:
+        return {"applied": False, "reason": "not_in_combat"}
+    damage = 2 if player.current_boss_hp > 3 else 1
+    player.current_boss_hp = max(0, player.current_boss_hp - damage)
+    return {"applied": True, "boss_damage": damage}
+
+
+def _card_53(player, game, db, *, target_player_id=None) -> dict:
+    """AMPscript Block — Boss abilità si ritorce contro se stesso per 1 round.
+
+    Stores ampscript_reflected_until_round in combat_state.
+    combat.py: if flag active on miss, skip boss extra_damage and deal 1HP to boss instead.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    current_round = (player.combat_round or 0) + 1
+    cs = dict(player.combat_state or {})
+    cs["ampscript_reflected_until_round"] = current_round
+    player.combat_state = cs
+    return {"applied": True, "ampscript_reflected_until_round": current_round}
+
+
+def _card_54(player, game, db, *, target_player_id=None) -> dict:
+    """On Error Propagate — Boss -1HP; la sua abilità propaga al giocatore alla tua sinistra (-1HP).
+
+    Boss damage is immediate. Left-neighbour collateral damage is also immediate.
+    """
+    if not player.is_in_combat or player.current_boss_hp is None:
+        return {"applied": False, "reason": "not_in_combat"}
+    player.current_boss_hp = max(0, player.current_boss_hp - 1)
+    result: dict = {"applied": True, "boss_damage": 1}
+    turn_order = game.turn_order or []
+    if player.id in turn_order:
+        idx = turn_order.index(player.id)
+        left_id = turn_order[(idx - 1) % len(turn_order)]
+        left_player = next((p for p in game.players if p.id == left_id and p.id != player.id), None)
+        if left_player:
+            left_player.hp = max(0, left_player.hp - 1)
+            result["collateral_player_id"] = left_player.id
+            result["collateral_damage"] = 1
+    return result
+
+
 OFFENSIVA: dict = {
     9:  _card_9,
     10: _card_10,
@@ -160,4 +242,10 @@ OFFENSIVA: dict = {
     16: _card_16,
     17: _card_17,
     18: _card_18,
+    49: _card_49,
+    50: _card_50,
+    51: _card_51,
+    52: _card_52,
+    53: _card_53,
+    54: _card_54,
 }

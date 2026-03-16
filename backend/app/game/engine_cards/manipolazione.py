@@ -1,4 +1,4 @@
-"""Carte Manipolazione Dado — modificano i tiri di dado (carte 26–30).
+"""Carte Manipolazione Dado — modificano i tiri di dado (carte 26–30, 59–60).
 
 Tutte le carte di questa categoria lavorano tramite flag in combat_state.
 combat.py (_handle_roll_dice) legge e consuma i flag prima/durante il tiro.
@@ -81,10 +81,40 @@ def _card_30(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "force_field_until_round": current_round}
 
 
+def _card_59(player, game, db, *, target_player_id=None) -> dict:
+    """Dynamic Content — Dopo aver visto il dado, puoi ritirarlo (prendi il secondo risultato).
+
+    Stores dynamic_content_reroll=True in combat_state.
+    combat.py: after a miss result, if flag set, automatically rerolls once and clears flag.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["dynamic_content_reroll"] = True
+    player.combat_state = cs
+    return {"applied": True, "dynamic_content_reroll": True}
+
+
+def _card_60(player, game, db, *, target_player_id=None) -> dict:
+    """Einstein STO — Ottimizza il timing del tiro: +1 al prossimo tiro di dado.
+
+    Stores einstein_sto_next_roll_bonus=1 in combat_state.
+    combat.py: adds 1 to the roll after base roll (before other modifiers), capped at 10.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["einstein_sto_next_roll_bonus"] = 1
+    player.combat_state = cs
+    return {"applied": True, "einstein_sto_next_roll_bonus": 1}
+
+
 MANIPOLAZIONE: dict = {
     26: _card_26,
     27: _card_27,
     28: _card_28,
     29: _card_29,
     30: _card_30,
+    59: _card_59,
+    60: _card_60,
 }

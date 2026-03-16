@@ -37,6 +37,24 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
     # ── FASE INIZIALE step 2: on-start abilities ──────────────────────────────
     # TODO: trigger_passive_addons(event="on_turn_start", player, game, db)
 
+    # ── FASE INIZIALE step 3: process cross-turn combat_state flags ───────────
+    _cs_init = dict(player.combat_state or {})
+    # Card 44 (Object Store): auto-return stored licenze at start of new turn
+    _stored_lic = _cs_init.pop("object_store_licenze", 0)
+    if _stored_lic:
+        player.licenze += _stored_lic
+    # Card 43 (Drip Program): deliver next licenza installment
+    _drip = _cs_init.get("drip_program_remaining", 0)
+    if _drip > 0:
+        player.licenze += 1
+        if _drip <= 1:
+            _cs_init.pop("drip_program_remaining", None)
+        else:
+            _cs_init["drip_program_remaining"] = _drip - 1
+    # Card 42 (Engagement Studio): clear fought_this_turn so it's fresh for this new turn
+    _cs_init.pop("fought_this_turn", None)
+    player.combat_state = _cs_init or {}
+
     if len(player.hand) >= engine.MAX_HAND_SIZE:
         await _error(game.code, user_id, "Hand is full")
         return
@@ -413,12 +431,26 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
             return
 
     cost = addon.cost + (player.pending_addon_cost_penalty or 0)
+    # Card 47 (Contracted Price): fix next addon cost to 5 (overrides base cost + penalty)
+    _price_fixed = (player.combat_state or {}).get("next_addon_price_fixed")
+    if _price_fixed is not None:
+        cost = _price_fixed
+    else:
+        # Card 48 (Price Rule): reduce next addon cost by N
+        _price_discount = (player.combat_state or {}).get("next_addon_price_discount", 0)
+        cost = max(0, cost - _price_discount)
     if player.licenze < cost:
         await _error(game.code, user_id, f"Need {cost} Licenze (have {player.licenze})")
         return
 
     player.licenze -= cost
     player.pending_addon_cost_penalty = 0  # penalty consumed on first purchase (boss 26)
+    # Consume addon price modifiers
+    if _price_fixed is not None or (player.combat_state or {}).get("next_addon_price_discount", 0):
+        cs_addon = dict(player.combat_state or {})
+        cs_addon.pop("next_addon_price_fixed", None)
+        cs_addon.pop("next_addon_price_discount", None)
+        player.combat_state = cs_addon
 
     # Bought addons are tracked as owned by player; market slot gets refilled
     if source == "market_1":
