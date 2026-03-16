@@ -771,22 +771,14 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
 
     if boss_defeated:
         player.bosses_defeated += 1
-        player.licenze += boss.reward_licenze
-        if boss.has_certification:
-            player.certificazioni += 1
 
-        # ── on_boss_defeated effects ──────────────────────────────────────
+        # ── GDD §5.6 — Morte del Boss: 7-step ordered sequence ───────────────
+        # Step 1: pre-reward boss abilities (revive, re-insert) — must fire BEFORE rewards
         defeated_effect = engine.apply_boss_ability(
             boss.id, "on_boss_defeated", cards_played=player.cards_played_this_turn
         )
-        # Boss 19 (Dreamforce Hydra): +1 bonus certification on kill
-        if defeated_effect["bonus_certification"] > 0:
-            player.certificazioni += defeated_effect["bonus_certification"]
-        # Boss 20 (Corrupted Trailblazer): +3 licenze if no cards played this turn
-        if defeated_effect["bonus_licenze"] > 0:
-            player.licenze += defeated_effect["bonus_licenze"]
 
-        # Boss 25 (Heroku Dyno Zombie): one-shot revive — only fires if resurrection not yet used
+        # Boss 25 (Heroku Dyno Zombie): one-shot revive — no rewards given
         if defeated_effect["boss_revive"] > 0:
             cs = dict(player.combat_state or {})
             if not cs.get("resurrection_used", False):
@@ -802,9 +794,9 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                     "new_hp": player.current_boss_hp,
                 })
                 await _broadcast_state(game, db)
-                return  # combat continues — boss revived
+                return  # combat continues — boss revived, skip all reward steps
 
-        # Boss 34 (Batch Apex Necromancer): first defeat re-inserts boss into deck; second is permanent
+        # Boss 34 (Batch Apex Necromancer): first defeat re-inserts boss into deck — no rewards
         if defeated_effect["boss_revive_to_deck"] > 0:
             cs = dict(player.combat_state or {})
             if not cs.get("necromancer_resurrected", False):
@@ -814,20 +806,46 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                     game.boss_deck_1 = (game.boss_deck_1 or []) + [boss.id]
                 else:
                     game.boss_deck_2 = (game.boss_deck_2 or []) + [boss.id]
-            # On second defeat the boss is simply discarded normally (falls through to defeat logic)
+                player.is_in_combat = False
+                player.current_boss_id = None
+                player.current_boss_hp = None
+                player.current_boss_source = None
+                game.current_phase = TurnPhase.action
+                db.commit()
+                db.refresh(game)
+                await manager.broadcast(game.code, {
+                    "type": "boss_revived",
+                    "player_id": player.id,
+                    "boss_id": boss.id,
+                    "necromancer": True,
+                })
+                await _broadcast_state(game, db)
+                return  # combat ended — boss re-inserted, no rewards
 
+        # Step 2: award Licenze reward
+        player.licenze += boss.reward_licenze
+
+        # Step 3: award Certification (if cert boss)
+        if boss.has_certification:
+            player.certificazioni += 1
+
+        # Step 4: post-reward boss abilities
+        # Boss 19 (Dreamforce Hydra): +1 bonus certification on kill
+        if defeated_effect["bonus_certification"] > 0:
+            player.certificazioni += defeated_effect["bonus_certification"]
+        # Boss 20 (Corrupted Trailblazer): +3 licenze if no cards played this turn
+        if defeated_effect["bonus_licenze"] > 0:
+            player.licenze += defeated_effect["bonus_licenze"]
         # Boss 26 (CPQ Configuration Chaos): next addon purchase costs +3 licenze
         if defeated_effect["next_addon_cost_penalty"] > 0:
             player.pending_addon_cost_penalty = (
                 (player.pending_addon_cost_penalty or 0) + defeated_effect["next_addon_cost_penalty"]
             )
-
         # Boss 99 (CTA Titan): every player who played an action card this combat gains N licenze
         if defeated_effect["bonus_licenze_to_helpers"] > 0:
             for p_help in game.players:
                 if p_help.id != player.id and p_help.cards_played_this_turn > 0:
                     p_help.licenze += defeated_effect["bonus_licenze_to_helpers"]
-
         # Boss 100 (Lost Trailblazer Omega): instant win regardless of cert count
         if defeated_effect["instant_win"]:
             game.status = GameStatus.finished
@@ -839,7 +857,6 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             await manager.broadcast(game.code, {"type": ServerEvent.GAME_OVER, "winner_id": player.id})
             await _broadcast_state(game, db)
             return
-
         # Boss 31 (AppExchange Parasite): unlock locked addon (untap it)
         # Boss 91 (List View Usurper): return stolen addon to player's possession
         if defeated_effect["unlock_locked_addon"] and player.combat_state:
@@ -854,13 +871,11 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             if stolen_addon_id:
                 from app.models.game import PlayerAddon as _PA2
                 db.add(_PA2(player_id=player.id, addon_id=stolen_addon_id))
-
         # Boss 82 (Customer 360 Gorgon): clear petrified cards on defeat
         if player.combat_state and player.combat_state.get("petrified_card_ids"):
             cs = dict(player.combat_state)
             cs.pop("petrified_card_ids", None)
             player.combat_state = cs
-
         # Boss 55 / Boss 74: also apply shadow copy's on_boss_defeated effects
         if copy_boss_id:
             copy_def = engine.apply_boss_ability(
@@ -875,7 +890,6 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                 player.pending_addon_cost_penalty = (
                     (player.pending_addon_cost_penalty or 0) + copy_def["next_addon_cost_penalty"]
                 )
-
         # Boss 100 (Omega): also apply the last legendary boss's on_boss_defeated effects
         if engine.boss_is_omega(boss.id) and game.last_defeated_legendary_boss_id:
             omega_def = engine.apply_boss_ability(
@@ -892,6 +906,7 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         if boss.has_certification:
             game.last_defeated_legendary_boss_id = boss.id
 
+        # Step 5 & 6: Trophy (cert boss) or Cimitero Boss (non-cert)
         source = player.current_boss_source
         if boss.has_certification:
             # Cert boss becomes a trophy in the player's possession.
@@ -901,7 +916,8 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         else:
             # Non-cert bosses go to the shared graveyard
             game.boss_graveyard = (game.boss_graveyard or []) + [boss.id]
-        # Refill market slot if boss was taken from market
+
+        # Step 7: Refill market slot if boss was taken from market
         if source == "market_1":
             game.boss_market_1 = game.boss_deck_1.pop(0) if game.boss_deck_1 else None
         elif source == "market_2":
@@ -981,6 +997,11 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
 
         player.licenze = penalty["licenze"]
         player.hp = player.max_hp  # respawn with full HP
+
+        # GDD §6: tutti gli AddOn rimanenti si tappano alla morte
+        for pa_death in player.addons:
+            pa_death.is_tapped = True
+
         player.is_in_combat = False
         player.current_boss_id = None
         player.current_boss_hp = None

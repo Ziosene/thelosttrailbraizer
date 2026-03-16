@@ -30,6 +30,13 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
         await _error(game.code, user_id, "Not in draw phase")
         return
 
+    # ── FASE INIZIALE step 1: Untap all addons (moved from end_turn) ─────────
+    for pa in player.addons:
+        pa.is_tapped = False
+
+    # ── FASE INIZIALE step 2: on-start abilities ──────────────────────────────
+    # TODO: trigger_passive_addons(event="on_turn_start", player, game, db)
+
     if len(player.hand) >= engine.MAX_HAND_SIZE:
         await _error(game.code, user_id, "Hand is full")
         return
@@ -86,7 +93,7 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
 
 
 async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Session):
-    if game.status != GameStatus.in_progress or game.current_phase != TurnPhase.action:
+    if game.status != GameStatus.in_progress or game.current_phase not in (TurnPhase.action, TurnPhase.combat):
         await _error(game.code, user_id, "Cannot play card now")
         return
 
@@ -432,7 +439,7 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
 
 
 async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Session):
-    if game.status != GameStatus.in_progress or game.current_phase != TurnPhase.action:
+    if game.status != GameStatus.in_progress or game.current_phase not in (TurnPhase.action, TurnPhase.combat):
         await _error(game.code, user_id, "Cannot use addon now")
         return
 
@@ -525,13 +532,25 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
         await _error(game.code, user_id, "Cannot end turn now (in combat?)")
         return
 
-    # TODO: triggherare gli addon passivi con trigger "fine turno" o "inizio turno".
-    # Alcuni addon applicano effetti periodici (es. guadagna 1L ogni turno, recupera 1HP, ecc.).
-    # Va chiamata trigger_passive_addons(event="on_turn_end", player, game, db) prima di avanzare.
+    # ── FASE FINALE step 1: on-end abilities ─────────────────────────────────
+    # TODO: trigger_passive_addons(event="on_turn_end", player, game, db)
 
-    # Untap all addons
-    for pa in player.addons:
-        pa.is_tapped = False
+    # ── FASE FINALE step 2: discard excess cards (hand > 10) ─────────────────
+    hand_cards = list(player.hand)
+    excess = len(hand_cards) - engine.MAX_HAND_SIZE
+    if excess > 0:
+        # Player must choose which to discard — for now auto-discard last drawn
+        to_discard = hand_cards[-excess:]
+        for hc_ex in to_discard:
+            game.action_discard = (game.action_discard or []) + [hc_ex.action_card_id]
+            db.delete(hc_ex)
+
+    # ── FASE FINALE step 3: "until end of turn" effects expire ───────────────
+    # TODO: expire timed effects stored in combat_state (e.g. "until_round" flags)
+    # when a proper effect-duration system is introduced.
+
+    # ── FASE FINALE step 4: reset HP to max_hp ───────────────────────────────
+    player.hp = player.max_hp
 
     # Card 18 (Org Takeover): clear the one-turn addon block when this player's turn ends
     if player.combat_state and player.combat_state.get("addons_blocked_next_turn"):

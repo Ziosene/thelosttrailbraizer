@@ -449,10 +449,35 @@ PARTITA (ciclo per ogni giocatore)
                     └─ torna ad ACTION PHASE
      └─ retreat_combat → torna ad ACTION (boss in cima al mazzo)
 
-FINE TURNO
-  └─ untap tutti gli addon del giocatore
-  └─ reset cards_played_this_turn = 0
-  └─ indice avanza al prossimo giocatore
+FASE FINALE (end_turn)
+  ├─ step 1: abilità "fine turno" (TODO: trigger_passive_addons on_turn_end)
+  ├─ step 2: scarto eccesso carte (hand > 10, auto-discard last drawn)
+  ├─ step 3: effetti "until end of turn" scadono (TODO)
+  ├─ step 4: reset HP a max_hp
+  ├─ cleanup Card 18 (addon block) e Card 37 (free trial addon)
+  ├─ reset cards_played_this_turn = 0
+  └─ indice avanza al prossimo giocatore → fase torna a DRAW
+
+INIZIO TURNO SUCCESSIVO (draw_card = FASE INIZIALE)
+  ├─ step 1: untap tutti gli addon del giocatore attivo
+  ├─ step 2: abilità "inizio turno" (TODO: trigger_passive_addons on_turn_start)
+  └─ step 3: pesca 1 carta → fase passa ad ACTION
+
+MORTE DEL BOSS (GDD §5.6 — 7 step)
+  ├─ step 1: abilità pre-ricompensa (revive boss 25, re-insert boss 34)
+  ├─ step 2: award Licenze reward
+  ├─ step 3: award Certificazione (se boss-cert)
+  ├─ step 4: abilità post-ricompensa (bonus cert/licenze, unlock addon, ecc.)
+  ├─ step 5: Trofeo (boss-cert → player.trophies) o Cimitero Boss (non-cert)
+  ├─ step 6: boss_graveyard aggiornato
+  └─ step 7: mercato rifornito
+
+MORTE DEL GIOCATORE
+  ├─ penalità: -1 carta, -1 licenza, -1 addon
+  ├─ tutti gli AddOn rimanenti vengono tappati (GDD §6)
+  ├─ respawn a max_hp
+  ├─ boss torna in cima al mazzo
+  └─ torna ad ACTION PHASE
 ```
 
 ---
@@ -487,6 +512,13 @@ FINE TURNO
 - [x] **Wiring boss residui (25, 26, 31, 34, 55, 56, 74, 82, 84, 91, 94, 100)** — sfruttano i nuovi DB fields. One-shot revive (25), one-shot necromancer (34), addon cost penalty (26), lock/unlock addon (31), steal/return addon (91), petrify cards (82), doomsayer prediction cap (84), loyalty shield (94), mimic routing (55), shape-shifter routing (74), omega routing (100), permanent card ban (56).
 - [x] **Refactoring moduli** — `engine.py` (1154 righe) → `engine.py` (core, 165 righe) + `engine_boss.py` (boss system, 1001 righe). `game_handler.py` (1887 righe) → thin router (65 righe) + `game_helpers.py` (156 righe) + `handlers/lobby.py` (151 righe) + `handlers/turn.py` (480 righe) + `handlers/combat.py` (1079 righe). Nessuna logica modificata. Backward-compatible tramite `from app.game.engine_boss import *` in engine.py.
 - [x] **Sistema reazione out-of-turn** — `reaction_manager.py`: asyncio Event per finestre di reazione (8 s timeout, in-memory, no DB). `_handle_play_card` apre una finestra se la carta colpisce un avversario con budget carte disponibile. Il target può rispondere con `play_reaction {hand_card_id}` o `pass_reaction`. Risoluzione: Shield Platform (carta 20) annulla l'originale; Chargeback (carta 7) su furto Licenze annulla + dà +1L; altre interferenze si applicano entrambe. Budget carte condiviso in-turn/out-of-turn: `cards_played_this_turn` conta entrambi. Nuovi ClientAction: `play_reaction`, `pass_reaction`. Nuovi ServerEvent: `reaction_window_open` (privato), `reaction_window_closed` (privato), `reaction_resolved` (broadcast).
+- [x] **Allineamento GDD §4 + §5.6 + §6 — struttura turno a tre fasi e morte boss/giocatore**
+  - `_handle_draw_card`: untap addons + TODO on_turn_start spostati qui (prima erano in end_turn) → implementa correttamente FASE INIZIALE (step 1 untap, step 2 abilità inizio turno, step 3 pesca).
+  - `_handle_end_turn`: aggiunta FASE FINALE — step 2 scarto eccesso carte (hand > 10, auto-discard), step 3 TODO effects expire, step 4 HP reset a max_hp.
+  - `_handle_play_card` + `_handle_use_addon`: guard aggiornato da `!= TurnPhase.action` a `not in (action, combat)` → carte e addon usabili durante il combattimento.
+  - `_handle_roll_dice` boss defeat: ordine riallineato a GDD §5.6 — step 1 (pre-reward: revive boss 25, re-insert boss 34 — ora questi ritornano SENZA aver già dato le ricompense), step 2 licenze, step 3 cert, step 4 post-reward, step 5–6 trofeo/cimitero, step 7 mercato.
+  - `_handle_roll_dice` player death: aggiunto tap di tutti gli AddOn rimanenti (GDD §6).
+
 - [x] **Effetti carte azione — carte 1–40 implementate** — Package `engine_cards/` con 6 moduli: `economica` (1–8), `offensiva` (9–18), `difensiva` (19–25), `manipolazione` (26–30), `utilita` (31–37), `interferenza` (38–40). `combat_state` keys aggiunte: `boss_ability_disabled_until_round` (carte 10, 21), `double_damage_until_round` (12), `boss_threshold_reduction` (13), `boss_threshold_increase_until_round` (15), `addons_blocked_next_turn` (18), `disaster_recovery_ready` (23), `next_roll_forced` (26), `reroll_available` (27), `critical_system_until_round` (28), `chaos_mode_next_roll` (29), `force_field_until_round` (30), `free_trial_addon_player_addon_ids` (37), `consulting_hours_until_round` + `consulting_hours_threshold_reduction` (38). Hooks in `combat.py` `_handle_roll_dice`: dice optimizer → chaos mode → lucky roll (post-roll); consulting hours (threshold); critical system (hit branch); force field (miss branch); disaster recovery (pre-death check). `turn.py` `_handle_end_turn` rimuove gli addon free trial.
 - [x] **Boss 33, 45, 63, 83, 86 — TUTTI I 100 BOSS COMPLETAMENTE CABLATI**
   - Boss 33 (Experience Cloud Illusion): nuova action `declare_card` — il player dichiara la carta prima del tiro. Se miss, la carta viene consumata. Handler: `_handle_declare_card` + guard in `_handle_roll_dice`.
