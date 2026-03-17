@@ -654,17 +654,14 @@ def _card_229(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_236(player, game, db, *, target_player_id=None) -> dict:
-    """API Governance — Per 1 turno tutti devono dichiarare le carte prima di giocarle.
-
-    Stores api_governance_active=True for ALL players.
-    turn.py play_card: if flag set, client must send declared_card_id matching the card played.
-    Cleared in end_turn.
-    """
-    for gp in game.players:
-        cs = dict(gp.combat_state or {})
-        cs["api_governance_active"] = True
-        gp.combat_state = cs
-    return {"applied": True, "players_affected": len(list(game.players))}
+    """API Governance — L'avversario con più Licenze perde 3L."""
+    opponents = [p for p in game.players if p.id != player.id]
+    if not opponents:
+        return {"applied": False, "reason": "no_opponents"}
+    richest = max(opponents, key=lambda p: p.licenze)
+    lost = min(3, richest.licenze)
+    richest.licenze -= lost
+    return {"applied": True, "target_id": richest.id, "licenze_lost": lost}
 
 
 def _card_237(player, game, db, *, target_player_id=None) -> dict:

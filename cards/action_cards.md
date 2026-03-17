@@ -2298,8 +2298,8 @@
 
 ### 236. API Governance
 - **Tipo**: Interferenza
-- **Quando**: Fuori dal proprio turno
-- **Effetto**: Imponi la governance — per 1 turno tutti i giocatori devono dichiarare le carte prima di giocarle
+- **Quando**: Durante il tuo turno
+- **Effetto**: L'avversario con più Licenze perde 3 Licenze.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn governance decree in the art style of The Binding of Isaac. A regulatory gavel forcing all players to hold their cards face-up before playing, a transparency mandate banner spanning the table. Thick black outlines, flat shading, regulatory mood. Plain off-white parchment background. Indie game card art.`
 

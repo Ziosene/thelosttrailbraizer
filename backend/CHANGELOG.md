@@ -42,6 +42,7 @@
 - **Carta 199** (Segment Builder): redesign — da "dividi mazzo in 2 pile" (complesso) a `scarta fino a 3 carte e pesca lo stesso numero`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
+- **Carta 236** (API Governance): redesign — da "tutti dichiarano carte prima di giocarle" (non implementabile) a `l'avversario con più licenze perde 3L`; rimosso hook `api_governance_active` da turn.py
 - **Carta 227** (Anypoint Visualizer): redesign — da "visualizza grafo partita (info già pubblica)" a `tutti giocano a carte scoperte per 1 turno`; flag `anypoint_visualizer_active` settato su tutti i giocatori; turn.py broadcast le mani di tutti a tutti finché il flag è attivo
 - **Carta 224** (Canvas): nerf — da "boss forzato a 1HP + nessuna abilità" (troppo forte) a `boss -2HP + soglia dado -2 permanente per il combattimento`
 - **Carta 223** (App Home): redesign — da "+1L per turno passivo (addon-like)" a `+1L per ogni addon posseduto`; rimosso hook `app_home_passive` da turn.py
