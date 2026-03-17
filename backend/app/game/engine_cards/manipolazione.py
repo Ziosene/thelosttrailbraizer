@@ -311,22 +311,15 @@ def _card_216(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_217(player, game, db, *, target_player_id=None) -> dict:
-    """Einstein Language — Recupera 1 carta dagli scarti + next roll +1.
-
-    Recovers last card from action_discard. Adds einstein_sto_next_roll_bonus (reusing card 60 key).
-    """
+    """Einstein Language — Recupera la prima carta dal mazzo degli scarti."""
     from app.models.game import PlayerHandCard as _PHC217
-    cs = dict(player.combat_state or {})
-    drew = False
     discard = list(game.action_discard or [])
-    if discard:
-        card_id = discard.pop(-1)
-        game.action_discard = discard
-        db.add(_PHC217(player_id=player.id, action_card_id=card_id))
-        drew = True
-    cs["einstein_sto_next_roll_bonus"] = cs.get("einstein_sto_next_roll_bonus", 0) + 1
-    player.combat_state = cs
-    return {"applied": True, "drew_card": drew, "next_roll_bonus": 1}
+    if not discard:
+        return {"applied": False, "reason": "discard_empty"}
+    card_id = discard.pop(0)
+    game.action_discard = discard
+    db.add(_PHC217(player_id=player.id, action_card_id=card_id))
+    return {"applied": True, "recovered_card_id": card_id}
 
 
 def _card_218(player, game, db, *, target_player_id=None) -> dict:

@@ -2123,8 +2123,8 @@
 
 ### 217. Einstein Language
 - **Tipo**: Manipolazione dado / Utilità
-- **Quando**: In qualsiasi momento
-- **Effetto**: Leggi il mazzo degli scarti — recupera la carta più adatta al tuo Ruolo e aggiungi +1 al dado per il prossimo round
+- **Quando**: Durante il tuo turno
+- **Effetto**: Recupera la prima carta dal mazzo degli scarti e aggiungila alla tua mano.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn language model reading scene in the art style of The Binding of Isaac. An Einstein figure interpreting discard pile cards like text, extracting the most relevant one while a +1 die modifier floats above. Thick black outlines, flat shading, comprehension mood. Plain off-white parchment background. Indie game card art.`
 
