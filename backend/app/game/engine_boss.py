@@ -684,9 +684,10 @@ def apply_boss_ability(
             return _boss_effect(next_addon_cost_penalty=3)
 
         # ── Boss 27 — The Marketing Cloud Banshee ────────────────────────────
-        # Every round ALL opponents (not the combatant) lose 1 HP from the banshee's scream.
+        # Rounds 1–2 only: ALL opponents (not the combatant) lose 1 HP from the banshee's scream.
+        # After round 2 the banshee loses her voice — no further AoE damage.
         case (27, "on_round_end"):
-            return _boss_effect(aoe_all_hp_damage=1)
+            return _boss_effect(aoe_all_hp_damage=1 if combat_round <= 2 else 0)
 
         # ── Boss 29 — The Data Cloud Colossus ────────────────────────────────
         # Each hit: boss absorbs 1 card from the combatant's hand into combat state.

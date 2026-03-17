@@ -290,7 +290,7 @@
 ### 27. The Marketing Cloud Banshee
 - **HP**: 4
 - **Soglia dado**: 5+
-- **Abilità**: Ogni round, tutti gli altri giocatori (non il combattente) perdono 1 HP per via dell'urlo della Banshee
+- **Abilità**: Nei primi 2 round, tutti gli altri giocatori (non il combattente) perdono 1 HP per via dell'urlo della Banshee. Dal round 3 in poi la Banshee perde la voce — nessun ulteriore danno AoE.
 - **Ricompensa**: 4 Licenze
 - **Difficoltà**: Media
 - **Image prompt**: `A 2D hand-drawn monster in the distinctive art style of The Binding of Isaac. The monster is "The Marketing Cloud Banshee": a wailing banshee whose hair is made of thousands of email campaign threads and journey builder paths. Her scream sends email unsubscribe waves in all directions, and her dress is stitched from open-rate analytics and A/B test results. Thick black outlines, grotesque but cartoonish, flat shading, plain off-white parchment background. Indie game card art.`
