@@ -1019,12 +1019,6 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             _cs_bs.pop("batch_scope_dot_rounds", None)
         player.combat_state = _cs_bs
 
-    # Card 191 (Autolaunched Flow): if player HP just dropped below 2, trigger auto-shot on boss
-    if (player.combat_state or {}).get("autolaunched_flow_ready") and player.hp < 2:
-        player.current_boss_hp = max(0, (player.current_boss_hp or 0) - 1)
-        _cs_af = dict(player.combat_state)
-        _cs_af.pop("autolaunched_flow_ready", None)
-        player.combat_state = _cs_af
 
     # Card 169 (Model Builder): track total misses (not consecutive); after 3, force next roll = 10
     if result == "miss" and (player.combat_state or {}).get("model_builder_active"):

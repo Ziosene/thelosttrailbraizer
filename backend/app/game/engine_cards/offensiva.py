@@ -557,20 +557,12 @@ def _card_150(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_191(player, game, db, *, target_player_id=None) -> dict:
-    """Autolaunched Flow — Si attiva automaticamente quando HP < 2: boss -1HP senza usare slot carta.
-
-    If already in combat and HP < 2, deal damage immediately.
-    Otherwise set autolaunched_flow_ready=True so combat.py triggers it on next HP-threshold event.
-    """
-    if not player.is_in_combat:
+    """Autolaunched Flow — Boss -2HP, ma il giocatore va a 1 HP."""
+    if not player.is_in_combat or player.current_boss_hp is None:
         return {"applied": False, "reason": "not_in_combat"}
-    cs = dict(player.combat_state or {})
-    if player.hp < 2:
-        player.current_boss_hp = max(0, player.current_boss_hp - 1)
-        return {"applied": True, "boss_damage": 1, "immediate": True}
-    cs["autolaunched_flow_ready"] = True
-    player.combat_state = cs
-    return {"applied": True, "autolaunched_flow_ready": True}
+    player.current_boss_hp = max(0, player.current_boss_hp - 2)
+    player.hp = 1
+    return {"applied": True, "boss_damage": 2, "player_hp_set_to": 1}
 
 
 def _card_192(player, game, db, *, target_player_id=None) -> dict:

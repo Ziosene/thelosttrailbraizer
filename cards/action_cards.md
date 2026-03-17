@@ -1877,8 +1877,8 @@
 
 ### 191. Autolaunched Flow
 - **Tipo**: Offensiva
-- **Quando**: Automatica — si attiva quando vai sotto 2 HP
-- **Effetto**: Si lancia automaticamente — il boss subisce 1 HP senza consumare il limite di 2 carte per turno
+- **Quando**: Durante combattimento
+- **Effetto**: Il boss subisce 2 HP, ma tu vai a 1 HP
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn autonomous machine launching a flaming arrow in the art style of The Binding of Isaac. A mechanical gear-driven cannon firing by itself with sparks and motion lines, no human hand involved. Thick black outlines, flat shading, urgent automated mood. Plain off-white parchment background. Indie game card art.`
 

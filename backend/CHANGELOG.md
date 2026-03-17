@@ -34,6 +34,7 @@
 - **Carta 180** (Related Attribute): redesign — da "collega 2 addon con +1 effetto" (non implementabile genericamente) a `vendi 1 addon: floor(cost/2)L + pesca 1 carta`; flag `related_attribute_sell_pending`; client risponde con `related_attribute_sell` + `player_addon_id`
 - **Carta 189** (Delete Records): rimossa restrizione riacquisto 3 turni — ora l'addon torna semplicemente nel mazzo disponibile per tutti
 - **Carta 190** (Unification Rule): redesign — da "forza tipo carta su tutti" (non implementabile) a `ruba 1 addon da un avversario`; sposta `PlayerAddon` dal target al caster
+- **Carta 191** (Autolaunched Flow): redesign — da "trigger automatico sotto 2HP" (complesso) a `-2HP al boss, giocatore va a 1HP`; rimosso hook `autolaunched_flow_ready` da combat.py
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
 
