@@ -396,23 +396,12 @@ def _card_128(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_129(player, game, db, *, target_player_id=None) -> dict:
-    """Boss Dossier — Studia il boss: rivela la sua abilità speciale, poi infliggi 1HP."""
+    """Boss Dossier — Boss -2HP, ma perdi 1L."""
     if not player.is_in_combat or player.current_boss_hp is None:
         return {"applied": False, "reason": "not_in_combat"}
-    from app.models.card import BossCard as _BC129
-    boss = db.get(_BC129, player.current_boss_id)
-    boss_info = {}
-    if boss:
-        boss_info = {
-            "id": boss.id,
-            "name": boss.name,
-            "hp": boss.hp,
-            "threshold": boss.dice_threshold,
-            "reward_licenze": boss.reward_licenze,
-            "has_certification": boss.has_certification,
-        }
-    player.current_boss_hp = max(0, player.current_boss_hp - 1)
-    return {"applied": True, "boss_info": boss_info, "boss_hp_damage": 1}
+    player.current_boss_hp = max(0, player.current_boss_hp - 2)
+    player.licenze = max(0, player.licenze - 1)
+    return {"applied": True, "boss_hp_damage": 2, "licenze_lost": 1}
 
 
 def _card_130(player, game, db, *, target_player_id=None) -> dict:

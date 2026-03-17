@@ -23,6 +23,7 @@
 - **Carta 102** (Einstein Intent): redesign — da "peek dado + offensivo/difensivo" (non implementabile) a `±3 al risultato dado dopo il tiro`; flag `einstein_intent_modifier_pending`; client risponde con `einstein_intent_apply` + delta [-3, +3]; risultato clampato a [1, 10]
 - **Carta 109** (Checkout Flow): chiarito che l'addon è gratuito; ora implementato direttamente in `_card_109` — pesca il primo addon da `addon_deck_1` (o `deck_2`) e lo assegna senza costo; carta stessa non conta nel limite
 - **Carta 112** (Visitor Activity): redesign — da "dichiara carte prima di giocarle" (non implementabile) a `scarta 2 carte a caso dalla mano del target`
+- **Carta 129** (Boss Dossier): redesign — da "rivela abilità boss + -1HP" (info già pubblica) a `-2HP al boss, -1L al giocatore`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
 

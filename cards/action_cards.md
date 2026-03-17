@@ -1276,7 +1276,7 @@
 ### 129. Boss Dossier
 - **Tipo**: Offensiva
 - **Quando**: Durante combattimento
-- **Effetto**: Studia il boss: guarda la sua abilità speciale, poi infliggi 1 HP
+- **Effetto**: Il boss subisce 2 HP, ma perdi 1 Licenza
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn classified dossier in the art style of The Binding of Isaac. A top-secret folder stamped with a boss monster silhouette, a detective magnifying it to reveal its special ability, then landing one precise blow. Thick black outlines, flat shading, investigative mood. Plain off-white parchment background. Indie game card art.`
 
