@@ -170,17 +170,17 @@ def _card_96(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_97(player, game, db, *, target_player_id=None) -> dict:
-    """Fault Path — Quando fallisci un tiro dado, guadagni 1L invece di perdere HP (per questo combat).
+    """Fault Path — Sui prossimi 3 tiri falliti, guadagni 1L invece di perdere HP.
 
-    Stores fault_path_active=True in combat_state.
-    combat.py miss branch: if flag set, +1L and skip HP damage (flag persists for whole combat).
+    Stores fault_path_remaining=3 in combat_state.
+    combat.py miss branch: if fault_path_remaining > 0, +1L, skip HP damage, decrement counter.
     """
     if not player.is_in_combat:
         return {"applied": False, "reason": "not_in_combat"}
     cs = dict(player.combat_state or {})
-    cs["fault_path_active"] = True
+    cs["fault_path_remaining"] = cs.get("fault_path_remaining", 0) + 3
     player.combat_state = cs
-    return {"applied": True, "fault_path_active": True}
+    return {"applied": True, "fault_path_remaining": cs["fault_path_remaining"]}
 
 
 def _card_98(player, game, db, *, target_player_id=None) -> dict:

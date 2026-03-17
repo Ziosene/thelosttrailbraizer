@@ -893,9 +893,14 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             cs = dict(player.combat_state)
             cs.pop("transform_element_active", None)
             player.combat_state = cs
-        # Card 97 (Fault Path): on miss gain 1L instead of taking HP damage (for whole combat)
-        elif (player.combat_state or {}).get("fault_path_active"):
+        # Card 97 (Fault Path): on miss gain 1L instead of taking HP damage (3 uses)
+        elif (player.combat_state or {}).get("fault_path_remaining", 0) > 0:
             player.licenze += 1
+            _cs97 = dict(player.combat_state)
+            _cs97["fault_path_remaining"] -= 1
+            if _cs97["fault_path_remaining"] <= 0:
+                _cs97.pop("fault_path_remaining", None)
+            player.combat_state = _cs97
         # Boss 95 (Identity & Access Heretic): player damage redirected to random opponent
         elif engine.boss_redirects_damage_to_opponent(boss.id):
             opponents_redir = [p for p in game.players if p.id != player.id]

@@ -968,7 +968,7 @@
 ### 97. Fault Path
 - **Tipo**: Difensiva
 - **Quando**: Durante combattimento
-- **Effetto**: Quando fallisci un tiro dado, invece di perdere HP guadagni 1 Licenza (per questo combattimento)
+- **Effetto**: Sui prossimi 3 tiri falliti, invece di perdere HP guadagni 1 Licenza
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn error monetization in the art style of The Binding of Isaac. A failed dice roll shown with a miss symbol, but instead of losing a heart a single coin drops into a purse with a silver lining. Thick black outlines, flat shading, resilient mood. Plain off-white parchment background. Indie game card art.`
 
