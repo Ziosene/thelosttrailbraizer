@@ -673,6 +673,54 @@ def _card_229(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "target_id": target.id, "tapped_addon_id": untapped[-1].addon_id}
 
 
+def _card_236(player, game, db, *, target_player_id=None) -> dict:
+    """API Governance — Per 1 turno tutti devono dichiarare le carte prima di giocarle.
+
+    Stores api_governance_active=True for ALL players.
+    turn.py play_card: if flag set, client must send declared_card_id matching the card played.
+    Cleared in end_turn.
+    """
+    for gp in game.players:
+        cs = dict(gp.combat_state or {})
+        cs["api_governance_active"] = True
+        gp.combat_state = cs
+    return {"applied": True, "players_affected": len(list(game.players))}
+
+
+def _card_237(player, game, db, *, target_player_id=None) -> dict:
+    """Dataflow — Forza un avversario a darti 1 carta dalla sua mano."""
+    if not target_player_id:
+        return {"applied": False, "reason": "target_required"}
+    from app.game.engine_cards.helpers import get_target
+    from app.models.game import PlayerHandCard as _PHC237
+    target = get_target(game, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "target_not_found"}
+    hand = list(target.hand)
+    if not hand:
+        return {"applied": False, "reason": "target_has_no_cards"}
+    stolen = hand[-1]
+    stolen_card_id = stolen.action_card_id
+    db.delete(stolen)
+    db.add(_PHC237(player_id=player.id, action_card_id=stolen_card_id))
+    return {"applied": True, "stolen_card_id": stolen_card_id}
+
+
+def _card_246(player, game, db, *, target_player_id=None) -> dict:
+    """Agent Topic — Per 1 turno solo il tipo dichiarato può essere giocato da chiunque.
+
+    Like Unification Rule (190) but defaults to 'Economica' as the mandated type.
+    Stores unification_rule_active + unification_rule_card_type for all players.
+    Cleared in end_turn.
+    """
+    for gp in game.players:
+        cs = dict(gp.combat_state or {})
+        cs["unification_rule_active"] = True
+        cs["unification_rule_card_type"] = "Economica"
+        gp.combat_state = cs
+    return {"applied": True, "unification_rule_card_type": "Economica", "players_affected": len(list(game.players))}
+
+
 INTERFERENZA: dict = {
     38:  _card_38,
     39:  _card_39,
@@ -713,4 +761,7 @@ INTERFERENZA: dict = {
     224: _card_224,
     225: _card_225,
     229: _card_229,
+    236: _card_236,
+    237: _card_237,
+    246: _card_246,
 }

@@ -135,15 +135,15 @@ backend/
 │       ├── __init__.py           ✅
 │       ├── engine.py             ✅ funzioni pure core (~165 righe): roll, combat, deck, death, ELO + re-export engine_boss
 │       ├── engine_boss.py        ✅ boss ability system (~1000 righe): tutti i 100 boss, query helper, apply_boss_ability
-│       └── engine_cards/         ✅ effetti carte azione (230/300 implementate)
+│       └── engine_cards/         ✅ effetti carte azione (250/300 implementate)
 │           ├── __init__.py       ✅ dispatcher apply_action_card_effect
 │           ├── helpers.py        ✅ get_target()
-│           ├── economica.py      ✅ carte 1–8, 41–48, 81–88, 121–125, 159–168, 208–214, 230
-│           ├── offensiva.py      ✅ carte 9–18, 49–54, 89–95, 126–130, 141–150, 191–195, 228
+│           ├── economica.py      ✅ carte 1–8, 41–48, 81–88, 121–125, 159–168, 208–214, 230, 235, 241, 244
+│           ├── offensiva.py      ✅ carte 9–18, 49–54, 89–95, 126–130, 141–150, 191–195, 228, 231, 233, 240
 │           ├── difensiva.py      ✅ carte 19–25, 55–58, 96–100, 131–135, 151–158, 201–207
 │           ├── manipolazione.py  ✅ carte 26–30, 59–62, 101–105, 136, 169–171, 216–220
-│           ├── utilita.py        ✅ carte 31–37, 63–69, 80, 106–110, 137–138, 172–180, 196–200, 215, 221, 223, 226–227
-│           └── interferenza.py   ✅ carte 38–40, 70–79, 111–120, 139–140, 181–190, 222, 224–225, 229
+│           ├── utilita.py        ✅ carte 31–37, 63–69, 80, 106–110, 137–138, 172–180, 196–200, 215, 221, 223, 226–227, 232, 234, 238–239, 242–243, 245, 247–250
+│           └── interferenza.py   ✅ carte 38–40, 70–79, 111–120, 139–140, 181–190, 222, 224–225, 229, 236–237, 246
 ├── scripts/
 │   └── seed_cards.py             ✅ parser .md → insert DB (idempotente, safe re-run)
 └── tests/
@@ -612,6 +612,14 @@ MORTE DEL GIOCATORE
   - **Offensiva 228**: Runtime Fabric (228, boss -1HP; se HP>2 → -2HP).
   - **combat.py hooks**: `grounding_data_until_turn` (sopprime scope_creep e consulting_hours se attivo).
   - **turn.py hooks**: `high_velocity_all_in` (blocca ulteriori carte in play_card), `shortcut_extra_plays` (aumenta max_cards per il turno), `app_home_passive` (draw phase: +1L all'inizio), `sales_engagement_active` (ogni carta vs target → +1L a target), `block_kit_pending` (riduce 1L guadagnata dalla prossima carta del player). End_turn: cleanup di tutti i nuovi flag; `cadence_no_combat_turns` incrementato/resettato.
+
+- [x] **Carte azione 231–250 — Batch 10 (MuleSoft, Agentforce, DevOps)**
+  - **Offensiva 231, 233, 240**: Mule Event (231, -1HP boss + draw 1), Mule Flow (233, -1HP/carta in mano max3), Batch Scope (240, DOT -1HP/round per 3 round).
+  - **Economica 235, 241, 244**: Anypoint Exchange (235, +2L + scambia 1 carta mano↔mazzo), Object Storage (241, archivia fino a 3L sicure; restituite al turno successivo), Prompt Template (244, +2L per addon Passivo max5).
+  - **Utilità 232, 234, 238–239, 242–243, 245, 247–250**: Mule Message (232, rivela mano + draw), Integration Pattern (234, +1 alla 2a carta del turno), Recipe (238, consuma 1 Economica in mano + +3L), SFTP Connector (239, archivia fino a 2 carte; restituite al prossimo turno), App Builder (242, 2 carte stesso tipo → draw bonus), Einstein GPT (243, recupera scarto + free play), Agent Skill (245, +2L proxy passivo), Agent Action Plan (247, guarda 3 + keep/requeue/discard), Pipeline Promotion (248, sposta top boss in fondo), Work Item (249, recupera 1 carta a fine turno), Pipeline Stage (250, scarto → top deck).
+  - **Interferenza 236, 237, 246**: API Governance (236, tutti devono dichiarare le carte per 1 turno), Dataflow (237, ruba 1 carta dalla mano del target), Agent Topic (246, come Unification Rule con tipo "Economica").
+  - **combat.py hooks**: `batch_scope_dot_rounds` (DOT -1HP boss ogni round, decrement/clear).
+  - **turn.py hooks**: `einstein_gpt_free_play` (skip cards_played_this_turn increment per 1 carta), `integration_pattern_boost` (+1L alla 2a carta giocata), `app_builder_active`+`app_builder_type_counts` (draw quando tipo raggiunge 2 play), `sftp_reserve_card_ids` (restituzione carte in draw_card), `work_item_active` (recupera 1 scarto in end_turn), `api_governance_active` (clear in end_turn).
 
 - [ ] **Rate limiting WS** — un utente non dovrebbe poter inviare messaggi troppo veloci.
 

@@ -600,6 +600,61 @@ def _card_230(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "licenze_gained": reward, "my_addons": my_addons, "max_opp_addons": max_opponent_addons}
 
 
+def _card_235(player, game, db, *, target_player_id=None) -> dict:
+    """Anypoint Exchange — +2L e scambia 1 carta dalla mano con 1 dal mazzo azione."""
+    from app.models.game import PlayerHandCard as _PHC235
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    player.licenze += 2
+    # Swap: discard last card in hand and draw from deck
+    hand = list(player.hand)
+    swapped = False
+    if hand:
+        hc_swap = hand[-1]
+        game.action_discard = (game.action_discard or []) + [hc_swap.action_card_id]
+        db.delete(hc_swap)
+        if game.action_deck_1:
+            db.add(_PHC235(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+            swapped = True
+        elif game.action_deck_2:
+            db.add(_PHC235(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+            swapped = True
+    return {"applied": True, "licenze_gained": 2, "swapped": swapped}
+
+
+def _card_241(player, game, db, *, target_player_id=None) -> dict:
+    """Object Storage — Archivia fino a 3L esternamente (non rubabili); restituite al prossimo turno.
+
+    Reuses object_store_licenze key (card 44) so existing turn.py auto-return hook handles retrieval.
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    to_store = min(3, player.licenze)
+    if to_store == 0:
+        return {"applied": False, "reason": "no_licenze_to_store"}
+    player.licenze -= to_store
+    cs = dict(player.combat_state or {})
+    cs["object_store_licenze"] = cs.get("object_store_licenze", 0) + to_store
+    player.combat_state = cs
+    return {"applied": True, "licenze_stored": to_store}
+
+
+def _card_244(player, game, db, *, target_player_id=None) -> dict:
+    """Prompt Template — +2L per ogni AddOn Passivo posseduto (max 5 totale)."""
+    from app.models.card import AddonCard as _ADC244
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    passive_count = sum(
+        1 for pa in player.addons
+        if (a := db.get(_ADC244, pa.addon_id)) and a.addon_type.value == "Passivo"
+    )
+    reward = min(5, passive_count * 2)
+    if reward == 0:
+        return {"applied": False, "reason": "no_passive_addons"}
+    player.licenze += reward
+    return {"applied": True, "licenze_gained": reward, "passive_addons": passive_count}
+
+
 ECONOMICA: dict = {
     1:   _card_1,
     2:   _card_2,
@@ -648,4 +703,7 @@ ECONOMICA: dict = {
     213: _card_213,
     214: _card_214,
     230: _card_230,
+    235: _card_235,
+    241: _card_241,
+    244: _card_244,
 }

@@ -51,6 +51,13 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
             _cs_init.pop("drip_program_remaining", None)
         else:
             _cs_init["drip_program_remaining"] = _drip - 1
+    # Card 239 (SFTP Connector): auto-return stored cards at start of turn
+    _sftp_ids = list(_cs_init.pop("sftp_reserve_card_ids", None) or [])
+    if _sftp_ids:
+        from app.models.game import PlayerHandCard as _PHCSFTP
+        for _sid in _sftp_ids:
+            if len(list(player.hand)) < engine.MAX_HAND_SIZE:
+                db.add(_PHCSFTP(player_id=player.id, action_card_id=_sid))
     # Card 223 (App Home): +1L at the start of every turn (draw phase)
     if _cs_init.get("app_home_passive"):
         player.licenze += 1
@@ -328,7 +335,14 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
         return
     game.action_discard.append(hc.action_card_id)
     db.delete(hc)
-    player.cards_played_this_turn += 1
+    # Card 243 (Einstein GPT): next card plays for free (no slot consumed)
+    _egpt_free = (player.combat_state or {}).get("einstein_gpt_free_play")
+    if _egpt_free:
+        _cs_egpt = dict(player.combat_state)
+        _cs_egpt.pop("einstein_gpt_free_play", None)
+        player.combat_state = _cs_egpt
+    else:
+        player.cards_played_this_turn += 1
     card_approved = True  # may be set to False by boss 69 below
 
     if player.is_in_combat and player.current_boss_id and card:
@@ -559,6 +573,33 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
             _types_played.append(card.card_type)
             _cs_ct["card_types_played_this_turn"] = _types_played
             player.combat_state = _cs_ct
+
+    # Card 234 (Integration Pattern): 2nd card played this turn has +1 to numeric effect
+    if card and card_approved and not original_cancelled:
+        if player.cards_played_this_turn == 2 and (player.combat_state or {}).get("integration_pattern_boost"):
+            player.licenze += 1  # proxy: +1L as the numeric boost
+            _cs_ip = dict(player.combat_state)
+            _cs_ip.pop("integration_pattern_boost", None)
+            player.combat_state = _cs_ip
+
+    # Card 242 (App Builder): track type counts; draw 1 bonus when any type reaches 2 plays
+    if card and card_approved and not original_cancelled and card.card_type:
+        _cs_ab = player.combat_state or {}
+        if _cs_ab.get("app_builder_active"):
+            _ab_counts = dict(_cs_ab.get("app_builder_type_counts") or {})
+            _ab_counts[card.card_type] = _ab_counts.get(card.card_type, 0) + 1
+            _cs_ab2 = dict(_cs_ab)
+            _cs_ab2["app_builder_type_counts"] = _ab_counts
+            if _ab_counts[card.card_type] == 2:
+                # Trigger bonus draw
+                from app.models.game import PlayerHandCard as _PHC242
+                if game.action_deck_1:
+                    db.add(_PHC242(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+                elif game.action_deck_2:
+                    db.add(_PHC242(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+                _cs_ab2.pop("app_builder_active", None)
+                _cs_ab2.pop("app_builder_type_counts", None)
+            player.combat_state = _cs_ab2
 
     # Card 120 (Event Monitoring): watchers earn 1L each time this player plays a card (max 2)
     for _watcher in game.players:
@@ -956,6 +997,22 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
             cs["cadence_no_combat_turns"] = cs.get("cadence_no_combat_turns", 0) + 1
         else:
             cs["cadence_no_combat_turns"] = 0
+        # Card 236 (API Governance): one-turn declaration rule expires
+        cs.pop("api_governance_active", None)
+        # Card 242 (App Builder): clear type counters if not triggered
+        cs.pop("app_builder_type_counts", None)
+        cs.pop("app_builder_active", None)
+        # Card 249 (Work Item): recover 1 card from discard at end of turn
+        if cs.pop("work_item_active", False):
+            discard_wi = list(game.action_discard or [])
+            if discard_wi:
+                wi_card_id = discard_wi.pop(-1)
+                game.action_discard = discard_wi
+                from app.models.game import PlayerHandCard as _PHCWI
+                if len(list(player.hand)) < engine.MAX_HAND_SIZE:
+                    db.add(_PHCWI(player_id=player.id, action_card_id=wi_card_id))
+        # Card 234 (Integration Pattern): clear boost if unused
+        cs.pop("integration_pattern_boost", None)
         player.combat_state = cs
 
     # Card 209 (Activity Score): track consecutive turns where player played at least 1 card

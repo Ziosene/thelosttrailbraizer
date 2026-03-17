@@ -913,6 +913,15 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                     game.action_discard = (game.action_discard or []) + [hc_33.action_card_id]
                     db.delete(hc_33)
 
+    # Card 240 (Batch Scope): apply 1HP DOT per round while counter > 0
+    if (player.combat_state or {}).get("batch_scope_dot_rounds", 0) > 0:
+        player.current_boss_hp = max(0, (player.current_boss_hp or 0) - 1)
+        _cs_bs = dict(player.combat_state)
+        _cs_bs["batch_scope_dot_rounds"] = _cs_bs["batch_scope_dot_rounds"] - 1
+        if _cs_bs["batch_scope_dot_rounds"] <= 0:
+            _cs_bs.pop("batch_scope_dot_rounds", None)
+        player.combat_state = _cs_bs
+
     # Card 191 (Autolaunched Flow): if player HP just dropped below 2, trigger auto-shot on boss
     if (player.combat_state or {}).get("autolaunched_flow_ready") and player.hp < 2:
         player.current_boss_hp = max(0, (player.current_boss_hp or 0) - 1)

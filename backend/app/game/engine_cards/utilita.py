@@ -815,6 +815,186 @@ def _card_227(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "anypoint_visualizer_active": True}
 
 
+def _card_232(player, game, db, *, target_player_id=None) -> dict:
+    """Mule Message — Mostra 1 carta all'avversario (rivela mano) + pesca 1 nuova carta.
+
+    Sets hand_revealed_this_turn=True (broadcast hook). Draws 1 card.
+    """
+    from app.models.game import PlayerHandCard as _PHC232
+    cs = dict(player.combat_state or {})
+    cs["hand_revealed_this_turn"] = True
+    player.combat_state = cs
+    drew = False
+    if game.action_deck_1:
+        db.add(_PHC232(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+        drew = True
+    elif game.action_deck_2:
+        db.add(_PHC232(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+        drew = True
+    return {"applied": True, "hand_revealed": True, "drew_card": drew}
+
+
+def _card_234(player, game, db, *, target_player_id=None) -> dict:
+    """Integration Pattern — La 2a carta giocata questo turno ha +1 a qualsiasi valore numerico.
+
+    Stores integration_pattern_boost=True. turn.py play_card: if this is the 2nd card
+    (cards_played_this_turn == 2 after increment) and flag set, +1L as proxy boost. Then clear flag.
+    """
+    cs = dict(player.combat_state or {})
+    cs["integration_pattern_boost"] = True
+    player.combat_state = cs
+    return {"applied": True, "integration_pattern_boost": True}
+
+
+def _card_238(player, game, db, *, target_player_id=None) -> dict:
+    """Recipe — Combina 2 carte economiche dalla mano: effetti L si sommano e si applicano come 1 azione.
+
+    Simplified: if player has ≥2 Economica cards in hand, discard one and gain +3L bonus.
+    """
+    from app.models.card import ActionCard as _AC238
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    eco_hand = [hc for hc in player.hand if (c := db.get(_AC238, hc.action_card_id)) and c.card_type == "Economica"]
+    if len(eco_hand) < 2:
+        return {"applied": False, "reason": "need_2_economic_cards", "found": len(eco_hand)}
+    # Discard one of them (the last, as a "combined" ingredient)
+    victim = eco_hand[-1]
+    game.action_discard = (game.action_discard or []) + [victim.action_card_id]
+    db.delete(victim)
+    player.licenze += 3
+    return {"applied": True, "licenze_gained": 3, "card_consumed": True}
+
+
+def _card_239(player, game, db, *, target_player_id=None) -> dict:
+    """SFTP Connector — Archivia fino a 2 carte dalla mano in riserva esterna (non conta per limite).
+
+    Stores sftp_reserve_card_ids=[card_id, ...] in combat_state.
+    Cards removed from hand. Auto-returned at start of next turn via turn.py draw_card hook.
+    """
+    from app.models.game import PlayerHandCard as _PHC239
+    hand = list(player.hand)
+    if not hand:
+        return {"applied": False, "reason": "empty_hand"}
+    to_store = hand[-min(2, len(hand)):]
+    card_ids = []
+    for hc in to_store:
+        card_ids.append(hc.action_card_id)
+        db.delete(hc)
+    cs = dict(player.combat_state or {})
+    existing = list(cs.get("sftp_reserve_card_ids") or [])
+    cs["sftp_reserve_card_ids"] = existing + card_ids
+    player.combat_state = cs
+    return {"applied": True, "stored_count": len(card_ids), "stored_card_ids": card_ids}
+
+
+def _card_242(player, game, db, *, target_player_id=None) -> dict:
+    """App Builder — Se giochi 2 carte dello stesso tipo questo turno, pesca 1 carta bonus.
+
+    Stores app_builder_active=True. turn.py play_card: tracks types with app_builder_type_counts dict;
+    when any type reaches count=2, draw 1 card and clear flag.
+    """
+    cs = dict(player.combat_state or {})
+    cs["app_builder_active"] = True
+    cs.setdefault("app_builder_type_counts", {})
+    player.combat_state = cs
+    return {"applied": True, "app_builder_active": True}
+
+
+def _card_243(player, game, db, *, target_player_id=None) -> dict:
+    """Einstein GPT — Pesca 1 carta dagli scarti e giocala immediatamente senza usare lo slot carta.
+
+    Draws 1 card from action_discard to hand. Sets einstein_gpt_free_play=True so the
+    next card played this turn does not increment cards_played_this_turn.
+    """
+    from app.models.game import PlayerHandCard as _PHC243
+    discard = list(game.action_discard or [])
+    if not discard:
+        return {"applied": False, "reason": "empty_discard"}
+    card_id = discard.pop(-1)
+    game.action_discard = discard
+    db.add(_PHC243(player_id=player.id, action_card_id=card_id))
+    cs = dict(player.combat_state or {})
+    cs["einstein_gpt_free_play"] = True
+    player.combat_state = cs
+    return {"applied": True, "recovered_card_id": card_id, "free_play_granted": True}
+
+
+def _card_245(player, game, db, *, target_player_id=None) -> dict:
+    """Agent Skill — Applica l'abilità passiva del personaggio una seconda volta questo turno.
+
+    Simplified: grants +2L (proxy for a passive ability re-trigger).
+    TODO: trigger actual passive_ability(player, game, db) when that system exists.
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    player.licenze += 2
+    return {"applied": True, "licenze_gained": 2, "note": "passive_ability_proxy"}
+
+
+def _card_247(player, game, db, *, target_player_id=None) -> dict:
+    """Agent Action Plan — Guarda top 3 carte: tieni 1, 1 in cima al mazzo, 1 scartata.
+
+    Auto-picks: keep first, requeue second, discard third.
+    """
+    from app.models.game import PlayerHandCard as _PHC247
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    deck = list(game.action_deck_1 or []) or list(game.action_deck_2 or [])
+    taken = []
+    while len(taken) < 3 and game.action_deck_1:
+        taken.append(game.action_deck_1.pop(0))
+    if len(taken) < 3 and game.action_deck_2:
+        while len(taken) < 3 and game.action_deck_2:
+            taken.append(game.action_deck_2.pop(0))
+    if not taken:
+        return {"applied": False, "reason": "empty_decks"}
+    # Keep first → add to hand
+    db.add(_PHC247(player_id=player.id, action_card_id=taken[0]))
+    # Requeue second → back on top of deck_1
+    if len(taken) >= 2:
+        game.action_deck_1 = [taken[1]] + list(game.action_deck_1 or [])
+    # Discard third
+    if len(taken) >= 3:
+        game.action_discard = (game.action_discard or []) + [taken[2]]
+    return {"applied": True, "kept": taken[0], "requeued": taken[1] if len(taken) >= 2 else None, "discarded": taken[2] if len(taken) >= 3 else None}
+
+
+def _card_248(player, game, db, *, target_player_id=None) -> dict:
+    """Pipeline Promotion — Sposta la top card del mazzo boss in fondo (eviti il prossimo boss)."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    if game.boss_deck and len(game.boss_deck) > 1:
+        top = game.boss_deck.pop(0)
+        game.boss_deck = list(game.boss_deck) + [top]
+        return {"applied": True, "deferred_boss_id": top}
+    return {"applied": False, "reason": "boss_deck_too_small"}
+
+
+def _card_249(player, game, db, *, target_player_id=None) -> dict:
+    """Work Item — Traccia il lavoro: a fine turno recuperi 1 carta tra quelle giocate.
+
+    Stores work_item_active=True. turn.py end_turn: if flag set and action_discard not empty,
+    move last discard card back to player's hand.
+    """
+    cs = dict(player.combat_state or {})
+    cs["work_item_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "work_item_active": True}
+
+
+def _card_250(player, game, db, *, target_player_id=None) -> dict:
+    """Pipeline Stage — Muovi 1 carta dagli scarti in cima al mazzo azione."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    discard = list(game.action_discard or [])
+    if not discard:
+        return {"applied": False, "reason": "empty_discard"}
+    card_id = discard.pop(-1)
+    game.action_discard = discard
+    game.action_deck_1 = [card_id] + list(game.action_deck_1 or [])
+    return {"applied": True, "card_moved_to_top": card_id}
+
+
 UTILITA: dict = {
     31:  _card_31,
     32:  _card_32,
@@ -857,4 +1037,15 @@ UTILITA: dict = {
     223: _card_223,
     226: _card_226,
     227: _card_227,
+    232: _card_232,
+    234: _card_234,
+    238: _card_238,
+    239: _card_239,
+    242: _card_242,
+    243: _card_243,
+    245: _card_245,
+    247: _card_247,
+    248: _card_248,
+    249: _card_249,
+    250: _card_250,
 }

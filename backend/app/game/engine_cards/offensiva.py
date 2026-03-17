@@ -665,6 +665,47 @@ def _card_228(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "boss_damage": damage, "boss_hp_before": current_hp}
 
 
+def _card_231(player, game, db, *, target_player_id=None) -> dict:
+    """Mule Event — In combattimento: boss -1HP e pesca 1 carta azione."""
+    from app.models.game import PlayerHandCard as _PHC231
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    player.current_boss_hp = max(0, player.current_boss_hp - 1)
+    drew = False
+    if game.action_deck_1:
+        db.add(_PHC231(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+        drew = True
+    elif game.action_deck_2:
+        db.add(_PHC231(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+        drew = True
+    return {"applied": True, "boss_damage": 1, "drew_card": drew}
+
+
+def _card_233(player, game, db, *, target_player_id=None) -> dict:
+    """Mule Flow — Flusso dati: boss -1HP per carta in mano (max 3HP)."""
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    damage = min(3, len(list(player.hand)))
+    if damage == 0:
+        return {"applied": False, "reason": "empty_hand"}
+    player.current_boss_hp = max(0, player.current_boss_hp - damage)
+    return {"applied": True, "boss_damage": damage, "hand_size": len(list(player.hand))}
+
+
+def _card_240(player, game, db, *, target_player_id=None) -> dict:
+    """Batch Scope — Boss -1HP/round per i prossimi 3 round (DOT persistente).
+
+    Stores batch_scope_dot_rounds=3 in combat_state.
+    combat.py: after each roll resolution, decrement and apply DOT damage.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["batch_scope_dot_rounds"] = cs.get("batch_scope_dot_rounds", 0) + 3
+    player.combat_state = cs
+    return {"applied": True, "batch_scope_dot_rounds": cs["batch_scope_dot_rounds"]}
+
+
 OFFENSIVA: dict = {
     9:   _card_9,
     10:  _card_10,
@@ -710,4 +751,7 @@ OFFENSIVA: dict = {
     194: _card_194,
     195: _card_195,
     228: _card_228,
+    231: _card_231,
+    233: _card_233,
+    240: _card_240,
 }
