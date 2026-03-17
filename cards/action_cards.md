@@ -1751,7 +1751,7 @@
 ### 178. VM Queue
 - **Tipo**: Utilità
 - **Quando**: Fuori dal combattimento
-- **Effetto**: Metti fino a 3 carte in una "coda" fuori mano — si giocano automaticamente 1 per turno nei turni successivi
+- **Effetto**: Scarta tutta la tua mano e pesca lo stesso numero di carte dal mazzo
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn virtual machine queue in the art style of The Binding of Isaac. Three cards lined up in a numbered queue outside the hand, auto-playing one per turn like a conveyor belt on a timer. Thick black outlines, flat shading, scheduled automation mood. Plain off-white parchment background. Indie game card art.`
 

@@ -610,23 +610,27 @@ def _card_177(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_178(player, game, db, *, target_player_id=None) -> dict:
-    """VM Queue — Metti fino a 3 carte in coda; si giocano automaticamente 1 per turno.
+    """VM Queue — Scarta tutta la mano e pesca lo stesso numero di carte.
 
-    Stores vm_queue_card_ids=[id1, id2, id3] in combat_state; removes queued cards from hand.
-    turn.py start_of_turn (or draw phase): if vm_queue_card_ids not empty, pop first and auto-play.
-    Simplified: queues the first 3 cards from the player's current hand.
+    Discards all cards in hand to action_discard, then draws the same number from the deck.
     """
-    hand_cards = list(player.hand)[:3]
-    if not hand_cards:
+    from app.models.game import PlayerHandCard as _PHC178
+    hand_cards = list(player.hand)
+    count = len(hand_cards)
+    if count == 0:
         return {"applied": False, "reason": "no_cards_in_hand"}
-    queued_ids = []
+    discarded = []
     for hc in hand_cards:
-        queued_ids.append(hc.action_card_id)
+        discarded.append(hc.action_card_id)
         db.delete(hc)
-    cs = dict(player.combat_state or {})
-    cs["vm_queue_card_ids"] = cs.get("vm_queue_card_ids", []) + queued_ids
-    player.combat_state = cs
-    return {"applied": True, "vm_queue_card_ids": queued_ids}
+    game.action_discard = (game.action_discard or []) + discarded
+    drew = 0
+    for _ in range(count):
+        src = game.action_deck_1 if game.action_deck_1 else game.action_deck_2
+        if src:
+            db.add(_PHC178(player_id=player.id, action_card_id=src.pop(0)))
+            drew += 1
+    return {"applied": True, "discarded": len(discarded), "drew": drew}
 
 
 def _card_179(player, game, db, *, target_player_id=None) -> dict:
