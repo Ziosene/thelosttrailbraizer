@@ -1914,7 +1914,7 @@
 ### 195. Subflow
 - **Tipo**: Offensiva / Utilità
 - **Quando**: In qualsiasi momento
-- **Effetto**: Gioca questa carta "dentro" un'altra — aggiunge +1 Licenza a un effetto economico o +1 HP a uno difensivo già giocato in questo turno
+- **Effetto**: Recupera 1 HP e il boss subisce 1 HP
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn small card nestled inside a larger glowing card in the art style of The Binding of Isaac. A miniature card slotting perfectly into a bigger card like a puzzle piece, both cards emitting a combined radiant glow. Thick black outlines, flat shading, synergistic clever mood. Plain off-white parchment background. Indie game card art.`
 

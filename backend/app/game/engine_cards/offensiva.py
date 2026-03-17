@@ -608,21 +608,12 @@ def _card_194(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_195(player, game, db, *, target_player_id=None) -> dict:
-    """Subflow — Gioca dentro un'altra carta: +1L a un effetto economico o +1HP a uno difensivo già giocato.
-
-    Simplified: if last card played this turn was economico → +1L, else → -1HP al boss.
-    Falls back to +1L bonus.
-    """
-    cs = dict(player.combat_state or {})
-    last_type = cs.get("last_card_type_played", "")
-    if last_type in ("Offensiva", "Difensiva"):
-        # defensive / offensive context → 1HP to boss
-        if player.is_in_combat:
-            player.current_boss_hp = max(0, player.current_boss_hp - 1)
-            return {"applied": True, "effect": "boss_damage_1"}
-    # default: economic boost
-    player.licenze += 1
-    return {"applied": True, "effect": "licenze_1"}
+    """Subflow — Recupera 1HP e infliggi 1HP al boss."""
+    if not player.is_in_combat or player.current_boss_hp is None:
+        return {"applied": False, "reason": "not_in_combat"}
+    player.hp = min(player.max_hp, player.hp + 1)
+    player.current_boss_hp = max(0, player.current_boss_hp - 1)
+    return {"applied": True, "hp_restored": 1, "boss_damage": 1}
 
 
 def _card_228(player, game, db, *, target_player_id=None) -> dict:
