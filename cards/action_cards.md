@@ -1769,7 +1769,7 @@
 ### 180. Related Attribute
 - **Tipo**: Utilità
 - **Quando**: In qualsiasi momento
-- **Effetto**: Collega 2 tuoi AddOn — quando uno si attiva, l'altro ha +1 al proprio effetto per quel round
+- **Effetto**: Vendi 1 tuo AddOn a scelta — recupera la metà del suo costo in Licenze (arrotondato per difetto) e pesca 1 carta
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn addon link in the art style of The Binding of Isaac. Two addon items connected by a glowing chain, one activating and boosting the linked other by +1 on its effect indicator for that round. Thick black outlines, flat shading, synergy mood. Plain off-white parchment background. Indie game card art.`
 

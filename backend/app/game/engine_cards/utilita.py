@@ -651,20 +651,22 @@ def _card_179(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_180(player, game, db, *, target_player_id=None) -> dict:
-    """Related Attribute — Collega 2 tuoi AddOn; quando uno si attiva l'altro ha +1 al suo effetto.
+    """Related Attribute — Vendi 1 tuo addon: recupera metà del costo in Licenze e pesca 1 carta.
 
-    Stores related_attribute_pair=[addon_id_a, addon_id_b] in combat_state.
-    turn.py use_addon: if used addon is in pair, set related_attribute_boost_addon_id for partner.
-    Simplified: takes the first 2 addons owned by the player.
+    Sends the player's addon list for selection via 'related_attribute_sell' ClientAction
+    with player_addon_id. Handler removes the PlayerAddon, awards floor(cost/2) Licenze,
+    draws 1 card, and returns the addon to addon_deck_1.
+    Stores related_attribute_sell_pending=True in combat_state to open the selection window.
     """
-    addons = list(player.addons)[:2]
-    if len(addons) < 2:
-        return {"applied": False, "reason": "need_at_least_2_addons"}
-    pair_ids = [addons[0].addon_id, addons[1].addon_id]
+    from app.models.game import PlayerHandCard as _PHC180
+    addons = list(player.addons)
+    if not addons:
+        return {"applied": False, "reason": "no_addons_to_sell"}
+    addon_options = [{"player_addon_id": pa.id, "addon_id": pa.addon_id} for pa in addons]
     cs = dict(player.combat_state or {})
-    cs["related_attribute_pair"] = pair_ids
+    cs["related_attribute_sell_pending"] = True
     player.combat_state = cs
-    return {"applied": True, "related_attribute_pair": pair_ids}
+    return {"applied": True, "addon_options": addon_options, "note": "related_attribute_sell_required"}
 
 
 def _card_196(player, game, db, *, target_player_id=None) -> dict:
