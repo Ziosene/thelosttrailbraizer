@@ -541,11 +541,11 @@
 
 ---
 
-### 52. The Manufacturing Cloud Beast
+### 52. The Manufacturing Cloud Beast 🏆
 - **HP**: 7
 - **Soglia dado**: 6+
 - **Abilità**: Armatura industriale — i primi 3 danni ricevuti sono annullati. Dopo, funziona normalmente
-- **Ricompensa**: 5 Licenze
+- **Ricompensa**: 5 Licenze + **1 Certificazione**
 - **Difficoltà**: Alta
 - **Image prompt**: `A 2D hand-drawn monster in the distinctive art style of The Binding of Isaac. The monster is "The Manufacturing Cloud Beast": a massive industrial golem with factory parts for limbs — conveyor belt arms, blast furnace torso, industrial crane neck. Its armor plating absorbs the first three hits entirely, and it moves with the inevitable weight of heavy industry. Smoke stacks protrude from its shoulders. Thick black outlines, grotesque but cartoonish, flat shading, plain off-white parchment background. Indie game card art.`
 

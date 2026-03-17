@@ -222,9 +222,16 @@ def seed():
             if card["number"] in existing_boss:
                 # Update mutable balance fields (hp, dice_threshold) on existing records
                 existing = db.query(BossCard).filter(BossCard.number == card["number"]).first()
-                if existing and (existing.hp != card["hp"] or existing.dice_threshold != card["dice_threshold"]):
+                if existing and (
+                    existing.hp != card["hp"]
+                    or existing.dice_threshold != card["dice_threshold"]
+                    or existing.has_certification != card["has_certification"]
+                    or existing.reward_licenze != card["reward_licenze"]
+                ):
                     existing.hp = card["hp"]
                     existing.dice_threshold = card["dice_threshold"]
+                    existing.has_certification = card["has_certification"]
+                    existing.reward_licenze = card["reward_licenze"]
                     updated_boss += 1
                 continue
             db.add(BossCard(**card))
