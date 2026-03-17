@@ -341,6 +341,18 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
         await _error(game.code, user_id, "high_velocity_all_in: no more cards this turn")
         return
 
+    # Boss 64 (Order Management Maelstrom): escalating licenze cost per card played this combat
+    if player.is_in_combat and player.current_boss_id and engine.boss_card_play_escalating_cost(player.current_boss_id):
+        _cs_ms = player.combat_state or {}
+        _maelstrom_extra = _cs_ms.get("maelstrom_cards_played_combat", 0) + 1
+        if player.licenze < _maelstrom_extra:
+            await _error(game.code, user_id, f"maelstrom: need {_maelstrom_extra}L extra to play this card (have {player.licenze}L)")
+            return
+        player.licenze -= _maelstrom_extra
+        cs_ms = dict(_cs_ms)
+        cs_ms["maelstrom_cards_played_combat"] = cs_ms.get("maelstrom_cards_played_combat", 0) + 1
+        player.combat_state = cs_ms
+
     # Card 27 (Lucky Roll): reaction-only — must be played via the post-roll reaction window,
     # not via play_card. Guard here prevents the card from being consumed without effect.
     if card and card.number == 27:

@@ -668,7 +668,7 @@
 ### 64. The Order Management Maelstrom
 - **HP**: 5
 - **Soglia dado**: 5+
-- **Abilità**: Le carte azione in mano al combattente vengono rimescolate ogni round — non può scegliere quale giocare, deve usare quella in cima al mazzo
+- **Abilità**: Costo crescente — ogni carta azione giocata durante questo combattimento costa Licenze extra cumulative: la 1ª costa +1L, la 2ª +2L, la 3ª +3L e così via. Se non si può pagare il costo extra, la carta non può essere giocata.
 - **Ricompensa**: 4 Licenze
 - **Difficoltà**: Media
 - **Image prompt**: `A 2D hand-drawn monster in the distinctive art style of The Binding of Isaac. The monster is "The Order Management Maelstrom": a chaotic whirlwind creature with order forms and fulfillment documents spinning in its vortex. It randomly reshuffles everything caught in its pull — cards, orders, priorities — with no regard for sequence. Thick black outlines, grotesque but cartoonish, flat shading, plain off-white parchment background. Indie game card art.`

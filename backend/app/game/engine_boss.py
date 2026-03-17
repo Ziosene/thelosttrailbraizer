@@ -398,6 +398,15 @@ def boss_forces_top_card_play(boss_id: int) -> bool:
     Returns True if the combatant's hand is reshuffled into the deck each round and
     only the top card may be played (no free choice of card).
     """
+    return False
+
+
+def boss_card_play_escalating_cost(boss_id: int) -> bool:
+    """
+    Returns True if each card played during this combat costs +1L extra cumulatively:
+    1st card +1L, 2nd card +2L, 3rd card +3L, etc.
+    If the player can't pay the extra cost, the card cannot be played.
+    """
     match boss_id:
         case 64:  # The Order Management Maelstrom
             return True
