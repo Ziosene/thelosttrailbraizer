@@ -559,17 +559,10 @@ def _card_213(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_214(player, game, db, *, target_player_id=None) -> dict:
-    """Customer Lifecycle — +1L per ogni fase completata (ogni 5 turni, max 5).
-
-    Uses game.turn_number to count completed 5-turn phases.
-    """
-    if player.is_in_combat:
-        return {"applied": False, "reason": "in_combat"}
-    phases = min(5, game.turn_number // 5)
-    if phases == 0:
-        return {"applied": False, "reason": "no_phases_completed", "turn": game.turn_number}
-    player.licenze += phases
-    return {"applied": True, "licenze_gained": phases, "phases_completed": phases}
+    """Customer Lifecycle — +1L per ogni boss sconfitto in questa partita (max 5)."""
+    reward = min(5, player.bosses_defeated)
+    player.licenze += reward
+    return {"applied": True, "licenze_gained": reward, "bosses_defeated": player.bosses_defeated}
 
 
 def _card_230(player, game, db, *, target_player_id=None) -> dict:

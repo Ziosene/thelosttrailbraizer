@@ -2092,8 +2092,8 @@
 
 ### 214. Customer Lifecycle
 - **Tipo**: Economica
-- **Quando**: Fuori dal combattimento
-- **Effetto**: Guadagna 1 Licenza per ogni "fase" della partita completata (ogni 5 turni totali, max 5 Licenze)
+- **Quando**: Durante il tuo turno
+- **Effetto**: Guadagna 1 Licenza per ogni boss che hai sconfitto in questa partita (max 5).
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn lifecycle funnel in the art style of The Binding of Isaac. A five-stage pipeline with one coin unlocking at each completed phase checkpoint, the total capped at five glowing coins. Thick black outlines, flat shading, milestone mood. Plain off-white parchment background. Indie game card art.`
 
