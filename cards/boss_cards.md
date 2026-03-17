@@ -400,7 +400,7 @@
 ### 38. The Einstein Bot Imposter
 - **HP**: 4
 - **Soglia dado**: 5+
-- **Abilità**: Ogni 2 round, il boss annulla automaticamente l'effetto della prossima carta azione giocata dal combattente
+- **Abilità**: Nei round pari (2, 4, 6…), la prima carta azione giocata dal combattente viene annullata automaticamente (consumata senza effetto).
 - **Ricompensa**: 3 Licenze
 - **Difficoltà**: Media
 - **Image prompt**: `A 2D hand-drawn monster in the distinctive art style of The Binding of Isaac. The monster is "The Einstein Bot Imposter": a sinister robot wearing a friendly chatbot face mask that is slightly askew, revealing a glowing red malevolent eye underneath. It holds up a "How can I help you today? :)" speech bubble while its true arms reach around to cancel the player's actions. Thick black outlines, grotesque but cartoonish, flat shading, plain off-white parchment background. Indie game card art.`
