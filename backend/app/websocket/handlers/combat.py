@@ -1030,6 +1030,25 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             _cs_mb["consecutive_misses"] = 0
         player.combat_state = _cs_mb
 
+    # Boss 87 (Pub/Sub API Pestilence): 2 consecutive misses → boss recovers 1 HP
+    _replay_threshold = engine.boss_recovers_on_consecutive_misses(boss.id)
+    if _replay_threshold:
+        _cs87 = dict(player.combat_state or {})
+        if result == "miss":
+            _cs87["pubsub_consecutive_misses"] = _cs87.get("pubsub_consecutive_misses", 0) + 1
+            if _cs87["pubsub_consecutive_misses"] >= _replay_threshold:
+                player.current_boss_hp = (player.current_boss_hp or 0) + 1
+                _cs87["pubsub_consecutive_misses"] = 0
+                await manager.broadcast(game.code, {
+                    "type": "boss_hp_recovered",
+                    "boss_id": boss.id,
+                    "amount": 1,
+                    "reason": "replay",
+                })
+        else:
+            _cs87["pubsub_consecutive_misses"] = 0
+        player.combat_state = _cs87
+
     # Boss 81 (Trailhead Jinx): miss → discard 1 random card from hand
     if result == "miss" and engine.boss_discard_on_miss(boss.id) and player.hand:
         import random as _random81

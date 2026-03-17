@@ -73,7 +73,7 @@ _EMPTY_EFFECT: dict = {
     "siren_deal": False,            # boss offers siren bargain: skip attack → +2 licenze, boss +1 HP (player chooses)
     "doomsayer_prediction_roll": False,  # handler rolls d10 at combat start; stores prediction; each exceeded round → +1 HP
     "force_card_type_declaration": False,  # combatant must declare Attack or Defense type; restricted for full combat
-    "aoe_unblockable_hp_damage": 0, # ALL players (including combatant) lose N HP; defensive cards cannot negate this
+    "aoe_unblockable_hp_damage": 0, # (unused — kept for legacy safety)
     "reveal_next_bosses": 0,        # reveal the next N boss cards in the deck to all players
     # ── Bosses 91-100 ───────────────────────────────────────────────────────
     "steal_and_use_addon": False,   # boss steals 1 combatant addon, applies its effect vs player; returned on defeat
@@ -528,6 +528,17 @@ def boss_discard_on_miss(boss_id: int) -> bool:
     return False
 
 
+def boss_recovers_on_consecutive_misses(boss_id: int) -> int:
+    """
+    Returns the number of consecutive misses needed to trigger boss HP recovery (+1 HP).
+    Returns 0 if this mechanic is not active for the boss.
+    """
+    match boss_id:
+        case 87:  # The Pub/Sub API Pestilence — 2 consecutive misses → boss +1 HP
+            return 2
+    return 0
+
+
 def boss_halves_card_effects(boss_id: int) -> bool:
     """
     Returns True if all action card effects are halved (rounded down) during this combat:
@@ -941,10 +952,9 @@ def apply_boss_ability(
             return _boss_effect(force_card_type_declaration=True)
 
         # ── Boss 87 — The Pub/Sub API Pestilence (Trophy) ────────────────────
-        # Every round: ALL players (including combatant) each lose 1 HP from the published event.
-        # Opponents' defensive action cards cannot negate this damage (handler must bypass defense checks).
-        case (87, "on_round_end"):
-            return _boss_effect(aoe_unblockable_hp_damage=1)
+        # Replay: if the combatant misses two times in a row, the boss recovers 1 HP.
+        # Tracked via combat_state["pubsub_consecutive_misses"] in combat.py.
+        # No on_round_end effect needed — fully handled in combat.py miss/hit branches.
 
         # ── Boss 88 — The Report Builder Omen ────────────────────────────────
         # At combat start: reveal the next 3 boss cards in the deck to all players.

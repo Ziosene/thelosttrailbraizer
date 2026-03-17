@@ -902,7 +902,7 @@
 ### 87. The Pub/Sub API Pestilence 🏆
 - **HP**: 7
 - **Soglia dado**: 6+
-- **Abilità**: Ogni round pubblica un evento — tutti i giocatori (incluso il combattente) subiscono 1 danno. Gli avversari non possono usare carte difensive in risposta a questo effetto
+- **Abilità**: Replay — se il combattente manca il colpo due volte di fila, il boss recupera 1 HP (i messaggi falliti vengono reinviati automaticamente).
 - **Ricompensa**: 6 Licenze + **1 Certificazione**
 - **Difficoltà**: Alta
 - **Image prompt**: `A 2D hand-drawn monster in the distinctive art style of The Binding of Isaac. The monster is "The Pub/Sub API Pestilence": a disease-broadcasting creature that transmits pestilence events to every player simultaneously. Its body is an event bus, its arms are publisher channels, and every round it broadcasts a new plague that no one can block with defensive cards. Thick black outlines, grotesque but cartoonish, flat shading, plain off-white parchment background. Indie game card art.`
