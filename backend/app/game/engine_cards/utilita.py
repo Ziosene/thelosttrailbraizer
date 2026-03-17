@@ -869,22 +869,9 @@ def _card_234(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_238(player, game, db, *, target_player_id=None) -> dict:
-    """Recipe — Combina 2 carte economiche dalla mano: effetti L si sommano e si applicano come 1 azione.
-
-    Simplified: if player has ≥2 Economica cards in hand, discard one and gain +3L bonus.
-    """
-    from app.models.card import ActionCard as _AC238
-    if player.is_in_combat:
-        return {"applied": False, "reason": "in_combat"}
-    eco_hand = [hc for hc in player.hand if (c := db.get(_AC238, hc.action_card_id)) and c.card_type == "Economica"]
-    if len(eco_hand) < 2:
-        return {"applied": False, "reason": "need_2_economic_cards", "found": len(eco_hand)}
-    # Discard one of them (the last, as a "combined" ingredient)
-    victim = eco_hand[-1]
-    game.action_discard = (game.action_discard or []) + [victim.action_card_id]
-    db.delete(victim)
-    player.licenze += 3
-    return {"applied": True, "licenze_gained": 3, "card_consumed": True}
+    """Recipe — Guadagna 5 Licenze."""
+    player.licenze += 5
+    return {"applied": True, "licenze_gained": 5}
 
 
 def _card_239(player, game, db, *, target_player_id=None) -> dict:

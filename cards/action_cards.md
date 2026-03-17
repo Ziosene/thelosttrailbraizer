@@ -2316,8 +2316,8 @@
 
 ### 238. Recipe
 - **Tipo**: Utilità / Economica
-- **Quando**: Fuori dal combattimento
-- **Effetto**: Combina 2 carte economiche dalla tua mano — gli effetti di Licenze si sommano e si applicano come una sola azione
+- **Quando**: Durante il tuo turno
+- **Effetto**: Guadagna 5 Licenze.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn recipe combination in the art style of The Binding of Isaac. Two economic cards being dropped into a cauldron and merged into a single super-effect coin burst, the combined total erupting upward. Thick black outlines, flat shading, alchemical combo mood. Plain off-white parchment background. Indie game card art.`
 
