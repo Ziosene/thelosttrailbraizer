@@ -1863,7 +1863,7 @@
 ### 190. Unification Rule
 - **Tipo**: Interferenza
 - **Quando**: Fuori dal proprio turno
-- **Effetto**: Per 1 turno, tutti i giocatori possono usare solo 1 tipo di carta a scelta tua (offensiva/difensiva/economica) oppure saltare la fase
+- **Effetto**: Ruba 1 AddOn a un avversario — passa direttamente nel tuo inventario
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn unification decree in the art style of The Binding of Isaac. A global rule banner forcing all players to hold the same card type as highlighted by a centralized selector, non-matching cards locked for one turn. Thick black outlines, flat shading, authoritarian mood. Plain off-white parchment background. Indie game card art.`
 

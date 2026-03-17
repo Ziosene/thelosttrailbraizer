@@ -574,19 +574,22 @@ def _card_189(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_190(player, game, db, *, target_player_id=None) -> dict:
-    """Unification Rule — Per 1 turno, tutti i giocatori possono usare solo 1 tipo di carta.
+    """Unification Rule — Ruba 1 addon a un avversario (passa nel tuo inventario).
 
-    Broadcasts unification_rule_active=True and unification_rule_card_type=<type> to all players.
-    turn.py play_card: if rule active for the playing player, reject cards of wrong type.
-    turn.py end_turn: clears both flags for the current-turn player.
-    Default enforced type: 'Offensiva' (client should specify via a future param).
+    Moves the first addon from target's inventory to player's inventory.
     """
-    for gp in game.players:
-        cs = dict(gp.combat_state or {})
-        cs["unification_rule_active"] = True
-        cs["unification_rule_card_type"] = "Offensiva"
-        gp.combat_state = cs
-    return {"applied": True, "unification_rule_card_type": "Offensiva", "affected_players": len(list(game.players))}
+    from app.models.game import PlayerAddon as _PA190
+    target = get_target(game, player, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "no_target"}
+    addons = list(target.addons)
+    if not addons:
+        return {"applied": False, "reason": "target_has_no_addons"}
+    stolen = addons[0]
+    stolen_addon_id = stolen.addon_id
+    db.delete(stolen)
+    db.add(_PA190(player_id=player.id, addon_id=stolen_addon_id))
+    return {"applied": True, "target_id": target.id, "stolen_addon_id": stolen_addon_id}
 
 
 def _card_222(player, game, db, *, target_player_id=None) -> dict:
