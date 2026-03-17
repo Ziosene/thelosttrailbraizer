@@ -1017,7 +1017,7 @@
 ### 102. Einstein Intent
 - **Tipo**: Manipolazione dado
 - **Quando**: Durante combattimento
-- **Effetto**: "Leggi l'intenzione" del boss — guarda il risultato del dado prima di dichiarare se è un round offensivo o difensivo
+- **Effetto**: Dopo aver tirato il dado, puoi aggiungere o sottrarre fino a 3 al risultato (min 1, max 10)
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn mind-reading scene in the art style of The Binding of Isaac. A brain with Einstein-like wild hair receiving a die result telepathically before it lands, deciding attack or defense. Thick black outlines, flat shading, prescient mood. Plain off-white parchment background. Indie game card art.`
 

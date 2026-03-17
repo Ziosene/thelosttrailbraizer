@@ -174,18 +174,19 @@ def _card_101(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_102(player, game, db, *, target_player_id=None) -> dict:
-    """Einstein Intent — "Leggi l'intenzione" del boss — disabilita la sua abilità per 1 round.
+    """Einstein Intent — Dopo aver tirato il dado, aggiungi o sottrai fino a 3 al risultato.
 
-    Stores boss_ability_disabled_until_round = current_round in combat_state.
-    Same mechanism as cards 10/21 (enemy ability disabling).
+    Stores einstein_intent_modifier_pending=True in combat_state.
+    combat.py: after rolling, if flag set, sends 'einstein_intent_choice' event to client
+    with the raw roll; client responds with 'einstein_intent_apply' and a delta (-3 to +3).
+    Result is clamped to [1, 10]. Clears flag after use.
     """
     if not player.is_in_combat:
         return {"applied": False, "reason": "not_in_combat"}
-    current_round = (player.combat_round or 0) + 1
     cs = dict(player.combat_state or {})
-    cs["boss_ability_disabled_until_round"] = current_round
+    cs["einstein_intent_modifier_pending"] = True
     player.combat_state = cs
-    return {"applied": True, "boss_ability_disabled_until_round": current_round}
+    return {"applied": True, "einstein_intent_modifier_pending": True}
 
 
 def _card_103(player, game, db, *, target_player_id=None) -> dict:
