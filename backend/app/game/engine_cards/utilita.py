@@ -432,15 +432,21 @@ def _card_108(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_109(player, game, db, *, target_player_id=None) -> dict:
-    """Checkout Flow — Gioca 1 carta azione extra che non conta nel limite (fuori da combattimento).
+    """Checkout Flow — Acquista gratis 1 AddOn dal mazzo; gioca 1 carta extra che non conta nel limite.
 
-    Decrements cards_played_this_turn by 1 to cancel the +1 applied before this call.
-    The addon purchase is handled separately via buy_addon.
+    Takes the first addon from addon_deck_1 (or deck_2) and gives it to the player for free.
+    Also decrements cards_played_this_turn by 1 so this card itself doesn't count.
     """
+    from app.models.game import PlayerAddon
     if player.is_in_combat:
         return {"applied": False, "reason": "in_combat"}
+    src_deck = "deck_1" if game.addon_deck_1 else ("deck_2" if game.addon_deck_2 else None)
+    if not src_deck:
+        return {"applied": False, "reason": "no_addon_available"}
+    addon_id = game.addon_deck_1.pop(0) if src_deck == "deck_1" else game.addon_deck_2.pop(0)
+    db.add(PlayerAddon(player_id=player.id, addon_id=addon_id))
     player.cards_played_this_turn = max(0, player.cards_played_this_turn - 1)
-    return {"applied": True, "card_did_not_count": True, "note": "buy addon separately via buy_addon action"}
+    return {"applied": True, "addon_acquired_free": addon_id, "card_did_not_count": True}
 
 
 def _card_110(player, game, db, *, target_player_id=None) -> dict:

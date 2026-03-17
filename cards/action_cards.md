@@ -1084,7 +1084,7 @@
 ### 109. Checkout Flow
 - **Tipo**: Utilità
 - **Quando**: Fuori dal combattimento
-- **Effetto**: Acquista 1 AddOn e gioca immediatamente 1 carta azione extra (non conta nel limite di 2 carte per turno)
+- **Effetto**: Acquista 1 AddOn gratuitamente dal mazzo e gioca 1 carta azione extra (non conta nel limite di 2 carte per turno)
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn express checkout in the art style of The Binding of Isaac. A figure swiping coins to buy a glowing addon while simultaneously slapping down a free bonus action card outside the normal hand limit. Thick black outlines, flat shading, efficient rush mood. Plain off-white parchment background. Indie game card art.`
 
