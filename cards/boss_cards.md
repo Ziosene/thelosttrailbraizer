@@ -350,7 +350,7 @@
 ### 33. The Experience Cloud Illusion
 - **HP**: 4
 - **Soglia dado**: 5+
-- **Abilità**: Il combattente deve dichiarare quale carta azione vuole giocare prima di tirare il dado. Se il tiro fallisce, la carta è comunque consumata
+- **Abilità**: Prima di ogni tiro dado, il combattente deve dichiarare quale carta azione intende giocare (fino a 2 per turno, come normale). Se il tiro fallisce, la carta dichiarata è comunque consumata senza effetto.
 - **Ricompensa**: 3 Licenze
 - **Difficoltà**: Media
 - **Image prompt**: `A 2D hand-drawn monster in the distinctive art style of The Binding of Isaac. The monster is "The Experience Cloud Illusion": a beautiful, polished creature that is hollow and cracked on the inside — like a perfect digital facade split open to reveal nothing but empty iframe containers and broken community pages. Its outer shell is sleek and branded; its exposed interior is chaos. Thick black outlines, grotesque but cartoonish, flat shading, plain off-white parchment background. Indie game card art.`
