@@ -631,6 +631,18 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         cs.pop("einstein_sto_next_roll_bonus", None)
         player.combat_state = cs
 
+    # Boss 56 (Change Data Capture Lurker): track rolled numbers; duplicate → auto miss
+    _lurker_miss = False
+    if engine.boss_tracks_duplicate_rolls(boss.id):
+        cs = dict(player.combat_state or {})
+        _seen = cs.get("lurker_rolled_numbers", [])
+        if roll in _seen:
+            _lurker_miss = True
+        else:
+            _seen = _seen + [roll]
+            cs["lurker_rolled_numbers"] = _seen
+            player.combat_state = cs
+
     # Boss 67 (Developer Console Glitch): roll 1 or 2 → entire round is nullified
     round_nullified = engine.boss_nullifies_round_on_low_roll(boss.id) and roll <= 2
 
@@ -771,6 +783,8 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
     _predictive_bonus = (_predictive_model_prediction is not None and _predictive_model_prediction == roll)
 
     result = engine.resolve_combat_round(roll, threshold)
+    if _lurker_miss:
+        result = "miss"  # Boss 56: duplicate roll → forced miss
     player.combat_round += 1
 
     player_took_damage = False

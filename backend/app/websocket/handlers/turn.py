@@ -366,10 +366,6 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
             await _error(game.code, user_id, f"Boss restricts you to {allowed_type} cards only")
             return
 
-    # Boss 56 (Change Data Capture Lurker): banned cards cannot be played anywhere in this game
-    if card and card.id in (game.banned_card_ids or []):
-        await _error(game.code, user_id, "This card has been permanently banned from the game")
-        return
     game.action_discard.append(hc.action_card_id)
     db.delete(hc)
     # Card 243 (Einstein GPT): next card plays for free (no slot consumed)
@@ -391,10 +387,6 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
             approval_roll = engine.roll_d10()
             if approval_roll <= 4:
                 card_approved = False
-
-        # Boss 56 (Change Data Capture Lurker): played cards are permanently banned from the game
-        if engine.boss_permanently_bans_used_cards(player.current_boss_id):
-            game.banned_card_ids = (game.banned_card_ids or []) + [card.id]
 
         # Boss 59 (Trailblazer Community Mob): boss heals when opponent plays an interference card
         # Interference cards played by NON-combatant players against this player also heal the boss

@@ -584,7 +584,7 @@
 ### 56. The Change Data Capture Lurker
 - **HP**: 3
 - **Soglia dado**: 4+
-- **Abilità**: Ogni carta azione usata in questo combattimento viene "registrata" — non può essere rigiocata per il resto della partita
+- **Abilità**: Ogni risultato del dado viene registrato. Se lo stesso numero esce una seconda volta, quel tiro conta automaticamente come miss — il Lurker ha già previsto quella mossa.
 - **Ricompensa**: 2 Licenze
 - **Difficoltà**: Facile
 - **Image prompt**: `A 2D hand-drawn monster in the distinctive art style of The Binding of Isaac. The monster is "The Change Data Capture Lurker": a surveillance creature with camera lens eyes recording everything, covered in sensor antennae and recording tentacles. Every card played gets logged permanently in its memory banks, visible on screen panels covering its body. It forgets nothing. Thick black outlines, grotesque but cartoonish, flat shading, plain off-white parchment background. Indie game card art.`

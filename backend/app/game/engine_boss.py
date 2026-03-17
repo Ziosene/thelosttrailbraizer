@@ -348,6 +348,14 @@ def boss_permanently_bans_used_cards(boss_id: int) -> bool:
     Returns True if every action card played during this combat is permanently banned —
     removed from the deck and added to game.banned_card_ids for the rest of the game.
     """
+    return False
+
+
+def boss_tracks_duplicate_rolls(boss_id: int) -> bool:
+    """
+    Returns True if the boss tracks dice results this combat.
+    If the same number is rolled a second time, that roll is treated as an automatic miss.
+    """
     match boss_id:
         case 56:  # The Change Data Capture Lurker
             return True
