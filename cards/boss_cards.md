@@ -1002,7 +1002,7 @@
 ### 97. The myTrailhead Defiler
 - **HP**: 3
 - **Soglia dado**: 4+
-- **Abilità**: All'inizio del combattimento, disabilita 1 AddOn a caso del combattente permanentemente — anche se il combattente vince, quell'AddOn non torna
+- **Abilità**: All'inizio del combattimento, scarta 1 AddOn a caso del combattente permanentemente — anche se il combattente vince, quell'AddOn non torna
 - **Ricompensa**: 2 Licenze
 - **Difficoltà**: Facile
 - **Image prompt**: `A 2D hand-drawn monster in the distinctive art style of The Binding of Isaac. The monster is "The myTrailhead Defiler": a dark creature permanently corrupting learning paths — dragging its claws across Trailhead modules and leaving them blackened and unusable. One AddOn permanently destroyed, not just disabled. Its fingerprints leave scorch marks on everything it touches. Thick black outlines, grotesque but cartoonish, flat shading, plain off-white parchment background. Indie game card art.`
