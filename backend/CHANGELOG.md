@@ -11,6 +11,7 @@
 - **Carta 10** (Patch di Emergenza): rimosso disable abilità boss, ora solo `-1HP`
 - **Carta 25** (Backup & Restore): effetto riscritto da "recupera carta/licenza/HP dall'ultimo turno di morte" a `+1HP + pesca 1 carta` (nessun tracking death in DB)
 - **Carta 33** (Quick Action): aggiunto `pesca 2 carte` — ora la carta non conta sul limite E genera valore immediato
+- **Carta 44** (Object Store → Cache Hit): redesign completo — pesca 3 carte, tienine 1, rimetti le 2 in cima al mazzo; client followup `cache_hit_keep` con `hand_card_id`; flag `cache_hit_pending` in combat_state
 
 ---
 

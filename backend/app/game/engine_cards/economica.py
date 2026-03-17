@@ -135,21 +135,26 @@ def _card_43(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_44(player, game, db, *, target_player_id=None) -> dict:
-    """Object Store — Deposita fino a 3L in storage protetto (non rubabili).
+    """Cache Hit — Pesca 3 carte, tienine 1, rimetti le altre 2 in cima al mazzo.
 
-    Moves min(3, player.licenze) from licenze into combat_state["object_store_licenze"].
-    draw_card (FASE INIZIALE) auto-restituisce le licenze stored all'inizio del turno successivo.
+    Draws up to 3 cards and returns their details for client-side selection.
+    The client must follow up with a 'cache_hit_keep' action specifying which
+    hand_card_id to keep; the handler puts the other 2 back on top of the deck.
     """
-    if player.is_in_combat:
-        return {"applied": False, "reason": "in_combat"}
-    amount = min(3, player.licenze)
-    if amount == 0:
-        return {"applied": False, "reason": "no_licenze_to_store"}
-    player.licenze -= amount
+    from app.models.game import PlayerHandCard
+    drawn_ids = []
+    for _ in range(3):
+        src = game.action_deck_1 if game.action_deck_1 else game.action_deck_2
+        if src:
+            cid = src.pop(0)
+            hc = PlayerHandCard(player_id=player.id, action_card_id=cid)
+            db.add(hc)
+            db.flush()
+            drawn_ids.append({"hand_card_id": hc.id, "action_card_id": cid})
     cs = dict(player.combat_state or {})
-    cs["object_store_licenze"] = cs.get("object_store_licenze", 0) + amount
+    cs["cache_hit_pending"] = [x["hand_card_id"] for x in drawn_ids]
     player.combat_state = cs
-    return {"applied": True, "licenze_stored": amount, "total_stored": cs["object_store_licenze"]}
+    return {"applied": True, "drew": len(drawn_ids), "choose_one": drawn_ids, "note": "cache_hit_keep_required"}
 
 
 def _card_45(player, game, db, *, target_player_id=None) -> dict:

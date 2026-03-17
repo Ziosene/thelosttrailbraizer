@@ -454,12 +454,12 @@
 
 ---
 
-### 44. Object Store
+### 44. Cache Hit
 - **Tipo**: Economica
-- **Quando**: Fuori dal combattimento
-- **Effetto**: "Deposita" fino a 3 Licenze fuori dal conteggio normale — non possono essere rubate. Recuperale quando vuoi.
+- **Quando**: In qualsiasi momento
+- **Effetto**: Pesca 3 carte dal mazzo azione, tienine 1 e rimetti le altre 2 in cima al mazzo nell'ordine che preferisci
 - **Rarità**: Non comune
-- **Image prompt**: `A 2D hand-drawn padlocked secure storage box holding up to three coins safe from theft in the art style of The Binding of Isaac. A fortified object store with three coins locked inside, a thief's hand bouncing off the impenetrable lock. Thick black outlines, flat shading, secure mood. Plain off-white parchment background. Indie game card art.`
+- **Image prompt**: `A 2D hand-drawn cache memory chip fanning out three cards for selection in the art style of The Binding of Isaac. Three cards spread in a hand with one highlighted and two being slid back onto a deck top. Thick black outlines, flat shading, decisive mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
