@@ -330,7 +330,7 @@
 ### 31. The AppExchange Parasite
 - **HP**: 3
 - **Soglia dado**: 5+
-- **Abilità**: All'inizio del combattimento, il giocatore perde l'uso di 1 AddOn a scelta. Lo recupera se vince
+- **Abilità**: All'inizio del combattimento, il giocatore perde l'uso di 1 AddOn a scelta. Lo recupera se vince. Se perde, quell'AddOn viene scartato nel Cimitero AddOn (in aggiunta alla normale perdita di 1 AddOn dalla morte).
 - **Ricompensa**: 2 Licenze
 - **Difficoltà**: Facile
 - **Image prompt**: `A 2D hand-drawn monster in the distinctive art style of The Binding of Isaac. The monster is "The AppExchange Parasite": a bloated parasite creature clamped onto a host application, sucking its resources through installed managed package tentacles. Its body is covered in 5-star review badges that it steals from the host, and its mouth is a "Get It Now" button. Thick black outlines, grotesque but cartoonish, flat shading, plain off-white parchment background. Indie game card art.`

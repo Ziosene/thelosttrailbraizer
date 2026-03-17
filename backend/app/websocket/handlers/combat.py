@@ -1369,6 +1369,19 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         player.licenze = penalty["licenze"]
         player.hp = player.max_hp  # respawn with full HP
 
+        # Boss 31 (AppExchange Parasite): on player death the locked addon is ALSO discarded
+        # (in addition to the normal death-penalty addon). GDD option B.
+        if player.combat_state and player.combat_state.get("locked_addon_id"):
+            _locked_pa_id = player.combat_state["locked_addon_id"]
+            from app.models.game import PlayerAddon as _PA31
+            _pa31 = db.get(_PA31, _locked_pa_id)
+            if _pa31 and _pa31.player_id == player.id:
+                game.addon_graveyard = (game.addon_graveyard or []) + [_pa31.addon_id]
+                db.delete(_pa31)
+            _cs31 = dict(player.combat_state)
+            _cs31.pop("locked_addon_id", None)
+            player.combat_state = _cs31
+
         # GDD §6: tutti gli AddOn rimanenti si tappano alla morte
         # Card 84 (Renewal Opportunity): first addon is spared if player paid 5L proactively
         _renewal = (player.combat_state or {}).get("renewal_protected", False)
