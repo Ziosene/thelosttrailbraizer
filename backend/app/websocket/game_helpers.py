@@ -98,18 +98,22 @@ async def _broadcast_state(game: GameSession, db: Session):
 
 def _build_hand_state(player: GamePlayer, db: Session) -> dict:
     """Private payload sent only to the owning player — full hand + addon details."""
+    hand_hidden = bool((player.combat_state or {}).get("hand_hidden_in_combat"))
     hand = []
     for hc in player.hand:
-        card = db.get(ActionCard, hc.action_card_id)
-        if card:
-            hand.append({
-                "hand_card_id": hc.id,
-                "card_id": card.id,
-                "name": card.name,
-                "card_type": card.card_type,
-                "effect": card.effect,
-                "rarity": card.rarity,
-            })
+        if hand_hidden:
+            hand.append({"hand_card_id": hc.id, "hidden": True})
+        else:
+            card = db.get(ActionCard, hc.action_card_id)
+            if card:
+                hand.append({
+                    "hand_card_id": hc.id,
+                    "card_id": card.id,
+                    "name": card.name,
+                    "card_type": card.card_type,
+                    "effect": card.effect,
+                    "rarity": card.rarity,
+                })
 
     addons = []
     for pa in player.addons:

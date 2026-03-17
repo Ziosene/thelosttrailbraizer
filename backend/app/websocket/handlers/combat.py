@@ -290,22 +290,16 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
             "prediction_cap": prediction_cap,
         })
 
-    # Boss 91 (List View Usurper): steal 1 random untapped addon; return it on defeat
-    # Note: applying the stolen addon's effect against the player requires apply_addon_effect —
-    # deferred until that system is implemented. Theft and return are fully tracked.
-    if start_effect["steal_and_use_addon"]:
-        untapped_91 = [pa for pa in player.addons if not pa.is_tapped]
-        if untapped_91:
-            pa_steal = random.choice(untapped_91)
-            cs = dict(player.combat_state or {})
-            cs["stolen_addon_id"] = pa_steal.addon_id
-            player.combat_state = cs
-            db.delete(pa_steal)
-            await manager.broadcast(game.code, {
-                "type": "addon_stolen_by_boss",
-                "player_id": player.id,
-                "boss_id": boss_id,
-            })
+    # Boss 91 (List View Usurper): hide combatant's hand for the whole fight
+    if start_effect["hand_hidden_in_combat"]:
+        cs = dict(player.combat_state or {})
+        cs["hand_hidden_in_combat"] = True
+        player.combat_state = cs
+        await manager.send_to_player(game.code, player.user_id, {
+            "type": "hand_hidden",
+            "player_id": player.id,
+            "reason": "list_view_usurper",
+        })
 
     # Boss 94 (Loyalty Cloud Warden): initialise loyalty points shield (blocks first 3 hits)
     if engine.boss_loyalty_shield(boss_id) > 0:
@@ -1344,19 +1338,19 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             await _broadcast_state(game, db)
             return
         # Boss 31 (AppExchange Parasite): unlock locked addon (untap it)
-        # Boss 91 (List View Usurper): return stolen addon to player's possession
         if defeated_effect["unlock_locked_addon"] and player.combat_state:
-            cs = player.combat_state
-            locked_pa_id = cs.get("locked_addon_id")
-            stolen_addon_id = cs.get("stolen_addon_id")
+            locked_pa_id = player.combat_state.get("locked_addon_id")
             if locked_pa_id:
                 from app.models.game import PlayerAddon as _PA
                 pa_unlock = db.get(_PA, locked_pa_id)
                 if pa_unlock and pa_unlock.player_id == player.id:
                     pa_unlock.is_tapped = False
-            if stolen_addon_id:
-                from app.models.game import PlayerAddon as _PA2
-                db.add(_PA2(player_id=player.id, addon_id=stolen_addon_id))
+
+        # Boss 91 (List View Usurper): clear hand_hidden_in_combat on boss defeat
+        if player.combat_state and player.combat_state.get("hand_hidden_in_combat"):
+            cs = dict(player.combat_state)
+            cs.pop("hand_hidden_in_combat", None)
+            player.combat_state = cs
         # Boss 82 (Customer 360 Gorgon): clear petrified cards on defeat
         if player.combat_state and player.combat_state.get("petrified_card_ids"):
             cs = dict(player.combat_state)
@@ -1488,6 +1482,12 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
 
         player.licenze = penalty["licenze"]
         player.hp = player.max_hp  # respawn with full HP
+
+        # Boss 91 (List View Usurper): clear hand_hidden_in_combat on player death
+        if player.combat_state and player.combat_state.get("hand_hidden_in_combat"):
+            _cs91d = dict(player.combat_state)
+            _cs91d.pop("hand_hidden_in_combat", None)
+            player.combat_state = _cs91d
 
         # Boss 31 (AppExchange Parasite): on player death the locked addon is ALSO discarded
         # (in addition to the normal death-penalty addon). GDD option B.

@@ -942,7 +942,7 @@
 ### 91. The List View Usurper
 - **HP**: 3
 - **Soglia dado**: 5+
-- **Abilità**: All'inizio del combattimento, ruba 1 AddOn a scelta del combattente e lo usa contro di lui (effetto normale). Il combattente lo recupera se vince
+- **Abilità**: Vista bloccata — per tutta la durata del combattimento, il combattente non può vedere i dettagli della propria mano. Sa quante carte ha, ma deve giocarle alla cieca.
 - **Ricompensa**: 2 Licenze
 - **Difficoltà**: Facile
 - **Image prompt**: `A 2D hand-drawn monster in the distinctive art style of The Binding of Isaac. The monster is "The List View Usurper": a creature that has stolen the player's best AddOn and is wearing it visibly — using it as a weapon against its original owner. It smirks with the AddOn equipped, daring the player to fight to reclaim it. Thick black outlines, grotesque but cartoonish, flat shading, plain off-white parchment background. Indie game card art.`

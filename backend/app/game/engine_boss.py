@@ -76,7 +76,8 @@ _EMPTY_EFFECT: dict = {
     "aoe_unblockable_hp_damage": 0, # (unused — kept for legacy safety)
     "reveal_next_bosses": 0,        # reveal the next N boss cards in the deck to all players
     # ── Bosses 91-100 ───────────────────────────────────────────────────────
-    "steal_and_use_addon": False,   # boss steals 1 combatant addon, applies its effect vs player; returned on defeat
+    "steal_and_use_addon": False,   # (unused — kept for legacy safety)
+    "hand_hidden_in_combat": False, # combatant's hand is hidden; they must play cards blind
     "draw_bonus_cards": 0,          # combatant draws N extra cards at combat start
     "subscription_drain": 0,        # pay N licenze each round; if unable, take 2×N HP instead
     "permanently_destroy_addon": 0, # permanently destroy N random combatant addons (not recovered on win)
@@ -964,13 +965,11 @@ def apply_boss_ability(
             return _boss_effect(reveal_next_bosses=3)
 
         # ── Boss 91 — The List View Usurper ──────────────────────────────────
-        # At combat start: steals 1 addon from combatant and immediately uses it against them.
-        # Handler: pick a random untapped addon → apply its effect inversely → mark it as stolen
-        # (store in combat_state.stolen_addon_id).  On defeat: return it to the player's addon list.
+        # At combat start: combatant's hand is hidden — they must play cards blind.
+        # Handler sets hand_hidden_in_combat=True in combat_state; _build_hand_state
+        # redacts card details (only hand_card_id + hidden:True visible to the player).
         case (91, "on_combat_start"):
-            return _boss_effect(steal_and_use_addon=True)
-        case (91, "on_boss_defeated"):
-            return _boss_effect(unlock_locked_addon=True)
+            return _boss_effect(hand_hidden_in_combat=True)
 
         # ── Boss 92 — The Einstein Copilot Seraph ────────────────────────────
         # At combat start: combatant draws 2 extra cards (seraph's "gift").
