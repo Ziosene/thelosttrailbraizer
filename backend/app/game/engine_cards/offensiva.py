@@ -187,18 +187,20 @@ def _card_52(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_53(player, game, db, *, target_player_id=None) -> dict:
-    """AMPscript Block — Boss abilità si ritorce contro se stesso per 1 round.
+    """AMPscript Block — Blocca l'abilità del boss per 2 round.
 
-    Stores ampscript_reflected_until_round in combat_state.
-    combat.py: if flag active on miss, skip boss extra_damage and deal 1HP to boss instead.
+    Sets boss_ability_disabled_until_round = current_round + 2 in combat_state.
+    combat.py skips apply_boss_ability calls while this flag is active.
     """
     if not player.is_in_combat:
         return {"applied": False, "reason": "not_in_combat"}
-    current_round = (player.combat_round or 0) + 1
+    disabled_until = (player.combat_round or 0) + 2
     cs = dict(player.combat_state or {})
-    cs["ampscript_reflected_until_round"] = current_round
+    cs["boss_ability_disabled_until_round"] = max(
+        cs.get("boss_ability_disabled_until_round", 0), disabled_until
+    )
     player.combat_state = cs
-    return {"applied": True, "ampscript_reflected_until_round": current_round}
+    return {"applied": True, "boss_ability_disabled_until_round": disabled_until}
 
 
 def _card_54(player, game, db, *, target_player_id=None) -> dict:

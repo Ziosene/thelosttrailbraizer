@@ -542,7 +542,7 @@
 ### 53. AMPscript Block
 - **Tipo**: Offensiva
 - **Quando**: Durante combattimento
-- **Effetto**: Inietta codice nel boss — la sua abilità speciale si attiva contro se stesso per 1 round (se l'abilità danneggia il giocatore, danneggia il boss)
+- **Effetto**: Blocca l'abilità speciale del boss per 2 round
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn code injection scene in the art style of The Binding of Isaac. A syringe filled with glowing script injecting into a confused boss monster whose own attack arrow curves back and strikes itself. Thick black outlines, flat shading, subversive mood. Plain off-white parchment background. Indie game card art.`
 
