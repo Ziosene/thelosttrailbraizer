@@ -524,7 +524,7 @@
 ### 50. The Health Cloud Plague 🏆
 - **HP**: 7
 - **Soglia dado**: 6+
-- **Abilità**: Ogni round, tutti i giocatori (non solo il combattente) perdono 1 HP. La peste non fa distinzioni
+- **Abilità**: Ogni 3 round (al round 3, 6, 9…), tutti i giocatori (incluso il combattente) perdono 1 HP. La peste non fa distinzioni, ma si diffonde lentamente.
 - **Ricompensa**: 6 Licenze + **1 Certificazione**
 - **Difficoltà**: Alta
 - **Image prompt**: `A 2D hand-drawn monster in the distinctive art style of The Binding of Isaac. The monster is "The Health Cloud Plague": a plague doctor monster wearing a Health Cloud logo as a beak mask, spreading contamination to every player equally. Its robes are made of patient care plans and EHR records. It carries a pestilential staff and infects the whole table with every round. Thick black outlines, grotesque but cartoonish, flat shading, plain off-white parchment background. Indie game card art.`

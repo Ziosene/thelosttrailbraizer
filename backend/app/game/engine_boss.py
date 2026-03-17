@@ -780,9 +780,9 @@ def apply_boss_ability(
                 return _boss_effect(opponent_gains_licenza=2)
 
         # ── Boss 50 — The Health Cloud Plague ────────────────────────────────
-        # Every round ALL players (including combatant) lose 1 HP.
+        # Every 3 rounds (3, 6, 9, …) ALL players (including combatant) lose 1 HP.
         case (50, "on_round_end"):
-            return _boss_effect(aoe_all_players_hp_damage=1)
+            return _boss_effect(aoe_all_players_hp_damage=1 if combat_round % 3 == 0 else 0)
 
         # ── Boss 51 — The Financial Services Fiend ───────────────────────────
         # At combat start: pay 3 Licenze as "commission". For each licenza short, take 1 HP.
