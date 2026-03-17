@@ -407,25 +407,21 @@ def _card_162(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_163(player, game, db, *, target_player_id=None) -> dict:
-    """Inventory Availability — +1L per tipo AddOn con 0 copie rimaste nei mazzi AddOn.
+    """Inventory Availability — +2L per ogni addon che possiedi in più rispetto all'avversario con meno addon (max 8).
 
-    Approximated: checks addon_deck_1 + addon_deck_2 for distinct types present.
-    Types absent from remaining decks each yield +1L.
+    Finds the opponent with the fewest addons, computes the difference with player's count,
+    and awards 2L per addon advantage (capped at 8L).
     """
     if player.is_in_combat:
         return {"applied": False, "reason": "in_combat"}
-    from app.models.card import AddonCard as _ADC163
-    remaining_ids = set((game.addon_deck_1 or []) + (game.addon_deck_2 or []))
-    present_types: set = set()
-    for aid in remaining_ids:
-        addon = db.get(_ADC163, aid)
-        if addon:
-            present_types.add(addon.addon_type.value)
-    all_types = {"Passivo", "Attivo", "Leggendario"}
-    missing_types = all_types - present_types
-    gain = len(missing_types)
+    opponents = [p for p in game.players if p.id != player.id]
+    if not opponents:
+        return {"applied": False, "reason": "no_opponents"}
+    min_opponent_addons = min(len(list(p.addons)) for p in opponents)
+    advantage = max(0, len(list(player.addons)) - min_opponent_addons)
+    gain = min(advantage * 2, 8)
     player.licenze += gain
-    return {"applied": True, "licenze_gained": gain, "missing_addon_types": list(missing_types)}
+    return {"applied": True, "licenze_gained": gain, "addon_advantage": advantage}
 
 
 def _card_164(player, game, db, *, target_player_id=None) -> dict:

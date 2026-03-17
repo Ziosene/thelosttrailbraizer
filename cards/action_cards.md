@@ -1608,7 +1608,7 @@
 ### 163. Inventory Availability
 - **Tipo**: Economica / Utilità
 - **Quando**: Fuori dal combattimento
-- **Effetto**: Verifica le scorte del mazzo AddOn — guadagna 1 Licenza per ogni tipo di AddOn con 0 copie rimaste nel mazzo
+- **Effetto**: Guadagna 2 Licenze per ogni AddOn che possiedi in più rispetto all'avversario con meno AddOn (max 8)
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn stockroom audit in the art style of The Binding of Isaac. An inventory list showing crossed-out addon slots, each empty slot minting one coin as a shortage bonus. Thick black outlines, flat shading, opportunistic scarcity mood. Plain off-white parchment background. Indie game card art.`
 
