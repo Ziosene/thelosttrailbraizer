@@ -697,7 +697,7 @@
 
 ### 67. The Developer Console Glitch
 - **HP**: 3
-- **Soglia dado**: 4+
+- **Soglia dado**: 6+
 - **Abilità**: Ogni round, se il dado esce 1 o 2, la console va in crash — il round è nullo (nessun danno in nessuna direzione)
 - **Ricompensa**: 2 Licenze
 - **Difficoltà**: Facile
