@@ -123,7 +123,7 @@
 ### 10. SOQL Blast
 - **Tipo**: Offensiva
 - **Quando**: Durante combattimento
-- **Effetto**: Il boss subisce 1 HP di danno immediato. Se il boss ha l'abilità attiva, viene disabilitata per 2 round
+- **Effetto**: Il boss subisce 1 HP di danno immediato
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn SELECT query beam blasting a boss and shorting out its ability icon in the art style of The Binding of Isaac. A SOQL query string firing as a laser beam, hitting a boss for -1 HP while its special ability sparks and goes dark. Thick black outlines, flat shading, technical mood. Plain off-white parchment background. Indie game card art.`
 

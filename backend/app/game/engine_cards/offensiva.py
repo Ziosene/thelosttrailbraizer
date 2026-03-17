@@ -18,20 +18,11 @@ def _card_9(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_10(player, game, db, *, target_player_id=None) -> dict:
-    """SOQL Blast — Boss -1HP; disabilita abilità boss per 2 round.
-
-    Stores boss_ability_disabled_until_round in combat_state.
-    combat.py checks this before applying on_round_start boss effects.
-    """
+    """SOQL Blast — Boss -1HP."""
     if not player.is_in_combat or player.current_boss_hp is None:
         return {"applied": False, "reason": "not_in_combat"}
     player.current_boss_hp = max(0, player.current_boss_hp - 1)
-    current_round = (player.combat_round or 0) + 1
-    cs = dict(player.combat_state or {})
-    disable_until = current_round + 2
-    cs["boss_ability_disabled_until_round"] = disable_until
-    player.combat_state = cs
-    return {"applied": True, "boss_damage": 1, "boss_ability_disabled_until_round": disable_until}
+    return {"applied": True, "boss_damage": 1}
 
 
 def _card_11(player, game, db, *, target_player_id=None) -> dict:
