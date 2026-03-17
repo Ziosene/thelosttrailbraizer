@@ -387,10 +387,61 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
     # budget carte (cards_played_this_turn < MAX_CARDS_PER_TURN), gli apriamo
     # una finestra di reazione PRIMA di applicare l'effetto originale.
     target_player_id = data.get("target_player_id")
+
+    # Card 287 (404 Not Found): block outgoing card targeting while active
+    if (player.combat_state or {}).get("not_found_active") and target_player_id:
+        if (player.combat_state or {}).get("not_found_until_turn", 0) >= game.turn_number:
+            await _error(game.code, user_id, "404 Not Found: you cannot target other players this turn")
+            return
+
+    # Check target-side protections for Offensiva cards
+    if card and card_approved and target_player_id and card.card_type == "Offensiva":
+        _tgt_check = next((p for p in game.players if p.id == target_player_id and p.id != player.id), None)
+        if _tgt_check:
+            # Card 287 (404 Not Found): block incoming targeting
+            if (_tgt_check.combat_state or {}).get("not_found_active") and \
+                    (_tgt_check.combat_state or {}).get("not_found_until_turn", 0) >= game.turn_number:
+                card_approved = False
+                await manager.broadcast(game.code, {
+                    "type": "card_blocked",
+                    "reason": "404_not_found",
+                    "target_player_id": _tgt_check.id,
+                })
+            # Card 271 (Ohana Pledge): block Offensiva toward the caster
+            _truce_caster = (_tgt_check.combat_state or {}).get("ohana_truce_caster_id")
+            _truce_until = (_tgt_check.combat_state or {}).get("ohana_truce_until_turn", 0)
+            if _truce_caster == player.id and _truce_until >= game.turn_number:
+                card_approved = False
+                await manager.broadcast(game.code, {
+                    "type": "card_blocked",
+                    "reason": "ohana_truce",
+                    "target_player_id": _tgt_check.id,
+                })
+            # Card 295 (Trust First): cancel first ever Offensiva targeting this player
+            if card_approved and (_tgt_check.combat_state or {}).get("trust_first_active"):
+                card_approved = False
+                _cs_tf = dict(_tgt_check.combat_state)
+                _cs_tf.pop("trust_first_active", None)
+                _tgt_check.combat_state = _cs_tf
+                await manager.broadcast(game.code, {
+                    "type": "card_blocked",
+                    "reason": "trust_first",
+                    "target_player_id": _tgt_check.id,
+                })
+
     reaction_target = None
     reaction_response = None
 
-    if card and card_approved and target_player_id:
+    # Card 283 (Queueable Job): skip reaction window while plays_remaining > 0
+    _skip_reaction = (player.combat_state or {}).get("queueable_job_plays_remaining", 0) > 0
+    if _skip_reaction:
+        _cs_qj = dict(player.combat_state)
+        _cs_qj["queueable_job_plays_remaining"] = max(0, _cs_qj["queueable_job_plays_remaining"] - 1)
+        if _cs_qj["queueable_job_plays_remaining"] == 0:
+            _cs_qj.pop("queueable_job_plays_remaining", None)
+        player.combat_state = _cs_qj
+
+    if card and card_approved and target_player_id and not _skip_reaction:
         reaction_target = next(
             (p for p in game.players if p.id == target_player_id and p.id != player.id),
             None,
@@ -687,6 +738,12 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
             return
 
     cost = addon.cost + (player.pending_addon_cost_penalty or 0)
+    # Card 272 (ISV Ecosystem): fix next addon cost to 5 for this turn (one-shot)
+    if (player.combat_state or {}).get("isv_ecosystem_active"):
+        cost = 5
+        _cs_isv = dict(player.combat_state)
+        _cs_isv.pop("isv_ecosystem_active", None)
+        player.combat_state = _cs_isv
     # Card 47 (Contracted Price): fix next addon cost to 5 (overrides base cost + penalty)
     _price_fixed = (player.combat_state or {}).get("next_addon_price_fixed")
     if _price_fixed is not None:
@@ -1018,6 +1075,18 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
                     db.add(_PHCWI(player_id=player.id, action_card_id=wi_card_id))
         # Card 234 (Integration Pattern): clear boost if unused
         cs.pop("integration_pattern_boost", None)
+        # Card 272 (ISV Ecosystem): clear per-turn cost-fix flag
+        cs.pop("isv_ecosystem_active", None)
+        # Card 273 (Trailhead Quest): clear per-turn card count tracking
+        cs.pop("trailhead_quest_cards_played", None)
+        # Card 287 (404 Not Found): clear if expired
+        if cs.get("not_found_until_turn", 0) < game.turn_number:
+            cs.pop("not_found_active", None)
+            cs.pop("not_found_until_turn", None)
+        # Card 271 (Ohana Pledge): clear truce if expired
+        if cs.get("ohana_truce_until_turn", 0) < game.turn_number:
+            cs.pop("ohana_truce_caster_id", None)
+            cs.pop("ohana_truce_until_turn", None)
         player.combat_state = cs
 
     # Card 209 (Activity Score): track consecutive turns where player played at least 1 card

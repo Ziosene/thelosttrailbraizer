@@ -745,6 +745,160 @@ def _card_257(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "drew_self": drew_self, "drew_others": drew_others}
 
 
+def _card_272(player, game, db, *, target_player_id=None) -> dict:
+    """ISV Ecosystem — Il costo del prossimo addon questo turno è 5L fissi."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    cs = player.combat_state or {}
+    cs["isv_ecosystem_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "effect": "next_addon_costs_5L"}
+
+
+def _card_274(player, game, db, *, target_player_id=None) -> dict:
+    """Engagement Score — +1L per turno consecutivo con carte giocate (max 5)."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    cs = player.combat_state or {}
+    streak = min(5, cs.get("consecutive_turns_with_cards", 0))
+    player.licenze += streak
+    return {"applied": True, "licenze_gained": streak}
+
+
+def _card_275(player, game, db, *, target_player_id=None) -> dict:
+    """Lead Conversion — Spendi 5L per ottenere +1 al prossimo tiro Elo."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    if player.licenze < 5:
+        return {"applied": False, "reason": "not_enough_licenze"}
+    player.licenze -= 5
+    cs = player.combat_state or {}
+    cs["lead_conversion_elo_bonus"] = cs.get("lead_conversion_elo_bonus", 0) + 1
+    player.combat_state = cs
+    return {"applied": True, "spent": 5, "elo_bonus": cs["lead_conversion_elo_bonus"]}
+
+
+def _card_276(player, game, db, *, target_player_id=None) -> dict:
+    """Web-to-Lead — +1L per ogni avversario fuori combattimento."""
+    opponents_out = [p for p in game.players if p.id != player.id and not p.is_in_combat]
+    gained = len(opponents_out)
+    player.licenze += gained
+    return {"applied": True, "licenze_gained": gained}
+
+
+def _card_279(player, game, db, *, target_player_id=None) -> dict:
+    """Salesforce Genie (Leggendaria) — Se in combattimento: +3L+2HP; altrimenti +5L."""
+    if player.is_in_combat:
+        player.licenze += 3
+        player.hp = min(player.hp + 2, player.max_hp)
+        return {"applied": True, "licenze_gained": 3, "hp_gained": 2}
+    player.licenze += 5
+    return {"applied": True, "licenze_gained": 5}
+
+
+def _card_280(player, game, db, *, target_player_id=None) -> dict:
+    """Salesforce Ohana (Leggendaria) — Tutti i giocatori +3L+1HP; tu +5L extra."""
+    for p in game.players:
+        p.licenze += 3
+        p.hp = min(p.hp + 1, p.max_hp)
+    player.licenze += 5
+    return {"applied": True, "all_licenze": 3, "all_hp": 1, "self_bonus_licenze": 5}
+
+
+def _card_285(player, game, db, *, target_player_id=None) -> dict:
+    """Trailhead Superbadge (Leggendaria) — Inizia a tracciare i boss sconfitti consecutivi; al 3° +1cert+10L."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    cs = player.combat_state or {}
+    cs["superbadge_tracking"] = True
+    player.combat_state = cs
+    return {"applied": True, "effect": "tracking_consecutive_boss_defeats"}
+
+
+def _card_286(player, game, db, *, target_player_id=None) -> dict:
+    """Hyperforce Region (Leggendaria) — Tira d10: 1-3→+3L, 4-6→+5L, 7-10→+7L."""
+    import random
+    roll = random.randint(1, 10)
+    if roll <= 3:
+        gained = 3
+    elif roll <= 6:
+        gained = 5
+    else:
+        gained = 7
+    player.licenze += gained
+    return {"applied": True, "roll": roll, "licenze_gained": gained}
+
+
+def _card_292(player, game, db, *, target_player_id=None) -> dict:
+    """Admin Appreciation Day — Ruolo Admin: +5L+pesca 2; altri: +2L."""
+    from app.models.game import PlayerHandCard as _PHC292
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    if getattr(player, "role", None) == "Administrator":
+        player.licenze += 5
+        drew = 0
+        for _ in range(2):
+            if game.action_deck_1:
+                db.add(_PHC292(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+                drew += 1
+            elif game.action_deck_2:
+                db.add(_PHC292(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+                drew += 1
+        return {"applied": True, "licenze_gained": 5, "drew": drew}
+    player.licenze += 2
+    return {"applied": True, "licenze_gained": 2}
+
+
+def _card_293(player, game, db, *, target_player_id=None) -> dict:
+    """Salesforce Values — +2L immediati (idealmente giocato nel turno avversario)."""
+    player.licenze += 2
+    return {"applied": True, "licenze_gained": 2}
+
+
+def _card_294(player, game, db, *, target_player_id=None) -> dict:
+    """Ohana Spirit — +2L se tutti i giocatori sono ancora vivi."""
+    all_alive = all(p.hp > 0 for p in game.players)
+    if all_alive:
+        player.licenze += 2
+        return {"applied": True, "licenze_gained": 2}
+    return {"applied": True, "licenze_gained": 0, "reason": "not_all_alive"}
+
+
+def _card_296(player, game, db, *, target_player_id=None) -> dict:
+    """Customer Success — Al prossimo boss sconfitto, gli spettatori con questa flag +1L."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    cs = player.combat_state or {}
+    cs["customer_success_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "effect": "watcher_bonus_on_next_boss_defeat"}
+
+
+def _card_297(player, game, db, *, target_player_id=None) -> dict:
+    """Trailblazer Spirit — Al prossimo boss inedito sconfitto, +3L."""
+    cs = player.combat_state or {}
+    cs["trailblazer_spirit_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "effect": "bonus_on_new_boss_defeat"}
+
+
+def _card_298(player, game, db, *, target_player_id=None) -> dict:
+    """Salesforce+ Premium — Pesca 2 carte e guadagna +2L."""
+    from app.models.game import PlayerHandCard as _PHC298
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    drew = 0
+    for _ in range(2):
+        if game.action_deck_1:
+            db.add(_PHC298(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+            drew += 1
+        elif game.action_deck_2:
+            db.add(_PHC298(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+            drew += 1
+    player.licenze += 2
+    return {"applied": True, "drew": drew, "licenze_gained": 2}
+
+
 ECONOMICA: dict = {
     1:   _card_1,
     2:   _card_2,
@@ -803,4 +957,18 @@ ECONOMICA: dict = {
     255: _card_255,
     256: _card_256,
     257: _card_257,
+    272: _card_272,
+    274: _card_274,
+    275: _card_275,
+    276: _card_276,
+    279: _card_279,
+    280: _card_280,
+    285: _card_285,
+    286: _card_286,
+    292: _card_292,
+    293: _card_293,
+    294: _card_294,
+    296: _card_296,
+    297: _card_297,
+    298: _card_298,
 }

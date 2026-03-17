@@ -1130,6 +1130,103 @@ def _card_270(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "received_card_id": card_id}
 
 
+def _card_282(player, game, db, *, target_player_id=None) -> dict:
+    """IdeaExchange Winner (Leggendaria) — +3L e pesca 2 carte."""
+    from app.models.game import PlayerHandCard as _PHC282
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    player.licenze += 3
+    drew = 0
+    for _ in range(2):
+        if game.action_deck_1:
+            db.add(_PHC282(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+            drew += 1
+        elif game.action_deck_2:
+            db.add(_PHC282(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+            drew += 1
+    return {"applied": True, "licenze_gained": 3, "drew": drew}
+
+
+def _card_283(player, game, db, *, target_player_id=None) -> dict:
+    """Queueable Job (Leggendaria) — Le prossime 3 carte ignora le finestre di reazione."""
+    cs = dict(player.combat_state or {})
+    cs["queueable_job_plays_remaining"] = 3
+    player.combat_state = cs
+    return {"applied": True, "effect": "next_3_plays_skip_reaction_windows"}
+
+
+def _card_284(player, game, db, *, target_player_id=None) -> dict:
+    """Bring Your Own Model (Leggendaria) — In combattimento: +2 al prossimo tiro; altrimenti +4L."""
+    if player.is_in_combat:
+        cs = dict(player.combat_state or {})
+        cs["byom_roll_bonus"] = cs.get("byom_roll_bonus", 0) + 2
+        player.combat_state = cs
+        return {"applied": True, "effect": "roll_bonus_2"}
+    player.licenze += 4
+    return {"applied": True, "licenze_gained": 4}
+
+
+def _card_287(player, game, db, *, target_player_id=None) -> dict:
+    """404 Not Found — Per 1 turno blocca carte in entrata e in uscita verso di te."""
+    cs = dict(player.combat_state or {})
+    cs["not_found_active"] = True
+    cs["not_found_until_turn"] = game.turn_number + 1
+    player.combat_state = cs
+    return {"applied": True, "effect": "block_all_card_targeting_until_turn", "until": game.turn_number + 1}
+
+
+def _card_289(player, game, db, *, target_player_id=None) -> dict:
+    """Stack Trace — Recupera fino a 3 carte dallo scarti."""
+    from app.models.game import PlayerHandCard as _PHC289
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    discard = list(game.action_discard or [])
+    recovered = discard[-3:] if len(discard) >= 3 else discard
+    for card_id in recovered:
+        db.add(_PHC289(player_id=player.id, action_card_id=card_id))
+    for card_id in recovered:
+        game.action_discard.remove(card_id)
+    return {"applied": True, "recovered": len(recovered)}
+
+
+def _card_291(player, game, db, *, target_player_id=None) -> dict:
+    """Copy/Paste — +1L e pesca 1 carta."""
+    from app.models.game import PlayerHandCard as _PHC291
+    player.licenze += 1
+    drew = 0
+    if game.action_deck_1:
+        db.add(_PHC291(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+        drew = 1
+    elif game.action_deck_2:
+        db.add(_PHC291(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+        drew = 1
+    return {"applied": True, "licenze_gained": 1, "drew": drew}
+
+
+def _card_299(player, game, db, *, target_player_id=None) -> dict:
+    """The Trailbraizer (Leggendaria) — Pesca 3, +5L, HP max, rimuovi flag negativi."""
+    from app.models.game import PlayerHandCard as _PHC299
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    drew = 0
+    for _ in range(3):
+        if game.action_deck_1:
+            db.add(_PHC299(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+            drew += 1
+        elif game.action_deck_2:
+            db.add(_PHC299(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+            drew += 1
+    player.licenze += 5
+    player.hp = player.max_hp
+    # Clear negative combat_state flags
+    cs = dict(player.combat_state or {})
+    for neg_flag in ("stunned", "locked_out", "sandbox_lock_turns", "fork_in_road_used",
+                     "not_found_active", "null_pointer_active"):
+        cs.pop(neg_flag, None)
+    player.combat_state = cs
+    return {"applied": True, "drew": drew, "licenze_gained": 5, "hp_restored": True, "flags_cleared": True}
+
+
 UTILITA: dict = {
     31:  _card_31,
     32:  _card_32,
@@ -1190,4 +1287,11 @@ UTILITA: dict = {
     248: _card_248,
     249: _card_249,
     250: _card_250,
+    282: _card_282,
+    283: _card_283,
+    284: _card_284,
+    287: _card_287,
+    289: _card_289,
+    291: _card_291,
+    299: _card_299,
 }

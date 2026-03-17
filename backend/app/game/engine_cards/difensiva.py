@@ -577,6 +577,22 @@ def _card_260(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "healed": 1, "admin": False}
 
 
+def _card_288(player, game, db, *, target_player_id=None) -> dict:
+    """NullPointerException — Se il prossimo tiro combattimento è 1, il round è annullato."""
+    cs = dict(player.combat_state or {})
+    cs["null_pointer_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "effect": "next_roll_1_nullifies_round"}
+
+
+def _card_295(player, game, db, *, target_player_id=None) -> dict:
+    """Trust First — Annulla la prima carta Offensiva diretta contro di te (per sempre)."""
+    cs = dict(player.combat_state or {})
+    cs["trust_first_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "effect": "cancel_first_offensiva_targeting_me"}
+
+
 DIFENSIVA: dict = {
     19:  _card_19,
     20:  _card_20,
@@ -617,4 +633,6 @@ DIFENSIVA: dict = {
     258: _card_258,
     259: _card_259,
     260: _card_260,
+    288: _card_288,
+    295: _card_295,
 }

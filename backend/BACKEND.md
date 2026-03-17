@@ -135,14 +135,14 @@ backend/
 │       ├── __init__.py           ✅
 │       ├── engine.py             ✅ funzioni pure core (~165 righe): roll, combat, deck, death, ELO + re-export engine_boss
 │       ├── engine_boss.py        ✅ boss ability system (~1000 righe): tutti i 100 boss, query helper, apply_boss_ability
-│       └── engine_cards/         ✅ effetti carte azione (270/300 implementate)
+│       └── engine_cards/         ✅ effetti carte azione (300/300 implementate)
 │           ├── __init__.py       ✅ dispatcher apply_action_card_effect
 │           ├── helpers.py        ✅ get_target()
 │           ├── economica.py      ✅ carte 1–8, 41–48, 81–88, 121–125, 159–168, 208–214, 230, 235, 241, 244, 251–257
 │           ├── offensiva.py      ✅ carte 9–18, 49–54, 89–95, 126–130, 141–150, 191–195, 228, 231, 233, 240, 261–262
 │           ├── difensiva.py      ✅ carte 19–25, 55–58, 96–100, 131–135, 151–158, 201–207, 258–260
 │           ├── manipolazione.py  ✅ carte 26–30, 59–62, 101–105, 136, 169–171, 216–220
-│           ├── utilita.py        ✅ carte 31–37, 63–69, 80, 106–110, 137–138, 172–180, 196–200, 215, 221, 223, 226–227, 232, 234, 238–239, 242–243, 245, 247–250, 263–267, 269–270
+│           ├── utilita.py        ✅ carte 31–37, 63–69, 80, 106–110, 137–138, 172–180, 196–200, 215, 221, 223, 226–227, 232, 234, 238–239, 242–243, 245, 247–250, 263–267, 269–270, 282–284, 287, 289, 291, 299
 │           └── interferenza.py   ✅ carte 38–40, 70–79, 111–120, 139–140, 181–190, 222, 224–225, 229, 236–237, 246, 268
 ├── scripts/
 │   └── seed_cards.py             ✅ parser .md → insert DB (idempotente, safe re-run)
@@ -629,6 +629,17 @@ MORTE DEL GIOCATORE
   - **Interferenza 268**: ISV Summit (tutti mostrano 1 addon; chi non ne ha -1L; player +1L per addon mostrato).
   - **combat.py hooks**: `salesforce_tower_active` (HP = max(1, hp-damage)), `world_tour_event_active`+`world_tour_event_first_bonus` (+2L/+1L su boss defeat).
   - **turn.py end_turn**: cleanup `salesforce_tower_active`, `world_tour_event_active`, `world_tour_event_first_bonus`.
+
+- [x] **Carte azione 271–300 — Batch 12 (Ultime 30 carte: Ohana, ISV, Leggendarie, Utility finale)**
+  - **Interferenza 271, 277, 278**: Ohana Pledge (271, tregua Ohana 2 turni su tutti gli avversari), Form Handler (277, prende l'ultima carta da ogni mano, mescola e redistribuisce), Marc Benioff Mode (278, Leggendaria: tutti +1L).
+  - **Economica 272, 274–276, 279–280, 285–286, 292–294, 296–298**: ISV Ecosystem (272, prossimo addon costa 5L fissi), Engagement Score (274, +1L/turno consecutivo con carte max5), Lead Conversion (275, -5L→+1 Elo bonus), Web-to-Lead (276, +1L/avversario non in combat), Salesforce Genie (279, Legg: in combat +3L+2HP; fuori +5L), Salesforce Ohana (280, Legg: tutti +3L+1HP; tu +5L extra), Trailhead Superbadge (285, Legg: traccia 3 boss consecutivi → +1cert+10L), Hyperforce Region (286, Legg: d10 1-3→+3L 4-6→+5L 7-10→+7L), Admin Appreciation Day (292, Admin +5L+draw2; altri +2L), Salesforce Values (293, +2L immediati), Ohana Spirit (294, +2L se tutti alive), Customer Success (296, su prossimo boss defeat watchers +1L), Trailblazer Spirit (297, su boss inedito sconfitto +3L), Salesforce+ Premium (298, draw2+2L).
+  - **Manipolazione 273**: Trailhead Quest (273, boss defeat senza carte quel turno → +5L).
+  - **Difensiva 288, 295**: NullPointerException (288, se roll==1 in combat round_nullified), Trust First (295, annulla prima Offensiva diretta verso di te).
+  - **Offensiva 281, 290, 300**: World's Most Innovative (281, Legg: boss ability disabilitata + threshold=1 + -1HP boss), Lorem Ipsum Boss (290, +2L + bosses_defeated+1), IdeaExchange Champion (300, Legg usa-1: A boss hp=0; B ruba cert; C +10L).
+  - **Utilità 282–284, 287, 289, 291, 299**: IdeaExchange Winner (282, Legg: +3L+draw2), Queueable Job (283, Legg: prossime 3 carte ignorano finestre reazione), Bring Your Own Model (284, Legg: in combat +2 roll bonus; fuori +4L), 404 Not Found (287, blocca targeting in/out per 1 turno), Stack Trace (289, recupera fino 3 carte dallo scarto), Copy/Paste (291, +1L+draw1), The Trailbraizer (299, Legg: draw3+5L+hp_full+clear flag negativi).
+  - **combat.py hooks**: `null_pointer_active` (288: roll==1→round_nullified one-shot), `boss_threshold_override_1` (281: threshold=1), `trailhead_quest_active` (273: boss defeat senza carte→+5L), `customer_success_active` (296: watchers +1L su boss defeat), `trailblazer_spirit_active` (297: +3L se boss inedito), `superbadge_tracking`+`consecutive_boss_defeats_alive` (285: 3 boss consecutivi→+1cert+10L).
+  - **turn.py hooks**: `isv_ecosystem_active` (272: costo addon=5 one-shot), `ohana_truce_caster_id`+`ohana_truce_until_turn` (271: blocca Offensiva verso caster), `trust_first_active` (295: annulla prima Offensiva), `queueable_job_plays_remaining` (283: salta reaction window), `not_found_active` (287: blocca targeting in/out).
+  - **end_turn cleanups**: `isv_ecosystem_active`, `trailhead_quest_cards_played`, `not_found_active`+`not_found_until_turn` (se scaduti), `ohana_truce_caster_id`+`ohana_truce_until_turn` (se scaduti).
 
 - [ ] **Rate limiting WS** — un utente non dovrebbe poter inviare messaggi troppo veloci.
 

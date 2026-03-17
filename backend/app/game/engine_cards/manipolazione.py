@@ -374,6 +374,15 @@ def _card_220(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "grounding_data_until_turn": cs["grounding_data_until_turn"]}
 
 
+def _card_273(player, game, db, *, target_player_id=None) -> dict:
+    """Trailhead Quest — Se sconfiggi un boss senza giocare carte quel turno, guadagna +5L."""
+    cs = dict(player.combat_state or {})
+    cs["trailhead_quest_active"] = True
+    cs["trailhead_quest_cards_played"] = 0
+    player.combat_state = cs
+    return {"applied": True, "effect": "bonus_5L_if_no_cards_played_on_boss_defeat"}
+
+
 MANIPOLAZIONE: dict = {
     26:  _card_26,
     27:  _card_27,
@@ -398,4 +407,5 @@ MANIPOLAZIONE: dict = {
     218: _card_218,
     219: _card_219,
     220: _card_220,
+    273: _card_273,
 }

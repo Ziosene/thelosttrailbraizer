@@ -737,6 +737,49 @@ def _card_262(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "players_affected": len(list(game.players))}
 
 
+def _card_281(player, game, db, *, target_player_id=None) -> dict:
+    """World's Most Innovative (Leggendaria) — Disabilita l'abilità del boss e riduci la soglia a 1; boss -1HP."""
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["boss_ability_disabled_until_round"] = 9999
+    cs["boss_threshold_override_1"] = True
+    player.combat_state = cs
+    if hasattr(game, "current_boss") and game.current_boss:
+        game.current_boss.hp = max(0, game.current_boss.hp - 1)
+        return {"applied": True, "boss_hp_reduced": 1}
+    return {"applied": True, "boss_hp_reduced": 0}
+
+
+def _card_290(player, game, db, *, target_player_id=None) -> dict:
+    """Lorem Ipsum Boss (Offensiva/Utilità) — Guadagna +2L e conta un boss sconfitto extra."""
+    player.licenze += 2
+    player.bosses_defeated = (player.bosses_defeated or 0) + 1
+    return {"applied": True, "licenze_gained": 2, "bosses_defeated_bonus": 1}
+
+
+def _card_300(player, game, db, *, target_player_id=None) -> dict:
+    """IdeaExchange Champion (Leggendaria, usa una volta) — A: boss hp=0; B: ruba 1cert; C: +10L."""
+    cs = dict(player.combat_state or {})
+    if cs.get("ideaexchange_champion_used"):
+        return {"applied": False, "reason": "already_used"}
+    cs["ideaexchange_champion_used"] = True
+    player.combat_state = cs
+    # State-based choice: in combat → A (boss hp=0); else if target → B (steal cert); else → C (+10L)
+    if player.is_in_combat and hasattr(game, "current_boss") and game.current_boss:
+        game.current_boss.hp = 0
+        return {"applied": True, "choice": "A", "effect": "boss_hp_zeroed"}
+    if target_player_id:
+        from app.game.engine_cards.helpers import get_target
+        target = get_target(game, player, target_player_id)
+        if target and target.certificazioni > 0:
+            target.certificazioni -= 1
+            player.certificazioni += 1
+            return {"applied": True, "choice": "B", "stolen_cert": 1}
+    player.licenze += 10
+    return {"applied": True, "choice": "C", "licenze_gained": 10}
+
+
 OFFENSIVA: dict = {
     9:   _card_9,
     10:  _card_10,
@@ -787,4 +830,7 @@ OFFENSIVA: dict = {
     240: _card_240,
     261: _card_261,
     262: _card_262,
+    281: _card_281,
+    290: _card_290,
+    300: _card_300,
 }

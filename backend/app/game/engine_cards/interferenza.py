@@ -735,6 +735,49 @@ def _card_268(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "licenze_gained": shown, "penalized_players": len(list(game.players)) - 1 - shown}
 
 
+def _card_271(player, game, db, *, target_player_id=None) -> dict:
+    """Ohana Pledge — Tutti gli avversari entrano in tregua Ohana per 2 turni (nessuna Offensiva verso il caster)."""
+    truce_until = game.turn_number + 2
+    for gp in game.players:
+        if gp.id == player.id:
+            continue
+        cs = dict(gp.combat_state or {})
+        cs["ohana_truce_caster_id"] = player.id
+        cs["ohana_truce_until_turn"] = truce_until
+        gp.combat_state = cs
+    return {"applied": True, "truce_until_turn": truce_until, "players_affected": len(list(game.players)) - 1}
+
+
+def _card_277(player, game, db, *, target_player_id=None) -> dict:
+    """Form Handler — Prende l'ultima carta dalla mano di ogni giocatore, le mescola e ridistribuisce casualmente."""
+    import random
+    from app.models.game import PlayerHandCard as _PHC277
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    pool = []
+    for gp in game.players:
+        hand = list(gp.hand)
+        if hand:
+            taken = hand[-1]
+            pool.append(taken.action_card_id)
+            db.delete(taken)
+    if not pool:
+        return {"applied": True, "redistributed": 0}
+    random.shuffle(pool)
+    players_list = list(game.players)
+    for i, card_id in enumerate(pool):
+        recipient = players_list[i % len(players_list)]
+        db.add(_PHC277(player_id=recipient.id, action_card_id=card_id))
+    return {"applied": True, "redistributed": len(pool)}
+
+
+def _card_278(player, game, db, *, target_player_id=None) -> dict:
+    """Marc Benioff Mode (Leggendaria) — Tutti i giocatori guadagnano +1L."""
+    for gp in game.players:
+        gp.licenze += 1
+    return {"applied": True, "licenze_each": 1, "players_affected": len(list(game.players))}
+
+
 INTERFERENZA: dict = {
     38:  _card_38,
     39:  _card_39,
@@ -779,4 +822,7 @@ INTERFERENZA: dict = {
     237: _card_237,
     246: _card_246,
     268: _card_268,
+    271: _card_271,
+    277: _card_277,
+    278: _card_278,
 }

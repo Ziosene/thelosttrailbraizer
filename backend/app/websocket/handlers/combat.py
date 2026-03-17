@@ -647,6 +647,9 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         cs.pop("review_app_active", None)
         player.combat_state = cs
     threshold = max(1, threshold)  # can't go below 1
+    # Card 281 (World's Most Innovative): override threshold to 1 for this combat
+    if (player.combat_state or {}).get("boss_threshold_override_1"):
+        threshold = 1
 
     # Card 203 (Sender Profile): threshold -2 for this round (boss doesn't recognize the sender)
     if (player.combat_state or {}).get("sender_profile_threshold_reduction"):
@@ -721,6 +724,13 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         cs["pause_element_rounds_remaining"] -= 1
         if cs["pause_element_rounds_remaining"] <= 0:
             cs.pop("pause_element_rounds_remaining", None)
+        player.combat_state = cs
+        round_nullified = True
+
+    # Card 288 (NullPointerException): if roll == 1, nullify this round (one-shot)
+    if (player.combat_state or {}).get("null_pointer_active") and roll == 1:
+        cs = dict(player.combat_state)
+        cs.pop("null_pointer_active", None)
         player.combat_state = cs
         round_nullified = True
 
@@ -1144,6 +1154,42 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                 _cs_wte = dict(player.combat_state)
                 _cs_wte.pop("world_tour_event_first_bonus", None)
                 player.combat_state = _cs_wte
+
+        # Card 273 (Trailhead Quest): +5L if no cards played this turn
+        if (player.combat_state or {}).get("trailhead_quest_active") and player.cards_played_this_turn == 0:
+            player.licenze += 5
+            _cs_tq = dict(player.combat_state)
+            _cs_tq.pop("trailhead_quest_active", None)
+            _cs_tq.pop("trailhead_quest_cards_played", None)
+            player.combat_state = _cs_tq
+        # Card 296 (Customer Success): watchers with flag get +1L
+        for _watcher_cs in game.players:
+            if _watcher_cs.id != player.id and (_watcher_cs.combat_state or {}).get("customer_success_active"):
+                _watcher_cs.licenze += 1
+                _wc_cs = dict(_watcher_cs.combat_state)
+                _wc_cs.pop("customer_success_active", None)
+                _watcher_cs.combat_state = _wc_cs
+        # Card 297 (Trailblazer Spirit): +3L if this boss not previously defeated
+        _boss_graveyard = game.boss_graveyard or []
+        _trophies_all = []
+        for _p2 in game.players:
+            _trophies_all.extend(_p2.trophies or [])
+        _boss_new = boss.id not in _boss_graveyard and boss.id not in _trophies_all
+        if (player.combat_state or {}).get("trailblazer_spirit_active") and _boss_new:
+            player.licenze += 3
+            _cs_ts = dict(player.combat_state)
+            _cs_ts.pop("trailblazer_spirit_active", None)
+            player.combat_state = _cs_ts
+        # Card 285 (Trailhead Superbadge): track consecutive boss defeats; at 3 → +1cert+10L
+        if (player.combat_state or {}).get("superbadge_tracking"):
+            _cs_sb = dict(player.combat_state)
+            _cs_sb["consecutive_boss_defeats_alive"] = _cs_sb.get("consecutive_boss_defeats_alive", 0) + 1
+            if _cs_sb["consecutive_boss_defeats_alive"] >= 3:
+                player.certificazioni += 1
+                player.licenze += 10
+                _cs_sb.pop("superbadge_tracking", None)
+                _cs_sb.pop("consecutive_boss_defeats_alive", None)
+            player.combat_state = _cs_sb
 
         # Step 3: award Certification (if cert boss)
         if boss.has_certification:
