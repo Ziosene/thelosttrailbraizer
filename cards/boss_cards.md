@@ -725,11 +725,11 @@
 
 ---
 
-### 70. The Duplicate Management Monster
+### 70. The Duplicate Management Monster 🏆
 - **HP**: 6
 - **Soglia dado**: 5+
 - **Abilità**: Se il boss riceve 2+ danni in un singolo round, si duplica — appare un secondo boss con 3 HP e soglia 5+ senza abilità. Entrambi devono essere sconfitti
-- **Ricompensa**: 4 Licenze
+- **Ricompensa**: 8 Licenze + **1 Certificazione**
 - **Difficoltà**: Media
 - **Image prompt**: `A 2D hand-drawn monster in the distinctive art style of The Binding of Isaac. The monster is "The Duplicate Management Monster": a creature that splits perfectly in two the moment it takes heavy damage — creating an identical but weaker copy of itself beside it. Both copies share a confused expression wondering which one is the real record. Thick black outlines, grotesque but cartoonish, flat shading, plain off-white parchment background. Indie game card art.`
 
