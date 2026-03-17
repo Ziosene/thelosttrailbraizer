@@ -58,9 +58,6 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
         for _sid in _sftp_ids:
             if len(list(player.hand)) < engine.MAX_HAND_SIZE:
                 db.add(_PHCSFTP(player_id=player.id, action_card_id=_sid))
-    # Card 223 (App Home): +1L at the start of every turn (draw phase)
-    if _cs_init.get("app_home_passive"):
-        player.licenze += 1
     # Card 42 (Engagement Studio): clear fought_this_turn so it's fresh for this new turn
     _cs_init.pop("fought_this_turn", None)
     # Card 70 (Suppression List): skip draw this turn if suppressed

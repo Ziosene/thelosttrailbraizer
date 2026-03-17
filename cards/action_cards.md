@@ -2181,8 +2181,8 @@
 
 ### 223. App Home
 - **Tipo**: Utilità
-- **Quando**: Fuori dal combattimento
-- **Effetto**: Stabilisci la tua base operativa — guadagni 1 Licenza extra ogni volta che è il tuo turno (effetto una tantum, per questa partita)
+- **Quando**: Durante il tuo turno
+- **Effetto**: Guadagna 1 Licenza per ogni addon che possiedi.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn home base setup in the art style of The Binding of Isaac. A player planting a flag on a central app hub, a coin dripping into their pouch automatically at the start of every subsequent turn. Thick black outlines, flat shading, home-advantage mood. Plain off-white parchment background. Indie game card art.`
 

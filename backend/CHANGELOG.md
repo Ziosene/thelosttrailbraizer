@@ -42,6 +42,7 @@
 - **Carta 199** (Segment Builder): redesign — da "dividi mazzo in 2 pile" (complesso) a `scarta fino a 3 carte e pesca lo stesso numero`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
+- **Carta 223** (App Home): redesign — da "+1L per turno passivo (addon-like)" a `+1L per ogni addon posseduto`; rimosso hook `app_home_passive` da turn.py
 - **Carta 219** (Vector Database): redesign — da "cerca carta simile negli scarti + +1 dado" (non implementabile) a `pesca 1 carta, perdi 2L`
 - **Carta 217** (Einstein Language): semplificato — rimosso controllo compatibilità ruolo e bonus +1 dado; ora recupera semplicemente la prima carta dagli scarti
 - **Carta 214** (Customer Lifecycle): redesign — da "+1L per fase (ogni 5 turni)" a `+1L per boss sconfitto in partita (max 5)`; usa `player.bosses_defeated`

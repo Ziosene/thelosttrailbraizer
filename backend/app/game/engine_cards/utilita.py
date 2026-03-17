@@ -805,17 +805,10 @@ def _card_221(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_223(player, game, db, *, target_player_id=None) -> dict:
-    """App Home — +1L extra ogni volta che è il tuo turno (draw phase), per tutta la partita.
-
-    Stores app_home_passive=True in combat_state (persistent).
-    turn.py _handle_draw_card: if active player has flag, +1L before draw.
-    """
-    cs = dict(player.combat_state or {})
-    if cs.get("app_home_passive"):
-        return {"applied": False, "reason": "already_active"}
-    cs["app_home_passive"] = True
-    player.combat_state = cs
-    return {"applied": True, "app_home_passive": True}
+    """App Home — +1L per ogni addon che possiedi."""
+    addon_count = len(list(player.addons))
+    player.licenze += addon_count
+    return {"applied": True, "licenze_gained": addon_count, "addon_count": addon_count}
 
 
 def _card_226(player, game, db, *, target_player_id=None) -> dict:
