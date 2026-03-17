@@ -2217,8 +2217,8 @@
 
 ### 227. Anypoint Visualizer
 - **Tipo**: Utilità
-- **Quando**: In qualsiasi momento
-- **Effetto**: Visualizza il grafo completo della partita — tutte le connessioni tra AddOn, risorse e giocatori visibili per 1 turno
+- **Quando**: Durante il tuo turno
+- **Effetto**: Per questo turno tutti i giocatori giocano a carte scoperte — le mani di tutti sono visibili a tutti.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn connection graph in the art style of The Binding of Isaac. A full network diagram appearing above the table linking all players' addons, resources, and interactions with glowing lines for one turn. Thick black outlines, flat shading, omniscient overview mood. Plain off-white parchment background. Indie game card art.`
 

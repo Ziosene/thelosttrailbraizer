@@ -712,6 +712,10 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
     await _send_hand_state(game.code, player, db)
     if reaction_target:
         await _send_hand_state(game.code, reaction_target, db)
+    # Card 227 (Anypoint Visualizer): if any player has flag active, broadcast all hands to all players
+    if any((p.combat_state or {}).get("anypoint_visualizer_active") for p in game.players):
+        for _p in game.players:
+            await _send_hand_state(game.code, _p, db)
 
 
 async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Session):

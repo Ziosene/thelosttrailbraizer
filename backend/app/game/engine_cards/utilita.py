@@ -824,15 +824,17 @@ def _card_226(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_227(player, game, db, *, target_player_id=None) -> dict:
-    """Anypoint Visualizer — Visualizza il grafo completo: tutti gli AddOn, risorse, mani visibili per 1 turno.
+    """Anypoint Visualizer — Tutti i giocatori giocano a carte scoperte per 1 turno.
 
-    Sets anypoint_visualizer_active=True in player.combat_state.
-    The broadcast hook will include full game state. Cleared in end_turn.
+    Sets anypoint_visualizer_active=True on every player's combat_state.
+    _send_hand_state in turn.py broadcasts each player's hand to all when flag is set.
+    Cleared at end_turn for each player.
     """
-    cs = dict(player.combat_state or {})
-    cs["anypoint_visualizer_active"] = True
-    player.combat_state = cs
-    return {"applied": True, "anypoint_visualizer_active": True}
+    for p in game.players:
+        cs = dict(p.combat_state or {})
+        cs["anypoint_visualizer_active"] = True
+        p.combat_state = cs
+    return {"applied": True, "anypoint_visualizer_active": True, "players_affected": len(list(game.players))}
 
 
 def _card_232(player, game, db, *, target_player_id=None) -> dict:
