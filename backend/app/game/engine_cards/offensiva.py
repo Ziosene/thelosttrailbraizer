@@ -290,10 +290,12 @@ def _card_92(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_93(player, game, db, *, target_player_id=None) -> dict:
-    """Live Message — Un avversario perde 2 Licenze.
+    """Live Message — Un avversario perde 2 Licenze; può recuperarle cedendo 1 carta a te.
 
-    Simplified: steal 2L (recovery mechanic requires async client interaction — TODO).
-    TODO: offer target the option to give 1 card to recover the 2L.
+    Deducts 2L from target immediately. Stores live_message_pending_caster_id=player.id
+    in target's combat_state to open a response window.
+    ClientAction 'live_message_respond' on target: if they choose to give a card,
+    the handler moves 1 random card from target's hand to caster's hand and restores 2L.
     """
     from .helpers import get_target
     target = get_target(game, player, target_player_id)
@@ -301,7 +303,12 @@ def _card_93(player, game, db, *, target_player_id=None) -> dict:
         return {"applied": False, "reason": "no_target"}
     stolen = min(2, target.licenze)
     target.licenze -= stolen
-    return {"applied": True, "target_player_id": target.id, "licenze_stolen": stolen}
+    if target.hand:
+        cs = dict(target.combat_state or {})
+        cs["live_message_pending_caster_id"] = player.id
+        target.combat_state = cs
+    return {"applied": True, "target_player_id": target.id, "licenze_lost": stolen,
+            "recovery_available": bool(target.hand)}
 
 
 def _card_94(player, game, db, *, target_player_id=None) -> dict:

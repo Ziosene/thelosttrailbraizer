@@ -928,7 +928,7 @@
 ### 93. Live Message
 - **Tipo**: Offensiva
 - **Quando**: In qualsiasi momento
-- **Effetto**: Un avversario perde 2 Licenze. Se le vuole recuperare, deve cedere 1 carta dalla sua mano
+- **Effetto**: Un avversario perde 2 Licenze. Se le vuole recuperare, deve cedere 1 carta dalla sua mano a te
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn live message extortion in the art style of The Binding of Isaac. An urgent glowing message demanding two coins from a sweating opponent figure, who reluctantly hands over a card to get them back. Thick black outlines, flat shading, pressuring mood. Plain off-white parchment background. Indie game card art.`
 
