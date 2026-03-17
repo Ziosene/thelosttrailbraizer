@@ -294,6 +294,86 @@ def _card_171(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "copilot_studio_boost_active": True}
 
 
+def _card_216(player, game, db, *, target_player_id=None) -> dict:
+    """Einstein Vision — Rivela debolezza boss: soglia dado -1 per il resto del combattimento.
+
+    Increments boss_threshold_reduction by 1 (same key used by card 13/91).
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["boss_threshold_reduction"] = cs.get("boss_threshold_reduction", 0) + 1
+    player.combat_state = cs
+    return {"applied": True, "boss_threshold_reduction": cs["boss_threshold_reduction"]}
+
+
+def _card_217(player, game, db, *, target_player_id=None) -> dict:
+    """Einstein Language — Recupera 1 carta dagli scarti + next roll +1.
+
+    Recovers last card from action_discard. Adds einstein_sto_next_roll_bonus (reusing card 60 key).
+    """
+    from app.models.game import PlayerHandCard as _PHC217
+    cs = dict(player.combat_state or {})
+    drew = False
+    discard = list(game.action_discard or [])
+    if discard:
+        card_id = discard.pop(-1)
+        game.action_discard = discard
+        db.add(_PHC217(player_id=player.id, action_card_id=card_id))
+        drew = True
+    cs["einstein_sto_next_roll_bonus"] = cs.get("einstein_sto_next_roll_bonus", 0) + 1
+    player.combat_state = cs
+    return {"applied": True, "drew_card": drew, "next_roll_bonus": 1}
+
+
+def _card_218(player, game, db, *, target_player_id=None) -> dict:
+    """Einstein Sentiment — Boss ability non si attiva per il prossimo round (Interferenza).
+
+    Stores boss_ability_disabled_until_round = current_round + 1.
+    Same flag used by card 102/135. Additive: takes the max.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = dict(player.combat_state or {})
+    current_round = player.combat_round or 0
+    new_until = current_round + 1
+    existing = cs.get("boss_ability_disabled_until_round", 0)
+    cs["boss_ability_disabled_until_round"] = max(existing, new_until)
+    player.combat_state = cs
+    return {"applied": True, "boss_ability_disabled_until_round": cs["boss_ability_disabled_until_round"]}
+
+
+def _card_219(player, game, db, *, target_player_id=None) -> dict:
+    """Vector Database — Cerca carta simile all'ultima giocata negli scarti + next roll +1.
+
+    Simplified: recovers first available card from action_discard + next_roll_bonus +1.
+    """
+    from app.models.game import PlayerHandCard as _PHC219
+    cs = dict(player.combat_state or {})
+    drew = False
+    discard = list(game.action_discard or [])
+    if discard:
+        card_id = discard.pop(0)  # earliest = most "semantically similar"
+        game.action_discard = discard
+        db.add(_PHC219(player_id=player.id, action_card_id=card_id))
+        drew = True
+    cs["einstein_sto_next_roll_bonus"] = cs.get("einstein_sto_next_roll_bonus", 0) + 1
+    player.combat_state = cs
+    return {"applied": True, "drew_card": drew, "next_roll_bonus": 1}
+
+
+def _card_220(player, game, db, *, target_player_id=None) -> dict:
+    """Grounding Data — Per 2 turni nessun effetto può modificare la soglia dado dei boss.
+
+    Stores grounding_data_until_turn = turn_number + 2 in combat_state.
+    combat.py: if grounding_data_until_turn >= game.turn_number, suppress threshold modifications.
+    """
+    cs = dict(player.combat_state or {})
+    cs["grounding_data_until_turn"] = game.turn_number + 2
+    player.combat_state = cs
+    return {"applied": True, "grounding_data_until_turn": cs["grounding_data_until_turn"]}
+
+
 MANIPOLAZIONE: dict = {
     26:  _card_26,
     27:  _card_27,
@@ -313,4 +393,9 @@ MANIPOLAZIONE: dict = {
     169: _card_169,
     170: _card_170,
     171: _card_171,
+    216: _card_216,
+    217: _card_217,
+    218: _card_218,
+    219: _card_219,
+    220: _card_220,
 }

@@ -51,6 +51,9 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
             _cs_init.pop("drip_program_remaining", None)
         else:
             _cs_init["drip_program_remaining"] = _drip - 1
+    # Card 223 (App Home): +1L at the start of every turn (draw phase)
+    if _cs_init.get("app_home_passive"):
+        player.licenze += 1
     # Card 42 (Engagement Studio): clear fought_this_turn so it's fresh for this new turn
     _cs_init.pop("fought_this_turn", None)
     # Card 70 (Suppression List): skip draw this turn if suppressed
@@ -185,6 +188,8 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
     _api_limit = (player.combat_state or {}).get("api_rate_limit_max_cards")
     if _api_limit is not None:
         max_cards = min(max_cards, _api_limit)
+    # Card 226 (Shortcut): bonus card plays this turn (skip draw = extra slots)
+    max_cards += (player.combat_state or {}).get("shortcut_extra_plays", 0)
     if player.cards_played_this_turn >= max_cards:
         await _error(game.code, user_id, "Card limit reached this turn")
         return
@@ -286,6 +291,11 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
         if card and card.card_type != _unification_type:
             await _error(game.code, user_id, f"unification_rule: only {_unification_type} cards allowed this turn")
             return
+
+    # Card 212 (High Velocity Sales): if all_in flag set, no more cards may be played this turn
+    if (player.combat_state or {}).get("high_velocity_all_in"):
+        await _error(game.code, user_id, "high_velocity_all_in: no more cards this turn")
+        return
 
     # Card 27 (Lucky Roll): reaction-only — must be played via the post-roll reaction window,
     # not via play_card. Guard here prevents the card from being consumed without effect.
@@ -467,6 +477,27 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
                 _immunity_target.combat_state = _cs206
                 _immunity_target.licenze += 2
                 card_effect_result = {"card_number": card.number, "applied": False, "blocked_by": "landing_page", "target_licenze_gained": 2}
+
+    # Card 211 (Sales Engagement): any card played against a player with this flag gives that player +1L
+    if card and card_approved and target_player_id and not original_cancelled:
+        _se_target = next(
+            (p for p in game.players if p.id == target_player_id and p.id != player.id), None
+        )
+        if _se_target and (_se_target.combat_state or {}).get("sales_engagement_active"):
+            _se_target.licenze += 1
+
+    # Card 222 (Block Kit): player's next card has -1 to its primary numeric effect
+    if card and card_approved and not original_cancelled:
+        _cs_bk = player.combat_state or {}
+        if _cs_bk.get("block_kit_pending"):
+            # Effect reduction: subtract 1L from the player (proxy: undo part of the card benefit)
+            # The simplest hook: take back 1L if player gained any
+            _gained = card_effect_result.get("licenze_gained", 0) if isinstance(card_effect_result, dict) else 0
+            if _gained > 0:
+                player.licenze = max(0, player.licenze - 1)
+            _cs_bk2 = dict(player.combat_state)
+            _cs_bk2.pop("block_kit_pending", None)
+            player.combat_state = _cs_bk2
 
     # Card 207 (Feedback Management): any card targeting a player with this flag gives them +1L
     if card and card_approved and target_player_id and not original_cancelled:
@@ -903,6 +934,28 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
         cs.pop("card_types_played_this_turn", None)
         # Card 171 (Copilot Studio): clear per-round boost
         cs.pop("copilot_studio_boost_active", None)
+        # Card 212 (High Velocity Sales): clear all-in flag
+        cs.pop("high_velocity_all_in", None)
+        # Card 211 (Sales Engagement): clear per-turn engagement flag
+        cs.pop("sales_engagement_active", None)
+        # Card 226 (Shortcut): consume extra plays granted this turn
+        cs.pop("shortcut_extra_plays", None)
+        # Card 215 (B2B Analytics): decrement target reveal turns
+        _ba = cs.get("b2b_analytics_turns", 0)
+        if _ba > 0:
+            _ba -= 1
+            if _ba <= 0:
+                cs.pop("b2b_analytics_turns", None)
+                cs.pop("b2b_analytics_target_id", None)
+            else:
+                cs["b2b_analytics_turns"] = _ba
+        # Card 227 (Anypoint Visualizer): clear per-turn flag
+        cs.pop("anypoint_visualizer_active", None)
+        # Card 213 (Cadence): track turns without combat
+        if not player.is_in_combat:
+            cs["cadence_no_combat_turns"] = cs.get("cadence_no_combat_turns", 0) + 1
+        else:
+            cs["cadence_no_combat_turns"] = 0
         player.combat_state = cs
 
     # Card 209 (Activity Score): track consecutive turns where player played at least 1 card

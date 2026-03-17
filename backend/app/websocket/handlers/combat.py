@@ -630,13 +630,15 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
     # Card 151 (Hyperforce Migration): suppress boss threshold bonuses and boss ability for N rounds
     _hyperforce_until = (player.combat_state or {}).get("hyperforce_until_round", 0)
     _hyperforce_active = _hyperforce_until >= current_round
+    # Card 220 (Grounding Data): freeze all threshold modifications for N turns
+    _grounding_active = (player.combat_state or {}).get("grounding_data_until_turn", 0) >= game.turn_number
     # Card 15 (Scope Creep): opponent raised threshold for this roll only
     _scope_creep_until = (player.combat_state or {}).get("boss_threshold_increase_until_round", 0)
-    if _scope_creep_until >= current_round and not _hyperforce_active:
+    if _scope_creep_until >= current_round and not _hyperforce_active and not _grounding_active:
         threshold += 2
     # Card 38 (Consulting Hours) / Card 91 (Guided Selling): threshold reduction for N rounds
     _consulting_until = (player.combat_state or {}).get("consulting_hours_until_round", 0)
-    if _consulting_until >= current_round:
+    if _consulting_until >= current_round and not _grounding_active:
         threshold -= (player.combat_state or {}).get("consulting_hours_threshold_reduction", 2)
     # Card 96 (Review App): threshold -2 for round 1 only
     if (player.combat_state or {}).get("review_app_active") and current_round == 1:

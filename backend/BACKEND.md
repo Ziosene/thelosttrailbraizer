@@ -135,15 +135,15 @@ backend/
 │       ├── __init__.py           ✅
 │       ├── engine.py             ✅ funzioni pure core (~165 righe): roll, combat, deck, death, ELO + re-export engine_boss
 │       ├── engine_boss.py        ✅ boss ability system (~1000 righe): tutti i 100 boss, query helper, apply_boss_ability
-│       └── engine_cards/         ✅ effetti carte azione (210/300 implementate)
+│       └── engine_cards/         ✅ effetti carte azione (230/300 implementate)
 │           ├── __init__.py       ✅ dispatcher apply_action_card_effect
 │           ├── helpers.py        ✅ get_target()
-│           ├── economica.py      ✅ carte 1–8, 41–48, 81–88, 121–125, 159–168, 208–210
-│           ├── offensiva.py      ✅ carte 9–18, 49–54, 89–95, 126–130, 141–150, 191–195
+│           ├── economica.py      ✅ carte 1–8, 41–48, 81–88, 121–125, 159–168, 208–214, 230
+│           ├── offensiva.py      ✅ carte 9–18, 49–54, 89–95, 126–130, 141–150, 191–195, 228
 │           ├── difensiva.py      ✅ carte 19–25, 55–58, 96–100, 131–135, 151–158, 201–207
-│           ├── manipolazione.py  ✅ carte 26–30, 59–62, 101–105, 136, 169–171
-│           ├── utilita.py        ✅ carte 31–37, 63–69, 80, 106–110, 137–138, 172–180, 196–200
-│           └── interferenza.py   ✅ carte 38–40, 70–79, 111–120, 139–140, 181–190
+│           ├── manipolazione.py  ✅ carte 26–30, 59–62, 101–105, 136, 169–171, 216–220
+│           ├── utilita.py        ✅ carte 31–37, 63–69, 80, 106–110, 137–138, 172–180, 196–200, 215, 221, 223, 226–227
+│           └── interferenza.py   ✅ carte 38–40, 70–79, 111–120, 139–140, 181–190, 222, 224–225, 229
 ├── scripts/
 │   └── seed_cards.py             ✅ parser .md → insert DB (idempotente, safe re-run)
 └── tests/
@@ -603,6 +603,15 @@ MORTE DEL GIOCATORE
   - **Economica 208–210**: Smart Capture Form (208, +1L per giocatore con hand_revealed_this_turn), Activity Score (209, +4L se consecutive_turns_with_cards >= 3), Activity Timeline (210, recupera 1 carta da scarto + +1L).
   - **combat.py hooks**: `screen_flow_active` (roll ≥ 7 forzato), `sender_profile_threshold_reduction` (threshold -2 consume), `delivery_profile_block_active` (skip HP damage in miss, prima di environment_branch), `autolaunched_flow_ready` (auto -1HP boss se player.hp < 2 post-danno).
   - **turn.py hooks**: `landing_page_active` (cancella Offensiva → +2L al target), `feedback_management_remaining` (any card vs target → +1L, decrement), `web_studio_active` (+1L refund al target su Offensiva), `consecutive_turns_with_cards` (increment in end_turn se cards_played>0, else reset), `turns_not_attacked` (increment se hp==max_hp in end_turn, else reset), `hand_revealed_this_turn` (clear in end_turn).
+
+- [x] **Carte azione 211–230 — Batch 9 (Sales Cloud, Einstein AI, Slack, MuleSoft)**
+  - **Economica 211–214, 230**: Sales Engagement (211, ogni carta avversaria giocata contro di te → +1L), High Velocity Sales (212, fuori: +3L; in combat: boss -2HP ma no altre azioni), Cadence (213, +2L per ogni 2 turni senza combattere), Customer Lifecycle (214, +1L/fase da 5 turni max5), Client Application (230, +2L o +4L se avversario ha più addon).
+  - **Manipolazione 216–220**: Einstein Vision (216, soglia dado -1 permanente), Einstein Language (217, recupera scarto + next roll +1), Einstein Sentiment (218, boss ability disabilitata round successivo), Vector Database (219, recupera scarto + next roll +1), Grounding Data (220, soglia non modificabile per 2 turni).
+  - **Utilità 215, 221, 223, 226–227**: B2B Analytics (215, snapshot completo avversario per 1 turno), Workflow Step (221, prossima carta pescata si gioca gratis), App Home (223, +1L passivo ogni draw phase per tutta la partita), Shortcut (226, +2 slot carte questo turno), Anypoint Visualizer (227, grafo completo visibile 1 turno).
+  - **Interferenza 222, 224–225, 229**: Block Kit (222, riduce prossima carta avversario di 1 punto effetto), Canvas (224, boss semplificato 1HP+no ability), Huddle (225, tutti rivelano la mano), SLA Tier (229, tappa 1 addon del target).
+  - **Offensiva 228**: Runtime Fabric (228, boss -1HP; se HP>2 → -2HP).
+  - **combat.py hooks**: `grounding_data_until_turn` (sopprime scope_creep e consulting_hours se attivo).
+  - **turn.py hooks**: `high_velocity_all_in` (blocca ulteriori carte in play_card), `shortcut_extra_plays` (aumenta max_cards per il turno), `app_home_passive` (draw phase: +1L all'inizio), `sales_engagement_active` (ogni carta vs target → +1L a target), `block_kit_pending` (riduce 1L guadagnata dalla prossima carta del player). End_turn: cleanup di tutti i nuovi flag; `cadence_no_combat_turns` incrementato/resettato.
 
 - [ ] **Rate limiting WS** — un utente non dovrebbe poter inviare messaggi troppo veloci.
 

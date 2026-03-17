@@ -532,6 +532,74 @@ def _card_210(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "recovered_card_id": card_id, "licenze_gained": 1}
 
 
+def _card_211(player, game, db, *, target_player_id=None) -> dict:
+    """Sales Engagement — Ogni avversario che gioca una carta contro di te questo turno ti dà 1L.
+
+    Stores sales_engagement_active=True. turn.py play_card: if target has flag, +1L to target.
+    """
+    cs = dict(player.combat_state or {})
+    cs["sales_engagement_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "sales_engagement_active": True}
+
+
+def _card_212(player, game, db, *, target_player_id=None) -> dict:
+    """High Velocity Sales — Fuori combattimento: +3L. In combattimento: boss -2HP ma no altre azioni.
+
+    In combat: deals 2HP to boss, sets high_velocity_all_in=True (no more cards this turn).
+    """
+    if player.is_in_combat:
+        player.current_boss_hp = max(0, player.current_boss_hp - 2)
+        cs = dict(player.combat_state or {})
+        cs["high_velocity_all_in"] = True
+        player.combat_state = cs
+        return {"applied": True, "boss_damage": 2, "all_in": True}
+    player.licenze += 3
+    return {"applied": True, "licenze_gained": 3}
+
+
+def _card_213(player, game, db, *, target_player_id=None) -> dict:
+    """Cadence — Ogni 2 turni consecutivi senza combattere, guadagni 2 Licenze.
+
+    Checks cadence_no_combat_turns counter (incremented in end_turn when not in combat).
+    Awards 2L each time the counter reaches a multiple of 2.
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    cs = dict(player.combat_state or {})
+    counter = cs.get("cadence_no_combat_turns", 0)
+    reward = (counter // 2) * 2
+    if reward > 0:
+        player.licenze += reward
+        return {"applied": True, "licenze_gained": reward, "cadence_turns": counter}
+    return {"applied": False, "reason": "not_enough_turns", "cadence_turns": counter, "needed": 2}
+
+
+def _card_214(player, game, db, *, target_player_id=None) -> dict:
+    """Customer Lifecycle — +1L per ogni fase completata (ogni 5 turni, max 5).
+
+    Uses game.turn_number to count completed 5-turn phases.
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    phases = min(5, game.turn_number // 5)
+    if phases == 0:
+        return {"applied": False, "reason": "no_phases_completed", "turn": game.turn_number}
+    player.licenze += phases
+    return {"applied": True, "licenze_gained": phases, "phases_completed": phases}
+
+
+def _card_230(player, game, db, *, target_player_id=None) -> dict:
+    """Client Application — +2L; +4L se un avversario ha più AddOn di te."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    my_addons = len(list(player.addons))
+    max_opponent_addons = max((len(list(p.addons)) for p in game.players if p.id != player.id), default=0)
+    reward = 4 if max_opponent_addons > my_addons else 2
+    player.licenze += reward
+    return {"applied": True, "licenze_gained": reward, "my_addons": my_addons, "max_opp_addons": max_opponent_addons}
+
+
 ECONOMICA: dict = {
     1:   _card_1,
     2:   _card_2,
@@ -575,4 +643,9 @@ ECONOMICA: dict = {
     208: _card_208,
     209: _card_209,
     210: _card_210,
+    211: _card_211,
+    212: _card_212,
+    213: _card_213,
+    214: _card_214,
+    230: _card_230,
 }

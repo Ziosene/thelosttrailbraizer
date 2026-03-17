@@ -599,6 +599,80 @@ def _card_190(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "unification_rule_card_type": "Offensiva", "affected_players": len(list(game.players))}
 
 
+def _card_222(player, game, db, *, target_player_id=None) -> dict:
+    """Block Kit — Riduce l'effetto della prossima carta di un avversario di 1 punto.
+
+    Stores block_kit_pending=True in target's combat_state.
+    turn.py play_card: if target has block_kit_pending, -1L or -1HP to that card's effect.
+    """
+    if not target_player_id:
+        return {"applied": False, "reason": "target_required"}
+    from app.game.engine_cards.helpers import get_target
+    target = get_target(game, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "target_not_found"}
+    cs = dict(target.combat_state or {})
+    cs["block_kit_pending"] = True
+    target.combat_state = cs
+    return {"applied": True, "target_id": target.id, "block_kit_pending": True}
+
+
+def _card_224(player, game, db, *, target_player_id=None) -> dict:
+    """Canvas — Sostituisce boss con versione semplificata: 1HP e nessuna abilità per 1 combattimento.
+
+    Applied to the caster's current combat (or to target's next combat).
+    Sets boss_ability_disabled_until_round=9999 and forces current_boss_hp to 1.
+    """
+    if player.is_in_combat:
+        player.current_boss_hp = min(player.current_boss_hp or 1, 1)
+        cs = dict(player.combat_state or {})
+        cs["boss_ability_disabled_until_round"] = max(cs.get("boss_ability_disabled_until_round", 0), 9999)
+        player.combat_state = cs
+        return {"applied": True, "canvas_applied": True, "boss_hp_forced": 1}
+    # If not in combat, apply to target so it affects their next fight
+    if target_player_id:
+        from app.game.engine_cards.helpers import get_target
+        target = get_target(game, target_player_id)
+        if target:
+            cs = dict(target.combat_state or {})
+            cs["boss_ability_disabled_until_round"] = 9999
+            target.combat_state = cs
+            return {"applied": True, "target_id": target.id, "canvas_applied": True}
+    return {"applied": False, "reason": "not_in_combat_and_no_target"}
+
+
+def _card_225(player, game, db, *, target_player_id=None) -> dict:
+    """Huddle — Tutti i giocatori devono mostrare la propria mano per 1 turno.
+
+    Sets hand_revealed_this_turn=True for ALL players.
+    Client/broadcast uses this flag to show hands.
+    """
+    for gp in game.players:
+        cs = dict(gp.combat_state or {})
+        cs["hand_revealed_this_turn"] = True
+        gp.combat_state = cs
+    return {"applied": True, "players_revealed": len(list(game.players))}
+
+
+def _card_229(player, game, db, *, target_player_id=None) -> dict:
+    """SLA Tier — Degrada livello di servizio: target perde il bonus di 1 addon per questo turno.
+
+    Taps the most recently acquired untapped addon of target.
+    """
+    if not target_player_id:
+        return {"applied": False, "reason": "target_required"}
+    from app.game.engine_cards.helpers import get_target
+    target = get_target(game, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "target_not_found"}
+    untapped = [pa for pa in target.addons if not pa.is_tapped]
+    if not untapped:
+        return {"applied": False, "reason": "no_untapped_addons"}
+    # Tap the most recently acquired (last in list)
+    untapped[-1].is_tapped = True
+    return {"applied": True, "target_id": target.id, "tapped_addon_id": untapped[-1].addon_id}
+
+
 INTERFERENZA: dict = {
     38:  _card_38,
     39:  _card_39,
@@ -635,4 +709,8 @@ INTERFERENZA: dict = {
     188: _card_188,
     189: _card_189,
     190: _card_190,
+    222: _card_222,
+    224: _card_224,
+    225: _card_225,
+    229: _card_229,
 }

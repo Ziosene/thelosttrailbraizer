@@ -746,6 +746,75 @@ def _card_200(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "beneficiaries": len(beneficiaries), "drew": drew_count, "discarded": discarded}
 
 
+def _card_215(player, game, db, *, target_player_id=None) -> dict:
+    """B2B Analytics — Analisi completa avversario: vedi tutte le carte, AddOn e risorse per 1 turno.
+
+    Stores b2b_analytics_target_id + b2b_analytics_turns=1 in player.combat_state.
+    turn.py draw_card (or broadcast): send full target snapshot to the player. Cleared in end_turn.
+    """
+    if not target_player_id:
+        return {"applied": False, "reason": "target_required"}
+    from app.game.engine_cards.helpers import get_target
+    target = get_target(game, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "target_not_found"}
+    cs = dict(player.combat_state or {})
+    cs["b2b_analytics_target_id"] = target_player_id
+    cs["b2b_analytics_turns"] = 1
+    player.combat_state = cs
+    return {"applied": True, "b2b_analytics_target_id": target_player_id}
+
+
+def _card_221(player, game, db, *, target_player_id=None) -> dict:
+    """Workflow Step — La prossima carta che peschi si gioca automaticamente senza usare slot carta.
+
+    Stores workflow_step_active=True in combat_state.
+    turn.py draw_card: if flag set, auto-play drawn card and clear flag (no cards_played_this_turn increment).
+    """
+    cs = dict(player.combat_state or {})
+    cs["workflow_step_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "workflow_step_active": True}
+
+
+def _card_223(player, game, db, *, target_player_id=None) -> dict:
+    """App Home — +1L extra ogni volta che è il tuo turno (draw phase), per tutta la partita.
+
+    Stores app_home_passive=True in combat_state (persistent).
+    turn.py _handle_draw_card: if active player has flag, +1L before draw.
+    """
+    cs = dict(player.combat_state or {})
+    if cs.get("app_home_passive"):
+        return {"applied": False, "reason": "already_active"}
+    cs["app_home_passive"] = True
+    player.combat_state = cs
+    return {"applied": True, "app_home_passive": True}
+
+
+def _card_226(player, game, db, *, target_player_id=None) -> dict:
+    """Shortcut — Salta la fase di pesca e ottieni 2 azioni extra (slots carta) questo turno.
+
+    Stores shortcut_extra_plays=2. turn.py play_card: when checking max cards, add shortcut_extra_plays.
+    Cleared in end_turn.
+    """
+    cs = dict(player.combat_state or {})
+    cs["shortcut_extra_plays"] = cs.get("shortcut_extra_plays", 0) + 2
+    player.combat_state = cs
+    return {"applied": True, "shortcut_extra_plays": cs["shortcut_extra_plays"]}
+
+
+def _card_227(player, game, db, *, target_player_id=None) -> dict:
+    """Anypoint Visualizer — Visualizza il grafo completo: tutti gli AddOn, risorse, mani visibili per 1 turno.
+
+    Sets anypoint_visualizer_active=True in player.combat_state.
+    The broadcast hook will include full game state. Cleared in end_turn.
+    """
+    cs = dict(player.combat_state or {})
+    cs["anypoint_visualizer_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "anypoint_visualizer_active": True}
+
+
 UTILITA: dict = {
     31:  _card_31,
     32:  _card_32,
@@ -783,4 +852,9 @@ UTILITA: dict = {
     198: _card_198,
     199: _card_199,
     200: _card_200,
+    215: _card_215,
+    221: _card_221,
+    223: _card_223,
+    226: _card_226,
+    227: _card_227,
 }

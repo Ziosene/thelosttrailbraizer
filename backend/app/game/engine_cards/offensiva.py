@@ -652,6 +652,19 @@ def _card_195(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "effect": "licenze_1"}
 
 
+def _card_228(player, game, db, *, target_player_id=None) -> dict:
+    """Runtime Fabric — Deploy ovunque: boss -1HP; se HP > 2 → -2HP invece.
+
+    Adaptive damage based on remaining boss HP.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    current_hp = player.current_boss_hp or 0
+    damage = 2 if current_hp > 2 else 1
+    player.current_boss_hp = max(0, current_hp - damage)
+    return {"applied": True, "boss_damage": damage, "boss_hp_before": current_hp}
+
+
 OFFENSIVA: dict = {
     9:   _card_9,
     10:  _card_10,
@@ -696,4 +709,5 @@ OFFENSIVA: dict = {
     193: _card_193,
     194: _card_194,
     195: _card_195,
+    228: _card_228,
 }
