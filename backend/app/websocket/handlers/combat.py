@@ -522,6 +522,18 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                 "reason": "agentforce_rebellion",
             })
 
+    # Boss 65 (Einstein Vision Stalker): predict above/below 5 each round; correct → -1L
+    if round_start["predicts_roll_direction"]:
+        _stalker_pred = "above" if random.randint(0, 1) == 0 else "below"
+        cs = dict(player.combat_state or {})
+        cs["stalker_prediction"] = _stalker_pred
+        player.combat_state = cs
+        await manager.broadcast(game.code, {
+            "type": "stalker_prediction",
+            "player_id": player.id,
+            "prediction": _stalker_pred,
+        })
+
     # Boss 58 (Prompt Builder Djinn): roll d4 each round → set random threshold
     if round_start["randomize_threshold"]:
         _d4 = random.randint(1, 4)
@@ -804,6 +816,20 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
     result = engine.resolve_combat_round(roll, threshold)
     if _lurker_miss:
         result = "miss"  # Boss 56: duplicate roll → forced miss
+
+    # Boss 65 (Einstein Vision Stalker): if prediction matches roll direction → player -1L
+    _stalker_pred = (player.combat_state or {}).get("stalker_prediction")
+    if _stalker_pred:
+        _pred_correct = (
+            (_stalker_pred == "above" and roll > 5) or
+            (_stalker_pred == "below" and roll < 5)
+        )
+        if _pred_correct:
+            player.licenze = max(0, player.licenze - 1)
+        cs = dict(player.combat_state)
+        cs.pop("stalker_prediction", None)
+        player.combat_state = cs
+
     player.combat_round += 1
 
     player_took_damage = False

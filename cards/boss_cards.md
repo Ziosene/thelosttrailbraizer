@@ -675,11 +675,11 @@
 
 ---
 
-### 65. The Einstein Vision Stalker
+### 65. The Einstein Vision Stalker 🏆
 - **HP**: 4
 - **Soglia dado**: 6+
-- **Abilità**: Vede tutto — all'inizio di ogni round rivela la carta azione che il combattente sta per giocare e la annulla se è offensiva
-- **Ricompensa**: 3 Licenze
+- **Abilità**: Predizione direzionale — all'inizio di ogni round, il boss prevede se il prossimo tiro sarà "sopra 5" o "sotto 5" (determinato casualmente). Se indovina, il combattente perde 1 Licenza.
+- **Ricompensa**: 4 Licenze + **1 Certificazione**
 - **Difficoltà**: Media
 - **Image prompt**: `A 2D hand-drawn monster in the distinctive art style of The Binding of Isaac. The monster is "The Einstein Vision Stalker": a surveillance monster with multiple camera-lens eyes covering its entire head, each eye a different computer vision model scanning for offensive moves. It sees through disguises and cancels any offensive action before it can land. Thick black outlines, grotesque but cartoonish, flat shading, plain off-white parchment background. Indie game card art.`
 

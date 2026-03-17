@@ -641,6 +641,28 @@ MORTE DEL GIOCATORE
   - **turn.py hooks**: `isv_ecosystem_active` (272: costo addon=5 one-shot), `ohana_truce_caster_id`+`ohana_truce_until_turn` (271: blocca Offensiva verso caster), `trust_first_active` (295: annulla prima Offensiva), `queueable_job_plays_remaining` (283: salta reaction window), `not_found_active` (287: blocca targeting in/out).
   - **end_turn cleanups**: `isv_ecosystem_active`, `trailhead_quest_cards_played`, `not_found_active`+`not_found_until_turn` (se scaduti), `ohana_truce_caster_id`+`ohana_truce_until_turn` (se scaduti).
 
+- [x] **Boss redesign — Batch (27, 31, 33, 38, 40, 41, 44, 45, 50, 52, 53, 54, 56, 58, 64, 65)**
+  - **Boss 27**: AoE HP damage cappato ai primi 2 round (era ogni round).
+  - **Boss 31**: alla morte del combattente, il boss scarta anche l'addon bloccato (oltre alla penalità normale di morte).
+  - **Boss 33**: esplicitato che il numero massimo di carte dichiarabili per round è 2.
+  - **Boss 38**: abilità di annullamento ora attiva solo nei round pari (2, 4, 6, …).
+  - **Boss 40**: ridotto a 6HP, soglia 5+ (era 8HP/6+).
+  - **Boss 41**: nuova abilità "rivela e blocca" — il boss rivela la carta del combattente; gli avversari in ordine di turno possono pagare 1L per bloccarla; la carta viene scartata.
+  - **Boss 44**: abilità semplificata — un avversario casuale guadagna +2L all'inizio del combattimento (one-shot).
+  - **Boss 45**: nuova abilità "addon licenze drain" — all'inizio di ogni round, se il combattente ha addon attivi ne perde 1L per addon.
+  - **Boss 50**: AoE ogni 3 round (era ogni round).
+  - **Boss 52**: aggiunta 1 Certificazione alla ricompensa + 🏆.
+  - **Boss 53**: nuova abilità "predizione round" — all'inizio del combattimento il giocatore dichiara quanti round durerà; se entro ±1 → +3L, altrimenti -2L.
+  - **Boss 54**: nuova meccanica "worst_of_2" — ogni roll tira 2d10 e usa il peggiore.
+  - **Boss 56**: nuova meccanica "duplicate roll → auto miss" — ogni numero già tirato in questo combattimento causa miss automatico.
+  - **Boss 58**: nuova abilità "soglia random" — ogni round tira 1d4 e la soglia diventa il risultato+6 (7–10); `djinn_threshold` in combat_state.
+  - **Boss 64**: nuova abilità "costo crescente" — ogni carta azione giocata in combattimento costa +N licenze cumulative (1ª→+1L, 2ª→+2L, …).
+  - **Boss 65**: nuova abilità "predizione direzionale" — ogni round il boss prevede casualmente sopra/sotto 5; se indovina, il combattente perde 1L. Aggiunta 1 Certificazione + 🏆.
+  - **engine_boss.py**: aggiornati `apply_boss_ability`, `boss_roll_mode`, `boss_tracks_duplicate_rolls`, `boss_card_play_escalating_cost`, `predicts_roll_direction`, `randomize_threshold`.
+  - **combat.py hooks**: `aoe_all_hp_damage` cap round≤2 (27), locked_addon_discard on death (31), `addon_licenze_drain` (45), AoE ogni 3 round (50), `request_round_prediction` at combat_start (53), `worst_of_2` roll mode (54), `lurker_rolled_numbers` duplicate tracking (56), `djinn_threshold` random (58), `stalker_prediction` outcome check -1L (65).
+  - **turn.py hooks**: boss 41 reveal-and-block flow, `maelstrom_cards_played_combat` escalating cost (64).
+  - **seed_cards.py**: upsert aggiornato per sincronizzare anche `has_certification` e `reward_licenze` su record esistenti.
+
 - [ ] **Rate limiting WS** — un utente non dovrebbe poter inviare messaggi troppo veloci.
 
 ---

@@ -58,6 +58,7 @@ _EMPTY_EFFECT: dict = {
     "request_round_prediction": False,  # boss 53: player declares predicted round count; ±1 → +3L, else -2L
     "invert_random_hand_card": False,   # invert the effect of 1 random card in combatant's hand for this combat
     "randomize_threshold": False,       # boss 58: roll d4 each round to set new threshold (1→2,2→4,3→6,4→8)
+    "predicts_roll_direction": False,   # boss 65: predicts above/below 5 each round; correct → player -1L
     "exam_roll": False,             # handler rolls d10 before combat: ≥7 → player +1 HP; ≤3 → player -1 HP
     "deal_offer": False,            # boss offers 1 free licenza; if accepted, threshold +1 this round (player chooses)
     "bonus_hp_per_player_addon": False,  # boss starts combat with +1 HP for each addon the combatant owns
@@ -418,9 +419,6 @@ def boss_cancels_offensive_if_revealed(boss_id: int) -> bool:
     Returns True if the boss reveals the intended action card before it resolves
     and automatically cancels it if it is an offensive card (card is still consumed).
     """
-    match boss_id:
-        case 65:  # The Einstein Vision Stalker
-            return True
     return False
 
 
@@ -854,6 +852,12 @@ def apply_boss_ability(
         # TODO: implement client accept/reject flow; currently auto-accepts for simplicity.
         case (63, "on_round_start"):
             return _boss_effect(deal_offer=True)
+
+        # ── Boss 65 — The Einstein Vision Stalker ─────────────────────────────
+        # Each round: boss predicts "above 5" or "below 5" randomly.
+        # If the prediction matches the dice result, player loses 1L.
+        case (65, "on_round_start"):
+            return _boss_effect(predicts_roll_direction=True)
 
         # ── Boss 68 — The Schema Builder Monstrosity ──────────────────────────
         # At combat start: boss HP increases by 1 for each addon the combatant owns.
