@@ -548,20 +548,14 @@ def _card_212(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_213(player, game, db, *, target_player_id=None) -> dict:
-    """Cadence — Ogni 2 turni consecutivi senza combattere, guadagni 2 Licenze.
+    """Cadence — +1L per ogni turno trascorso senza combattere in questa partita (max 6).
 
-    Checks cadence_no_combat_turns counter (incremented in end_turn when not in combat).
-    Awards 2L each time the counter reaches a multiple of 2.
+    Reads cadence_no_combat_turns counter (incremented in end_turn when not in combat).
     """
-    if player.is_in_combat:
-        return {"applied": False, "reason": "in_combat"}
-    cs = dict(player.combat_state or {})
-    counter = cs.get("cadence_no_combat_turns", 0)
-    reward = (counter // 2) * 2
-    if reward > 0:
-        player.licenze += reward
-        return {"applied": True, "licenze_gained": reward, "cadence_turns": counter}
-    return {"applied": False, "reason": "not_enough_turns", "cadence_turns": counter, "needed": 2}
+    counter = (player.combat_state or {}).get("cadence_no_combat_turns", 0)
+    reward = min(6, counter)
+    player.licenze += reward
+    return {"applied": True, "licenze_gained": reward, "cadence_turns": counter}
 
 
 def _card_214(player, game, db, *, target_player_id=None) -> dict:

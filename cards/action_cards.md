@@ -2083,8 +2083,8 @@
 
 ### 213. Cadence
 - **Tipo**: Economica
-- **Quando**: Fuori dal combattimento
-- **Effetto**: Ogni 2 turni consecutivi senza combattere, guadagni 2 Licenze (effetto cumulativo, si attiva automaticamente)
+- **Quando**: Durante il tuo turno
+- **Effetto**: Guadagna 1 Licenza per ogni turno trascorso senza combattere in questa partita (max 6).
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn rhythmic cadence ticker in the art style of The Binding of Isaac. A metronome counting two peaceful turns and automatically releasing two coins as a passive cadence reward, stacking with each cycle. Thick black outlines, flat shading, steady rhythm mood. Plain off-white parchment background. Indie game card art.`
 
