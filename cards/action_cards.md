@@ -266,7 +266,7 @@
 ### 25. Backup & Restore
 - **Tipo**: Difensiva
 - **Quando**: In qualsiasi momento
-- **Effetto**: Recupera 1 carta, 1 Licenza e 1 HP persi nell'ultimo turno in cui sei morto
+- **Effetto**: Recupera 1 HP e pesca 1 carta
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn backup drive beaming back a card, a coin, and a heart simultaneously in the art style of The Binding of Isaac. A glowing external drive projecting three recovered items upward — one action card, one license coin, one HP heart. Thick black outlines, flat shading, miraculous mood. Plain off-white parchment background. Indie game card art.`
 

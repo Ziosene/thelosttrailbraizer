@@ -85,34 +85,18 @@ def _card_24(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_25(player, game, db, *, target_player_id=None) -> dict:
-    """Backup & Restore — Recupera 1 carta, 1 Licenza e 1 HP dall'ultimo turno in cui sei morto.
-
-    Approximation: +1 HP, +1 Licenza, draw 1 card from action_discard into hand.
-    Exact restoration of per-death penalties is not tracked persistently; this is the
-    closest mechanical equivalent without a dedicated DB field.
-    """
+    """Backup & Restore — Recupera 1 HP e pesca 1 carta."""
     from app.models.game import PlayerHandCard
 
-    result: dict = {"applied": True}
-
-    # +1 HP
-    healed = min(1, player.max_hp - player.hp)
     player.hp = min(player.max_hp, player.hp + 1)
-    result["hp_restored"] = healed
 
-    # +1 Licenza
-    player.licenze += 1
-    result["licenze_gained"] = 1
+    drew = 0
+    src = game.action_deck_1 if game.action_deck_1 else game.action_deck_2
+    if src:
+        db.add(PlayerHandCard(player_id=player.id, action_card_id=src.pop(0)))
+        drew = 1
 
-    # Recover 1 card from discard (most recently discarded)
-    discard = list(game.action_discard or [])
-    if discard:
-        recovered_id = discard.pop(-1)
-        game.action_discard = discard
-        db.add(PlayerHandCard(player_id=player.id, action_card_id=recovered_id))
-        result["card_recovered"] = recovered_id
-
-    return result
+    return {"applied": True, "hp_restored": 1, "drew": drew}
 
 
 def _card_55(player, game, db, *, target_player_id=None) -> dict:
