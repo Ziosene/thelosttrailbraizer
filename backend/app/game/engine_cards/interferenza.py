@@ -772,6 +772,24 @@ def _card_278(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "licenze_each": 1, "players_affected": len(list(game.players))}
 
 
+def _card_98(player, game, db, *, target_player_id=None) -> dict:
+    """Pause Element — Un avversario in combattimento salta 1 round (né lui né il boss perdono HP).
+
+    Stores pause_element_rounds_remaining=1 in target's combat_state.
+    combat.py: if flag > 0 on that player, nullifies the round (no roll processed), decrements flag.
+    """
+    target = get_target(game, player, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "no_target"}
+    if not target.is_in_combat:
+        return {"applied": False, "reason": "target_not_in_combat"}
+    cs = dict(target.combat_state or {})
+    cs["pause_element_rounds_remaining"] = cs.get("pause_element_rounds_remaining", 0) + 1
+    target.combat_state = cs
+    return {"applied": True, "target_player_id": target.id,
+            "pause_element_rounds_remaining": cs["pause_element_rounds_remaining"]}
+
+
 INTERFERENZA: dict = {
     38:  _card_38,
     39:  _card_39,
@@ -786,6 +804,7 @@ INTERFERENZA: dict = {
     77:  _card_77,
     78:  _card_78,
     79:  _card_79,
+    98:  _card_98,
     111: _card_111,
     112: _card_112,
     113: _card_113,

@@ -19,6 +19,7 @@
 - **Carta 93** (Live Message): chiarito che la carta ceduta va al caster; rimosso TODO — ora implementato con flag `live_message_pending_caster_id` in combat_state del target; ClientAction `live_message_respond` gestisce la scelta
 - **Carta 94** (Territory Assignment Rule): redesign — da "assegna boss a avversario con penale" a `guarda i primi 3 boss di un mazzo e scegli quale pescare`; flag `territory_pending_choices` in combat_state; ClientAction `territory_assignment_pick`
 - **Carta 97** (Fault Path): nerf — da "per tutto il combattimento" a `3 tiri falliti`; flag `fault_path_remaining=3` (contatore) al posto di `fault_path_active` (bool); combat.py decrementa e rimuove a 0
+- **Carta 98** (Pause Element): spostata da Difensiva a Interferenza — ora si usa su un avversario in combattimento per fargli saltare 1 round; spostata da `difensiva.py` a `interferenza.py`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
 

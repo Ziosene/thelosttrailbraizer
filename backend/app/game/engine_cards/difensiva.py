@@ -183,19 +183,6 @@ def _card_97(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "fault_path_remaining": cs["fault_path_remaining"]}
 
 
-def _card_98(player, game, db, *, target_player_id=None) -> dict:
-    """Pause Element — Round neutro: né tu né il boss perdete HP.
-
-    Stores pause_element_rounds_remaining=1 in combat_state.
-    combat.py: if flag > 0, acts as round_nullified, decrements flag.
-    """
-    if not player.is_in_combat:
-        return {"applied": False, "reason": "not_in_combat"}
-    cs = dict(player.combat_state or {})
-    cs["pause_element_rounds_remaining"] = cs.get("pause_element_rounds_remaining", 0) + 1
-    player.combat_state = cs
-    return {"applied": True, "pause_element_rounds_remaining": cs["pause_element_rounds_remaining"]}
-
 
 def _card_99(player, game, db, *, target_player_id=None) -> dict:
     """Web-to-Case — La prossima azione offensiva contro di te viene annullata (bloccata prima di colpirti).
@@ -591,7 +578,6 @@ DIFENSIVA: dict = {
     58:  _card_58,
     96:  _card_96,
     97:  _card_97,
-    98:  _card_98,
     99:  _card_99,
     100: _card_100,
     131: _card_131,

@@ -975,9 +975,9 @@
 ---
 
 ### 98. Pause Element
-- **Tipo**: Difensiva
-- **Quando**: Durante combattimento
-- **Effetto**: Metti in pausa il combattimento per 1 round — né tu né il boss perdete HP in quel round
+- **Tipo**: Interferenza
+- **Quando**: Fuori dal proprio turno
+- **Effetto**: Un avversario in combattimento salta 1 round — né lui né il boss perdono HP in quel round
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn pause button in the art style of The Binding of Isaac. A giant pause symbol frozen in mid-combat between a player and a boss, both locked in place with clocks stopped and health bars unchanged. Thick black outlines, flat shading, tense standoff mood. Plain off-white parchment background. Indie game card art.`
 
