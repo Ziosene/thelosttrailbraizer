@@ -437,13 +437,10 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             "prediction": prediction,
         })
 
-    # Boss 93 (Subscription Management Tormentor): pay 1 licenza or take 2 HP
+    # Boss 93 (Subscription Management Tormentor): if player has 0 licenze, take 1 HP
     if round_start["subscription_drain"] > 0:
-        n_sub = round_start["subscription_drain"]
-        if player.licenze >= n_sub:
-            player.licenze -= n_sub
-        else:
-            player.hp = max(0, player.hp - 2 * n_sub)
+        if player.licenze == 0:
+            player.hp = max(0, player.hp - 1)
 
     # Boss 100 (Omega): apply last legendary boss's on_round_start effects in parallel
     if engine.boss_is_omega(boss.id) and game.last_defeated_legendary_boss_id:
@@ -461,11 +458,8 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             else:
                 player.hp = max(0, player.hp - n)
         if omega_rs["subscription_drain"] > 0:
-            ns = omega_rs["subscription_drain"]
-            if player.licenze >= ns:
-                player.licenze -= ns
-            else:
-                player.hp = max(0, player.hp - 2 * ns)
+            if player.licenze == 0:
+                player.hp = max(0, player.hp - 1)
 
     # Boss 55 / Boss 74: apply shadow copy's on_round_start effects
     if copy_boss_id:
@@ -491,11 +485,8 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             else:
                 player.hp = max(0, player.hp - copy_rs["force_discard_or_damage"])
         if copy_rs["subscription_drain"] > 0:
-            ns = copy_rs["subscription_drain"]
-            if player.licenze >= ns:
-                player.licenze -= ns
-            else:
-                player.hp = max(0, player.hp - 2 * ns)
+            if player.licenze == 0:
+                player.hp = max(0, player.hp - 1)
 
     # Boss 45 (Agentforce Rebellion): each owned addon costs 1L/round; can't pay → addon tapped
     threshold_bonus = 0
