@@ -42,6 +42,7 @@
 - **Carta 199** (Segment Builder): redesign — da "dividi mazzo in 2 pile" (complesso) a `scarta fino a 3 carte e pesca lo stesso numero`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
+- **Carta 201** (Web Studio): redesign — da "slot addon permanente" (non implementabile) a `+1 slot carta questo turno`; flag `web_studio_extra_card` in combat_state; turn.py aggiunge 1 a `max_cards` e cancella il flag a fine turno
 
 ---
 

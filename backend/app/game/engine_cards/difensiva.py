@@ -415,15 +415,16 @@ def _card_158(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_201(player, game, db, *, target_player_id=None) -> dict:
-    """Web Studio — Carte offensive avversarie fanno 1 danno in meno per questo turno (min 0).
+    """Web Studio — Nel prossimo turno puoi giocare fino a 3 carte invece di 2.
 
-    Stores web_studio_active=True in combat_state.
-    turn.py play_card: if targeting this player with Offensiva card and flag set, -1 to damage effect.
+    Stores web_studio_extra_card=True in combat_state.
+    turn.py _handle_play_card: if flag set, max_cards_per_turn = 3 (instead of 2).
+    Cleared at end of the following turn.
     """
     cs = dict(player.combat_state or {})
-    cs["web_studio_active"] = True
+    cs["web_studio_extra_card"] = True
     player.combat_state = cs
-    return {"applied": True, "web_studio_active": True}
+    return {"applied": True, "web_studio_extra_card": True}
 
 
 def _card_202(player, game, db, *, target_player_id=None) -> dict:

@@ -197,6 +197,9 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
         max_cards = min(max_cards, _api_limit)
     # Card 226 (Shortcut): bonus card plays this turn (skip draw = extra slots)
     max_cards += (player.combat_state or {}).get("shortcut_extra_plays", 0)
+    # Card 201 (Web Studio): +1 card slot this turn
+    if (player.combat_state or {}).get("web_studio_extra_card"):
+        max_cards += 1
     if player.cards_played_this_turn >= max_cards:
         await _error(game.code, user_id, "Card limit reached this turn")
         return
@@ -1079,6 +1082,8 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
         cs.pop("sales_engagement_active", None)
         # Card 226 (Shortcut): consume extra plays granted this turn
         cs.pop("shortcut_extra_plays", None)
+        # Card 201 (Web Studio): consume extra card slot granted this turn
+        cs.pop("web_studio_extra_card", None)
         # Card 215 (B2B Analytics): decrement target reveal turns
         _ba = cs.get("b2b_analytics_turns", 0)
         if _ba > 0:
