@@ -5,7 +5,15 @@
 
 ---
 
-## Sessione corrente — Bilanciamento boss (67–100)
+## Sessione corrente — Revisione carte azione (1–25)
+
+- **Carta 3** (Licenza Provvisoria): effetto `+3L (o +5L al primo turno)` → flat `+5L`
+- **Carta 10** (Patch di Emergenza): rimosso disable abilità boss, ora solo `-1HP`
+- **Carta 25** (Backup & Restore): effetto riscritto da "recupera carta/licenza/HP dall'ultimo turno di morte" a `+1HP + pesca 1 carta` (nessun tracking death in DB)
+
+---
+
+## Bilanciamento boss (67–100)
 
 - **Boss 67**: soglia dado `4+` → `6+`
 - **Boss 68**: soglia dado `6+` → `7+`, aggiunta 1 Certificazione + 🏆
