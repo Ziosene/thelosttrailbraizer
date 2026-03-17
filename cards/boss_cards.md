@@ -464,7 +464,7 @@
 ### 44. The SSO Doppelganger
 - **HP**: 3
 - **Soglia dado**: 5+
-- **Abilità**: All'inizio del combattimento, ruba l'identità del combattente — un avversario a scelta guadagna 2 Licenze come se stesse combattendo lui
+- **Abilità**: All'inizio del combattimento, un avversario a caso riceve 2 Licenze (il Doppelganger si è spacciato per te e qualcuno ne ha approfittato). Effetto unico, non si ripete.
 - **Ricompensa**: 2 Licenze
 - **Difficoltà**: Facile
 - **Image prompt**: `A 2D hand-drawn monster in the distinctive art style of The Binding of Isaac. The monster is "The SSO Doppelganger": a creature with two perfectly identical faces — one is the real player's face, one is the impostor — both wearing the same SSO login token around their neck. It causes confusion by performing the player's actions for the enemy's benefit. Thick black outlines, grotesque but cartoonish, flat shading, plain off-white parchment background. Indie game card art.`

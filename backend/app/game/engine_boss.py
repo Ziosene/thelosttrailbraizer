@@ -750,8 +750,7 @@ def apply_boss_ability(
             return _boss_effect(licenza_or_hp_drain=1)
 
         # ── Boss 44 — The SSO Doppelganger ───────────────────────────────────
-        # At combat start a random opponent gains 2 Licenze (the "stolen identity" reward).
-        # NOTE: card says "avversario a scelta" (opponent's choice); using random until UX ready.
+        # At combat start a random opponent gains 2 Licenze (one-shot, not repeated).
         case (44, "on_combat_start"):
             return _boss_effect(opponent_gains_licenza=2)
 
