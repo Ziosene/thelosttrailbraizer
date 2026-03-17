@@ -553,13 +553,10 @@ def _card_188(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_189(player, game, db, *, target_player_id=None) -> dict:
-    """Delete Records — Elimina 1 AddOn avversario; lui non può riacquistarlo per 3 turni.
+    """Delete Records — Elimina 1 AddOn avversario: torna nel mazzo addon.
 
-    Removes the first addon from target's inventory, returns it to addon_deck_1.
-    Stores deleted_addon_blocked_ids=[addon_id] and deleted_addon_block_turns_remaining=3
-    in target's combat_state.
-    turn.py buy_addon: if addon_id in deleted_addon_blocked_ids, reject purchase.
-    turn.py end_turn: decrements deleted_addon_block_turns_remaining; clears both when 0.
+    Removes the first addon from target's inventory and returns it to addon_deck_1.
+    No purchase restriction applied.
     """
     target = get_target(game, player, target_player_id)
     if not target:
@@ -573,12 +570,6 @@ def _card_189(player, game, db, *, target_player_id=None) -> dict:
     deck = list(game.addon_deck_1 or [])
     deck.append(removed_addon_id)
     game.addon_deck_1 = deck
-    cs = dict(target.combat_state or {})
-    blocked = list(cs.get("deleted_addon_blocked_ids") or [])
-    blocked.append(removed_addon_id)
-    cs["deleted_addon_blocked_ids"] = blocked
-    cs["deleted_addon_block_turns_remaining"] = 3
-    target.combat_state = cs
     return {"applied": True, "target_id": target.id, "removed_addon_id": removed_addon_id}
 
 

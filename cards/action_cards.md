@@ -1854,7 +1854,7 @@
 ### 189. Delete Records
 - **Tipo**: Interferenza
 - **Quando**: In qualsiasi momento
-- **Effetto**: Elimina permanentemente 1 AddOn avversario dalla partita — torna nel mazzo, lui non può riacquistarlo per 3 turni
+- **Effetto**: Elimina 1 AddOn avversario — torna nel mazzo addon disponibile per tutti
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn hard delete scene in the art style of The Binding of Isaac. A delete command striking an opponent's addon item and disintegrating it, a 3-turn cooldown timer stamped on the empty slot. Thick black outlines, flat shading, ruthless removal mood. Plain off-white parchment background. Indie game card art.`
 
