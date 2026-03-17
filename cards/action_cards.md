@@ -56,7 +56,7 @@
 ### 3. Forecasting Boost
 - **Tipo**: Economica
 - **Quando**: In qualsiasi momento (fuori da combattimento)
-- **Effetto**: Guadagna 3 Licenze. Se è il tuo primo turno senza combattere, guadagna 5 invece
+- **Effetto**: Guadagna 5 Licenze
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn crystal ball displaying an ascending revenue chart in the art style of The Binding of Isaac. A glowing forecast orb showing a steep upward trend, coins multiplying around it from 3 to 5. Thick black outlines, flat shading, optimistic mood. Plain off-white parchment background. Indie game card art.`
 

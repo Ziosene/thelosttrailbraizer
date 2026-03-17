@@ -19,12 +19,11 @@ def _card_2(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_3(player, game, db, *, target_player_id=None) -> dict:
-    """Forecasting Boost — +3L; +5L se è il primo turno (turn_number ≤ 1)."""
+    """Forecasting Boost — +5L."""
     if player.is_in_combat:
         return {"applied": False, "reason": "in_combat"}
-    amount = 5 if game.turn_number <= 1 else 3
-    player.licenze += amount
-    return {"applied": True, "licenze_gained": amount}
+    player.licenze += 5
+    return {"applied": True, "licenze_gained": 5}
 
 
 def _card_4(player, game, db, *, target_player_id=None) -> dict:
