@@ -235,18 +235,18 @@ def _card_105(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_136(player, game, db, *, target_player_id=None) -> dict:
-    """Service Forecast — Usa il valore medio (= soglia) invece di tirare il dado.
+    """Service Forecast — Scegli tu il risultato del dado (1-10), senza tirare.
 
-    Stores service_forecast_use_threshold=True in combat_state.
-    combat.py: after computing threshold, if flag set, roll=threshold (guaranteed hit/miss at border),
-    then clears the flag.
+    Stores service_forecast_choose_roll=True in combat_state.
+    combat.py: if flag set, skips the random roll and sends 'choose_roll_value' event to client;
+    client responds with 'service_forecast_pick' and a value [1-10]. Clears flag after use.
     """
     if not player.is_in_combat:
         return {"applied": False, "reason": "not_in_combat"}
     cs = dict(player.combat_state or {})
-    cs["service_forecast_use_threshold"] = True
+    cs["service_forecast_choose_roll"] = True
     player.combat_state = cs
-    return {"applied": True, "service_forecast_use_threshold": True}
+    return {"applied": True, "service_forecast_choose_roll": True}
 
 
 def _card_169(player, game, db, *, target_player_id=None) -> dict:

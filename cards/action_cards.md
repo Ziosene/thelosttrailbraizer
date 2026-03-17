@@ -1347,7 +1347,7 @@
 ### 136. Service Forecast
 - **Tipo**: Manipolazione dado
 - **Quando**: Durante combattimento
-- **Effetto**: Prima di tirare, puoi scegliere di usare il valore medio della soglia attuale invece di tirare il dado
+- **Effetto**: Scegli tu il risultato del dado questo round (qualsiasi valore da 1 a 10, senza tirare)
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn forecast chart in the art style of The Binding of Isaac. A prediction graph showing the average threshold value highlighted as a safe guaranteed result, skipping the random die roll. Thick black outlines, flat shading, cautious analytical mood. Plain off-white parchment background. Indie game card art.`
 
