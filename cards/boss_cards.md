@@ -705,11 +705,11 @@
 
 ---
 
-### 68. The Schema Builder Monstrosity
+### 68. The Schema Builder Monstrosity 🏆
 - **HP**: 5
-- **Soglia dado**: 6+
+- **Soglia dado**: 7+
 - **Abilità**: Per ogni AddOn che il combattente possiede, il boss guadagna +1 HP all'inizio del combattimento (la complessità si accumula)
-- **Ricompensa**: 4 Licenze
+- **Ricompensa**: 4 Licenze + **1 Certificazione**
 - **Difficoltà**: Media
 - **Image prompt**: `A 2D hand-drawn monster in the distinctive art style of The Binding of Isaac. The monster is "The Schema Builder Monstrosity": a tangled creature assembled entirely from entity-relationship diagram nodes and relationship lines. Every AddOn the player owns adds more complexity — more nodes — visibly making the creature larger and more overwhelming before the fight even begins. Thick black outlines, grotesque but cartoonish, flat shading, plain off-white parchment background. Indie game card art.`
 
