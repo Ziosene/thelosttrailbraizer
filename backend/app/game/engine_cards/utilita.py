@@ -684,20 +684,15 @@ def _card_196(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_197(player, game, db, *, target_player_id=None) -> dict:
-    """Create Records — Recupera 1 carta casuale dallo scarto azione e aggiungila alla mano (+1L jolly).
-
-    If no discard available, just grants +1L as the "base record" value.
-    """
+    """Create Records — Pesca 2 carte azione."""
     from app.models.game import PlayerHandCard as _PHC197
-    discard = list(game.action_discard or [])
-    if discard:
-        card_id = discard.pop(0)
-        game.action_discard = discard
-        db.add(_PHC197(player_id=player.id, action_card_id=card_id))
-        return {"applied": True, "recovered_card_id": card_id}
-    # Fallback: +1L jolly
-    player.licenze += 1
-    return {"applied": True, "licenze_gained": 1, "reason": "empty_discard_fallback"}
+    drew = 0
+    for _ in range(2):
+        src = game.action_deck_1 if game.action_deck_1 else game.action_deck_2
+        if src:
+            db.add(_PHC197(player_id=player.id, action_card_id=src.pop(0)))
+            drew += 1
+    return {"applied": True, "drew": drew}
 
 
 def _card_198(player, game, db, *, target_player_id=None) -> dict:

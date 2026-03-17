@@ -1932,7 +1932,7 @@
 ### 197. Create Records
 - **Tipo**: Utilità
 - **Quando**: Fuori dal combattimento
-- **Effetto**: Crea un record jolly — aggiungi 1 carta con effetto base (guadagna 1 Licenza) alla tua mano
+- **Effetto**: Pesca 2 carte azione
 - **Rarità**: Comune
 - **Image prompt**: `A 2D hand-drawn hand writing on a blank card that materializes from thin air in the art style of The Binding of Isaac. A glowing quill pen inscribing a simple coin symbol onto a freshly conjured floating card. Thick black outlines, flat shading, creative constructive mood. Plain off-white parchment background. Indie game card art.`
 
