@@ -240,20 +240,57 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
                     await _send_hand_state(game.code, player, db)
                     return
 
-        # Boss 41 (Quip Wisp): hand is visible to opponents — broadcast the card before it resolves
-        if engine.boss_hand_visible_to_opponents(player.current_boss_id):
+        # Boss 41 (Quip Wisp): reveal the card to all, then offer opponents (in turn order)
+        # the chance to pay 1L to cancel it. First to accept blocks the card (discarded).
+        if engine.boss_opponents_can_block_card(player.current_boss_id):
             hand_card_id_peek = data.get("hand_card_id")
             from app.models.game import PlayerHandCard as _PHC2
             hc_peek = db.get(_PHC2, hand_card_id_peek)
             if hc_peek:
                 card_peek = db.get(ActionCard, hc_peek.action_card_id)
-                opponents_ids = [p.user_id for p in game.players if p.id != player.id]
-                for opp_uid in opponents_ids:
-                    await manager.send_to_player(game.code, opp_uid, {
-                        "type": "card_declared",
-                        "player_id": player.id,
-                        "card": {"id": card_peek.id, "name": card_peek.name} if card_peek else {},
+                card_info = {"id": card_peek.id, "name": card_peek.name} if card_peek else {}
+                # Notify everyone (including combatant) that the card has been revealed
+                await manager.broadcast(game.code, {
+                    "type": "card_declared",
+                    "player_id": player.id,
+                    "card": card_info,
+                    "blockable": True,
+                    "cost": 1,
+                })
+                # Offer block in turn order starting from the player after the combatant
+                turn_order = game.turn_order or []
+                combatant_pos = turn_order.index(player.id) if player.id in turn_order else -1
+                ordered_ids = (
+                    turn_order[combatant_pos + 1:] + turn_order[:combatant_pos]
+                    if combatant_pos >= 0 else turn_order
+                )
+                _quip_blocked = False
+                for opp_pid in ordered_ids:
+                    opp = next((p for p in game.players if p.id == opp_pid and p.id != player.id), None)
+                    if not opp or opp.licenze < 1:
+                        continue
+                    await manager.send_to_player(game.code, opp.user_id, {
+                        "type": "quip_block_window_open",
+                        "card": card_info,
+                        "cost": 1,
+                        "timeout_ms": 5000,
                     })
+                    block_response = await open_reaction_window(game.code, opp.id, timeout=5.0)
+                    await manager.send_to_player(game.code, opp.user_id, {
+                        "type": "quip_block_window_closed",
+                    })
+                    if block_response and block_response.get("action") == "block":
+                        opp.licenze -= 1
+                        _quip_blocked = True
+                        await manager.broadcast(game.code, {
+                            "type": "card_blocked",
+                            "reason": "quip_wisp",
+                            "blocker_player_id": opp.id,
+                            "card": card_info,
+                        })
+                        break
+                if _quip_blocked:
+                    card_approved = False
 
         # Boss 65 (Einstein Vision Stalker): reveals card and cancels it if offensive
         if engine.boss_cancels_offensive_if_revealed(player.current_boss_id):

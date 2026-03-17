@@ -263,10 +263,10 @@ def boss_card_declared_before_roll(boss_id: int) -> bool:
     return False
 
 
-def boss_hand_visible_to_opponents(boss_id: int) -> bool:
+def boss_opponents_can_block_card(boss_id: int) -> bool:
     """
-    Returns True if opponents can see which action card the combatant intends to play
-    before it resolves (handler broadcasts a 'card_declared' event to non-combatants).
+    Returns True if opponents can see the declared card and pay 1L to cancel it
+    before it resolves. Opponents are offered the chance in turn order; first to pay wins.
     """
     match boss_id:
         case 41:  # The Quip Wisp

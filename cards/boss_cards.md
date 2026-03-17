@@ -434,7 +434,7 @@
 ### 41. The Quip Wisp
 - **HP**: 3
 - **Soglia dado**: 4+
-- **Abilità**: Ogni round, tutti gli avversari vedono quale carta azione il combattente intende giocare prima che venga giocata
+- **Abilità**: Ogni volta che il combattente gioca una carta azione, essa viene rivelata a tutti prima di risolversi. Ogni avversario (in ordine di turno) può pagare 1 Licenza per annullarla: il primo che paga la blocca e la carta viene scartata senza effetto. Se nessuno paga, la carta si risolve normalmente.
 - **Ricompensa**: 2 Licenze
 - **Difficoltà**: Facile
 - **Image prompt**: `A 2D hand-drawn monster in the distinctive art style of The Binding of Isaac. The monster is "The Quip Wisp": a mischievous will-o'-wisp made of glowing document pages and collaboration thread bubbles. It floats just out of reach, illuminating secrets it shouldn't, and its glow reveals everything the player tries to hide. Thick black outlines, grotesque but cartoonish, flat shading, plain off-white parchment background. Indie game card art.`
