@@ -2141,8 +2141,8 @@
 
 ### 219. Vector Database
 - **Tipo**: Manipolazione dado / Utilità
-- **Quando**: Fuori dal combattimento
-- **Effetto**: Cerca la carta più simile a quella appena giocata tra gli scarti e aggiungila alla mano; +1 al dado nel prossimo round
+- **Quando**: Durante il tuo turno
+- **Effetto**: Pesca 1 carta. Perdi 2 Licenze.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn semantic search in the art style of The Binding of Isaac. A vector grid scanning discard piles and highlighting the nearest matching card, pulling it back to hand while a die gains a bonus pip. Thick black outlines, flat shading, similarity-search mood. Plain off-white parchment background. Indie game card art.`
 

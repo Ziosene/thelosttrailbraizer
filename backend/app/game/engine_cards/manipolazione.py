@@ -340,22 +340,15 @@ def _card_218(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_219(player, game, db, *, target_player_id=None) -> dict:
-    """Vector Database — Cerca carta simile all'ultima giocata negli scarti + next roll +1.
-
-    Simplified: recovers first available card from action_discard + next_roll_bonus +1.
-    """
+    """Vector Database — Pesca 1 carta, perdi 2 Licenze."""
     from app.models.game import PlayerHandCard as _PHC219
-    cs = dict(player.combat_state or {})
-    drew = False
-    discard = list(game.action_discard or [])
-    if discard:
-        card_id = discard.pop(0)  # earliest = most "semantically similar"
-        game.action_discard = discard
-        db.add(_PHC219(player_id=player.id, action_card_id=card_id))
-        drew = True
-    cs["einstein_sto_next_roll_bonus"] = cs.get("einstein_sto_next_roll_bonus", 0) + 1
-    player.combat_state = cs
-    return {"applied": True, "drew_card": drew, "next_roll_bonus": 1}
+    deck = game.action_deck_1 or game.action_deck_2
+    if not deck:
+        return {"applied": False, "reason": "deck_empty"}
+    card_id = (game.action_deck_1 or game.action_deck_2).pop(0)
+    db.add(_PHC219(player_id=player.id, action_card_id=card_id))
+    player.licenze = max(0, player.licenze - 2)
+    return {"applied": True, "licenze_lost": 2}
 
 
 def _card_220(player, game, db, *, target_player_id=None) -> dict:
