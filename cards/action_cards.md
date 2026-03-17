@@ -756,7 +756,7 @@
 ### 75. Triggered Send
 - **Tipo**: Interferenza
 - **Quando**: Fuori dal proprio turno — quando un avversario pesca un boss
-- **Effetto**: Ruba 2 Licenze dalla ricompensa del boss appena pescato dall'avversario (prima che lui combatta)
+- **Effetto**: Scegli un avversario in combattimento — se sconfigge il boss, guadagni 2 Licenze dalla sua ricompensa
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn ambush theft in the art style of The Binding of Isaac. A quick hand snatching two coins from a reward chest before an opponent can open it, triggered by a boss card appearing. Thick black outlines, flat shading, swift mood. Plain off-white parchment background. Indie game card art.`
 

@@ -1243,6 +1243,17 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                 await _broadcast_state(game, db)
                 return  # combat ended — boss re-inserted, no rewards
 
+        # Card 75 (Triggered Send): thief gains 2L if they set the flag on this player
+        _ts_thief_id = (player.combat_state or {}).get("triggered_send_thief_id")
+        if _ts_thief_id:
+            _ts_thief = next((p for p in game.players if p.id == _ts_thief_id), None)
+            if _ts_thief:
+                _ts_thief.licenze += 2
+                await manager.send_to_player(_ts_thief.user_id, {"type": "triggered_send_reward", "licenze_gained": 2})
+            _cs75 = dict(player.combat_state)
+            _cs75.pop("triggered_send_thief_id", None)
+            player.combat_state = _cs75
+
         # Step 2: award Licenze reward
         player.licenze += boss.reward_licenze
         # Card 262 (World Tour Event): bonus +2L on boss defeat if event active; first combatant +1L extra

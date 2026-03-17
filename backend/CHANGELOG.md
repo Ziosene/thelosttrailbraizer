@@ -15,6 +15,7 @@
 - **Carta 53** (AMPscript Block): redesign — da "abilità si ritorce contro il boss" (non implementabile) a `blocca abilità boss per 2 round` (riusa flag `boss_ability_disabled_until_round`)
 - **Carta 60** (Einstein STO): redesign — da "+1 al prossimo tiro" a `tira 2 dadi, scegli quale usare`; flag `einstein_sto_dual_roll` in combat_state; combat.py invia `dual_roll_choice` al client e attende `choose_roll`
 - **Carta 71** (Anypoint MQ): redesign — da "forza carta in coda avversario" a `blocca avversario: non può giocare carte per 1 turno`; riusa flag `locked_out` già gestito da turn.py
+- **Carta 75** (Triggered Send): effetto modificato — le 2L si guadagnano solo se l'avversario bersaglio sconfigge il boss; flag `triggered_send_thief_id` in combat_state del target; hook in combat.py prima di Step 2
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
 

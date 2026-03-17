@@ -154,18 +154,20 @@ def _card_74(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_75(player, game, db, *, target_player_id=None) -> dict:
-    """Triggered Send — Ruba 2L dalla ricompensa boss di un avversario (prima che combatta).
+    """Triggered Send — Ruba 2L dalla ricompensa di un avversario se sconfigge il boss.
 
-    Simplified: steal 2L from target directly.
-    TODO: reactive trigger via event="on_opponent_drew_boss".
+    Stores triggered_send_thief_id=player.id in target's combat_state.
+    combat.py on boss_defeated: if flag set, transfer 2L from target to thief, clear flag.
     """
     target = get_target(game, player, target_player_id)
     if not target:
         return {"applied": False, "reason": "no_target"}
-    stolen = min(2, target.licenze)
-    target.licenze -= stolen
-    player.licenze += stolen
-    return {"applied": True, "target_player_id": target.id, "licenze_stolen": stolen}
+    if not target.is_in_combat:
+        return {"applied": False, "reason": "target_not_in_combat"}
+    cs = dict(target.combat_state or {})
+    cs["triggered_send_thief_id"] = player.id
+    target.combat_state = cs
+    return {"applied": True, "target_player_id": target.id, "triggered_send_thief_id": player.id}
 
 
 def _card_76(player, game, db, *, target_player_id=None) -> dict:
