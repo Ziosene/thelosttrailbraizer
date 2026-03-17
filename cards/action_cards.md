@@ -1115,7 +1115,7 @@
 ### 112. Visitor Activity
 - **Tipo**: Interferenza
 - **Quando**: Fuori dal proprio turno
-- **Effetto**: Per 1 turno, un avversario deve dichiarare ogni carta che intende giocare prima di giocarla
+- **Effetto**: Un avversario scarta 2 carte a caso dalla sua mano
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn transparency enforcement in the art style of The Binding of Isaac. An opponent forced to hold up each card for announcement before playing it, a spotlight shining on them. Thick black outlines, flat shading, transparent accountability mood. Plain off-white parchment background. Indie game card art.`
 

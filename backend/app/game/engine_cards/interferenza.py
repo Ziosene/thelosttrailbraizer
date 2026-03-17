@@ -243,18 +243,23 @@ def _card_111(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_112(player, game, db, *, target_player_id=None) -> dict:
-    """Visitor Activity — Per 1 turno, un avversario deve dichiarare ogni carta prima di giocarla.
+    """Visitor Activity — Un avversario scarta 2 carte a caso dalla sua mano.
 
-    Stores visitor_activity_turns=1 in target's combat_state (client-side enforcement signal).
-    turn.py draw_card: decrements visitor_activity_turns at start of affected turn.
+    Picks up to 2 random cards from target's hand and deletes them (discarded).
     """
+    import random as _rnd112
     target = get_target(game, player, target_player_id)
     if not target:
         return {"applied": False, "reason": "no_target"}
-    cs = dict(target.combat_state or {})
-    cs["visitor_activity_turns"] = 1
-    target.combat_state = cs
-    return {"applied": True, "target_player_id": target.id, "visitor_activity_turns": 1}
+    hand = list(target.hand)
+    if not hand:
+        return {"applied": False, "reason": "target_hand_empty"}
+    to_discard = _rnd112.sample(hand, min(2, len(hand)))
+    discarded = []
+    for hc in to_discard:
+        discarded.append(hc.action_card_id)
+        db.delete(hc)
+    return {"applied": True, "target_player_id": target.id, "discarded": discarded}
 
 
 def _card_113(player, game, db, *, target_player_id=None) -> dict:
