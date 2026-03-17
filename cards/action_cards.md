@@ -2016,8 +2016,8 @@
 
 ### 206. Landing Page
 - **Tipo**: Difensiva / Economica
-- **Quando**: Fuori dal proprio turno
-- **Effetto**: Il prossimo avversario che ti attacca invece ti dà 2 Licenze (effetto singolo, poi scartata)
+- **Quando**: Durante il tuo turno
+- **Effetto**: Pesca 3 carte azione. Perdi 3 Licenze.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn conversion landing page in the art style of The Binding of Isaac. An opponent launching an attack that gets redirected to a conversion funnel, spitting out two coins as payment instead of damage. Thick black outlines, flat shading, monetized defense mood. Plain off-white parchment background. Indie game card art.`
 

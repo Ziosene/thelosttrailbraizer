@@ -484,14 +484,18 @@ def _card_205(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_206(player, game, db, *, target_player_id=None) -> dict:
-    """Landing Page — Il prossimo avversario che ti attacca ti dà 2 Licenze invece di danno.
-
-    Stores landing_page_active=True. turn.py play_card: if Offensiva targeting this player and flag, +2L instead.
-    """
-    cs = dict(player.combat_state or {})
-    cs["landing_page_active"] = True
-    player.combat_state = cs
-    return {"applied": True, "landing_page_active": True}
+    """Landing Page — Pesca 3 carte, perdi 3 Licenze."""
+    from app.models.game import PlayerHandCard
+    drawn = []
+    for deck in (game.action_deck_1, game.action_deck_2) * 3:
+        if len(drawn) >= 3:
+            break
+        if deck:
+            drawn.append(deck.pop(0))
+    for card_id in drawn:
+        db.add(PlayerHandCard(player_id=player.id, action_card_id=card_id))
+    player.licenze = max(0, player.licenze - 3)
+    return {"applied": True, "cards_drawn": len(drawn), "licenze_lost": 3}
 
 
 def _card_207(player, game, db, *, target_player_id=None) -> dict:
