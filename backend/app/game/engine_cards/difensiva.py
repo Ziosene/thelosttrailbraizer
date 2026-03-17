@@ -442,6 +442,96 @@ def _card_158(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "runtime_manager_ready": True}
 
 
+def _card_201(player, game, db, *, target_player_id=None) -> dict:
+    """Web Studio — Carte offensive avversarie fanno 1 danno in meno per questo turno (min 0).
+
+    Stores web_studio_active=True in combat_state.
+    turn.py play_card: if targeting this player with Offensiva card and flag set, -1 to damage effect.
+    """
+    cs = dict(player.combat_state or {})
+    cs["web_studio_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "web_studio_active": True}
+
+
+def _card_202(player, game, db, *, target_player_id=None) -> dict:
+    """Prospect Grade — +L in base alla posizione in classifica per Licenze.
+
+    1° = 5L, 2° = 3L, 3° = 2L, 4°+ = 1L.
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    all_players = sorted(game.players, key=lambda p: p.licenze, reverse=True)
+    rank = next((i + 1 for i, p in enumerate(all_players) if p.id == player.id), len(all_players))
+    reward = {1: 5, 2: 3, 3: 2}.get(rank, 1)
+    player.licenze += reward
+    return {"applied": True, "rank": rank, "licenze_gained": reward}
+
+
+def _card_203(player, game, db, *, target_player_id=None) -> dict:
+    """Sender Profile — Per 1 round la soglia dado conta come 2 punti più bassa.
+
+    Stores sender_profile_threshold_reduction=2 in combat_state.
+    combat.py: effective_threshold = max(1, threshold - sender_profile_threshold_reduction); consume flag.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["sender_profile_threshold_reduction"] = 2
+    player.combat_state = cs
+    return {"applied": True, "threshold_reduction": 2}
+
+
+def _card_204(player, game, db, *, target_player_id=None) -> dict:
+    """Delivery Profile — Il danno del prossimo round di combattimento non arriva (bloccato in transito).
+
+    Stores delivery_profile_block_active=True in combat_state.
+    combat.py miss branch: if flag set, skip HP damage once and clear flag.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["delivery_profile_block_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "delivery_profile_block_active": True}
+
+
+def _card_205(player, game, db, *, target_player_id=None) -> dict:
+    """MicroSite — +1L per ogni turno passato senza essere attaccato in questa partita (max 4).
+
+    Uses turns_not_attacked counter in combat_state (incremented by combat.py when player takes no damage).
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    cs = dict(player.combat_state or {})
+    turns_safe = cs.get("turns_not_attacked", 0)
+    reward = min(4, turns_safe)
+    player.licenze += reward
+    return {"applied": True, "turns_not_attacked": turns_safe, "licenze_gained": reward}
+
+
+def _card_206(player, game, db, *, target_player_id=None) -> dict:
+    """Landing Page — Il prossimo avversario che ti attacca ti dà 2 Licenze invece di danno.
+
+    Stores landing_page_active=True. turn.py play_card: if Offensiva targeting this player and flag, +2L instead.
+    """
+    cs = dict(player.combat_state or {})
+    cs["landing_page_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "landing_page_active": True}
+
+
+def _card_207(player, game, db, *, target_player_id=None) -> dict:
+    """Feedback Management — Ogni carta giocata contro di te questo turno genera 1L (max 3).
+
+    Stores feedback_management_remaining=3. turn.py play_card: if targeting this player, +1L to them, decrement.
+    """
+    cs = dict(player.combat_state or {})
+    cs["feedback_management_remaining"] = 3
+    player.combat_state = cs
+    return {"applied": True, "feedback_management_remaining": 3}
+
+
 DIFENSIVA: dict = {
     19:  _card_19,
     20:  _card_20,
@@ -472,4 +562,11 @@ DIFENSIVA: dict = {
     156: _card_156,
     157: _card_157,
     158: _card_158,
+    201: _card_201,
+    202: _card_202,
+    203: _card_203,
+    204: _card_204,
+    205: _card_205,
+    206: _card_206,
+    207: _card_207,
 }

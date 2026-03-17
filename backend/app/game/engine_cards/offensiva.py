@@ -569,6 +569,89 @@ def _card_150(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "addons_untapped": count}
 
 
+def _card_191(player, game, db, *, target_player_id=None) -> dict:
+    """Autolaunched Flow — Si attiva automaticamente quando HP < 2: boss -1HP senza usare slot carta.
+
+    If already in combat and HP < 2, deal damage immediately.
+    Otherwise set autolaunched_flow_ready=True so combat.py triggers it on next HP-threshold event.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = dict(player.combat_state or {})
+    if player.hp < 2:
+        player.current_boss_hp = max(0, player.current_boss_hp - 1)
+        return {"applied": True, "boss_damage": 1, "immediate": True}
+    cs["autolaunched_flow_ready"] = True
+    player.combat_state = cs
+    return {"applied": True, "autolaunched_flow_ready": True}
+
+
+def _card_192(player, game, db, *, target_player_id=None) -> dict:
+    """Screen Flow — Per 1 round puoi sostituire il tiro del dado con valore fisso 7.
+
+    Sets screen_flow_active=True. combat.py: after roll, if flag set and roll < 7, use 7 instead.
+    """
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    cs = dict(player.combat_state or {})
+    cs["screen_flow_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "screen_flow_active": True}
+
+
+def _card_193(player, game, db, *, target_player_id=None) -> dict:
+    """Decision Element — Interferenza. Presenta 2 opzioni al target; tu applichi l'effetto opposto.
+
+    Simplified: target perde 1HP → player guadagna 2L.
+    Requires target_player_id.
+    """
+    if not target_player_id:
+        return {"applied": False, "reason": "target_required"}
+    from app.game.engine_cards.helpers import get_target
+    target = get_target(game, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "target_not_found"}
+    target.hp = max(0, target.hp - 1)
+    player.licenze += 2
+    return {"applied": True, "target_hp_lost": 1, "licenze_gained": 2}
+
+
+def _card_194(player, game, db, *, target_player_id=None) -> dict:
+    """Assignment Element — Ridistribuisci le Licenze tra te e 1 avversario; tu prendi la metà superiore.
+
+    Requires target_player_id.
+    """
+    if not target_player_id:
+        return {"applied": False, "reason": "target_required"}
+    from app.game.engine_cards.helpers import get_target
+    import math
+    target = get_target(game, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "target_not_found"}
+    total = player.licenze + target.licenze
+    player.licenze = math.ceil(total / 2)
+    target.licenze = total - player.licenze
+    return {"applied": True, "total_licenze": total, "player_gets": player.licenze, "target_gets": target.licenze}
+
+
+def _card_195(player, game, db, *, target_player_id=None) -> dict:
+    """Subflow — Gioca dentro un'altra carta: +1L a un effetto economico o +1HP a uno difensivo già giocato.
+
+    Simplified: if last card played this turn was economico → +1L, else → -1HP al boss.
+    Falls back to +1L bonus.
+    """
+    cs = dict(player.combat_state or {})
+    last_type = cs.get("last_card_type_played", "")
+    if last_type in ("Offensiva", "Difensiva"):
+        # defensive / offensive context → 1HP to boss
+        if player.is_in_combat:
+            player.current_boss_hp = max(0, player.current_boss_hp - 1)
+            return {"applied": True, "effect": "boss_damage_1"}
+    # default: economic boost
+    player.licenze += 1
+    return {"applied": True, "effect": "licenze_1"}
+
+
 OFFENSIVA: dict = {
     9:   _card_9,
     10:  _card_10,
@@ -608,4 +691,9 @@ OFFENSIVA: dict = {
     148: _card_148,
     149: _card_149,
     150: _card_150,
+    191: _card_191,
+    192: _card_192,
+    193: _card_193,
+    194: _card_194,
+    195: _card_195,
 }

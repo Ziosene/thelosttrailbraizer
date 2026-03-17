@@ -640,6 +640,112 @@ def _card_180(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "related_attribute_pair": pair_ids}
 
 
+def _card_196(player, game, db, *, target_player_id=None) -> dict:
+    """Get Records — Pesca 1 carta e guarda le prime 2 del mazzo boss senza pescarle."""
+    from app.models.game import PlayerHandCard as _PHC196
+    drew = False
+    if game.action_deck_1:
+        db.add(_PHC196(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+        drew = True
+    elif game.action_deck_2:
+        db.add(_PHC196(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+        drew = True
+    peeked = (game.boss_deck or [])[:2]
+    return {"applied": True, "drew_card": drew, "boss_deck_top2": peeked}
+
+
+def _card_197(player, game, db, *, target_player_id=None) -> dict:
+    """Create Records — Recupera 1 carta casuale dallo scarto azione e aggiungila alla mano (+1L jolly).
+
+    If no discard available, just grants +1L as the "base record" value.
+    """
+    from app.models.game import PlayerHandCard as _PHC197
+    discard = list(game.action_discard or [])
+    if discard:
+        card_id = discard.pop(0)
+        game.action_discard = discard
+        db.add(_PHC197(player_id=player.id, action_card_id=card_id))
+        return {"applied": True, "recovered_card_id": card_id}
+    # Fallback: +1L jolly
+    player.licenze += 1
+    return {"applied": True, "licenze_gained": 1, "reason": "empty_discard_fallback"}
+
+
+def _card_198(player, game, db, *, target_player_id=None) -> dict:
+    """Einstein Recommendation — Pesca 1 AddOn dal mazzo gratis se compatibile col tuo Ruolo.
+
+    Simplified: draws the first available addon from the addon market at no cost.
+    Since full role-compatibility check requires catalog data, treat first addon as "recommended".
+    If no addons available in market, grants +2L as fallback.
+    """
+    from app.models.game import PlayerAddon as _PA198
+    market = list(game.addon_market or [])
+    if market:
+        addon_id = market.pop(0)
+        game.addon_market = market
+        db.add(_PA198(player_id=player.id, addon_id=addon_id, is_tapped=False))
+        return {"applied": True, "addon_id": addon_id, "free": True}
+    player.licenze += 2
+    return {"applied": True, "licenze_gained": 2, "reason": "no_addon_available"}
+
+
+def _card_199(player, game, db, *, target_player_id=None) -> dict:
+    """Segment Builder — Dividi il mazzo azione in 2 pile; scegli da quale pescare per 2 turni.
+
+    Stores segment_builder_deck_pref=1 (deck_1 preferred) and segment_builder_turns=2.
+    turn.py draw_card: if flag set, draw from deck_1 first (or deck_2 if pref=2). Decrement per turn.
+    Default preference = 1 (longest deck).
+    """
+    deck1_len = len(game.action_deck_1 or [])
+    deck2_len = len(game.action_deck_2 or [])
+    pref = 1 if deck1_len >= deck2_len else 2
+    cs = dict(player.combat_state or {})
+    cs["segment_builder_deck_pref"] = pref
+    cs["segment_builder_turns"] = 2
+    player.combat_state = cs
+    return {"applied": True, "deck_pref": pref, "turns": 2}
+
+
+def _card_200(player, game, db, *, target_player_id=None) -> dict:
+    """Publication List — 1 gruppo di giocatori pesca 1 carta, l'altro scarta 1 carta.
+
+    Simplified: player designates a target (ally group). Target draws 1 card; all others discard 1.
+    If no target given, all other players draw 1 (player is the publisher, everyone benefits).
+    """
+    from app.models.game import PlayerHandCard as _PHC200
+    others = [p for p in game.players if p.id != player.id]
+    beneficiaries = []
+    losers = []
+    if target_player_id:
+        for p in others:
+            if p.id == target_player_id:
+                beneficiaries.append(p)
+            else:
+                losers.append(p)
+    else:
+        beneficiaries = others
+
+    drew_count = 0
+    for bp in beneficiaries:
+        if game.action_deck_1:
+            db.add(_PHC200(player_id=bp.id, action_card_id=game.action_deck_1.pop(0)))
+            drew_count += 1
+        elif game.action_deck_2:
+            db.add(_PHC200(player_id=bp.id, action_card_id=game.action_deck_2.pop(0)))
+            drew_count += 1
+
+    discarded = 0
+    for lp in losers:
+        hand = list(lp.hand)
+        if hand:
+            hc = hand[-1]
+            game.action_discard = (game.action_discard or []) + [hc.action_card_id]
+            db.delete(hc)
+            discarded += 1
+
+    return {"applied": True, "beneficiaries": len(beneficiaries), "drew": drew_count, "discarded": discarded}
+
+
 UTILITA: dict = {
     31:  _card_31,
     32:  _card_32,
@@ -672,4 +778,9 @@ UTILITA: dict = {
     178: _card_178,
     179: _card_179,
     180: _card_180,
+    196: _card_196,
+    197: _card_197,
+    198: _card_198,
+    199: _card_199,
+    200: _card_200,
 }

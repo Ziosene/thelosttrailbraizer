@@ -482,6 +482,56 @@ def _card_168(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "licenze_gained": player_count, "player_count": player_count}
 
 
+def _card_208(player, game, db, *, target_player_id=None) -> dict:
+    """Smart Capture Form — +1L per ogni giocatore che ha mostrato la propria mano in questo turno.
+
+    Checks hand_revealed_this_turn flag in each player's combat_state.
+    Always counts self (player just played this card = "submitted form").
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    revealed_count = 1  # self
+    for p in game.players:
+        if p.id != player.id:
+            cs = p.combat_state or {}
+            if cs.get("hand_revealed_this_turn"):
+                revealed_count += 1
+    player.licenze += revealed_count
+    return {"applied": True, "licenze_gained": revealed_count, "revealed_count": revealed_count}
+
+
+def _card_209(player, game, db, *, target_player_id=None) -> dict:
+    """Activity Score — Se hai giocato carte in 3 turni consecutivi senza saltare, +4L.
+
+    Checks consecutive_turns_with_cards counter in combat_state (incremented by turn.py end_turn).
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    cs = dict(player.combat_state or {})
+    streak = cs.get("consecutive_turns_with_cards", 0)
+    if streak >= 3:
+        player.licenze += 4
+        return {"applied": True, "streak": streak, "licenze_gained": 4}
+    return {"applied": False, "reason": "streak_too_low", "streak": streak, "required": 3}
+
+
+def _card_210(player, game, db, *, target_player_id=None) -> dict:
+    """Activity Timeline — Recupera 1 carta tra le ultime 5 scarti e guadagna 1L."""
+    from app.models.game import PlayerHandCard as _PHC210
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    discard = list(game.action_discard or [])
+    if not discard:
+        player.licenze += 1
+        return {"applied": True, "licenze_gained": 1, "reason": "empty_discard"}
+    # Take last card from discard (most recent)
+    card_id = discard.pop(-1)
+    game.action_discard = discard
+    db.add(_PHC210(player_id=player.id, action_card_id=card_id))
+    player.licenze += 1
+    return {"applied": True, "recovered_card_id": card_id, "licenze_gained": 1}
+
+
 ECONOMICA: dict = {
     1:   _card_1,
     2:   _card_2,
@@ -522,4 +572,7 @@ ECONOMICA: dict = {
     166: _card_166,
     167: _card_167,
     168: _card_168,
+    208: _card_208,
+    209: _card_209,
+    210: _card_210,
 }

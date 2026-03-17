@@ -135,14 +135,14 @@ backend/
 │       ├── __init__.py           ✅
 │       ├── engine.py             ✅ funzioni pure core (~165 righe): roll, combat, deck, death, ELO + re-export engine_boss
 │       ├── engine_boss.py        ✅ boss ability system (~1000 righe): tutti i 100 boss, query helper, apply_boss_ability
-│       └── engine_cards/         ✅ effetti carte azione (190/300 implementate)
+│       └── engine_cards/         ✅ effetti carte azione (210/300 implementate)
 │           ├── __init__.py       ✅ dispatcher apply_action_card_effect
 │           ├── helpers.py        ✅ get_target()
-│           ├── economica.py      ✅ carte 1–8, 41–48, 81–88, 121–125, 159–168
-│           ├── offensiva.py      ✅ carte 9–18, 49–54, 89–95, 126–130, 141–150
-│           ├── difensiva.py      ✅ carte 19–25, 55–58, 96–100, 131–135, 151–158
+│           ├── economica.py      ✅ carte 1–8, 41–48, 81–88, 121–125, 159–168, 208–210
+│           ├── offensiva.py      ✅ carte 9–18, 49–54, 89–95, 126–130, 141–150, 191–195
+│           ├── difensiva.py      ✅ carte 19–25, 55–58, 96–100, 131–135, 151–158, 201–207
 │           ├── manipolazione.py  ✅ carte 26–30, 59–62, 101–105, 136, 169–171
-│           ├── utilita.py        ✅ carte 31–37, 63–69, 80, 106–110, 137–138, 172–180
+│           ├── utilita.py        ✅ carte 31–37, 63–69, 80, 106–110, 137–138, 172–180, 196–200
 │           └── interferenza.py   ✅ carte 38–40, 70–79, 111–120, 139–140, 181–190
 ├── scripts/
 │   └── seed_cards.py             ✅ parser .md → insert DB (idempotente, safe re-run)
@@ -595,6 +595,14 @@ MORTE DEL GIOCATORE
   - **combat.py hooks aggiunti (batch 7)**: `best_of_2_until_round` (max di 2 roll), `copilot_studio_boost_active` (roll+1), `_hyperforce_active` (sopprime scope_creep e boss ability in miss branch), `combat_hits_dealt` (incremento in hit branch), `model_builder_active`+`consecutive_misses` (traccia miss consecutive → next_roll_forced=10 dopo 3), `environment_branch_active` (skip HP damage una volta), `travel_time_calc_active` (roll==soglia-1 → skip danno), `net_zero_commitment_active` (+1L per HP perso), `sustainability_hp_lost` (contatore), `runtime_manager_ready` (sopravvivi con 1HP), `next_boss_ability_disabled` (persiste in `_persist_cs`, neutralizza start_effect).
   - **turn.py hooks aggiunti (batch 7)**: `update_records_licenze_drain_turns` (draw_card: -1L), `vm_queue_card_ids` (draw_card: consegna prima carta in coda), `code_review_blocked_card_ids` (play_card: blocca carta), `unification_rule_active`+`unification_rule_card_type` (play_card: solo il tipo mandato), `card_types_played_this_turn` (play_card: aggiorna lista tipi), `record_triggered_flow_remaining` (use_addon: +1L ai watcher), `deleted_addon_blocked_ids` (buy_addon: blocca riacquisto), `promotions_engine_turns_remaining` (buy_addon: -2L costo), `sustainability_discount_pending`+`sustainability_hp_lost` (buy_addon: sconto pari a HP persi), `bought_addon_this_turn` (buy_addon: flag per Storefront Reference). End_turn: pulizia di tutti i nuovi flag con decrement/clear appropriato.
   - **Pattern**: dict unico per modulo (no secondary dict); tutte le funzioni definite prima del dict `MODULO: dict = {...}`.
+
+- [x] **Carte azione 191–210 — Batch 8 (Flow, Records, Difensiva avanzata, Economica)**
+  - **Offensiva 191–195**: Autolaunched Flow (191, auto -1HP boss quando HP<2), Screen Flow (192, usa 7 se roll<7 per 1 round), Decision Element (193, target -1HP → player +2L), Assignment Element (194, redistribuisce L: player prende metà superiore), Subflow (195, +1L o -1HP boss in base all'ultima carta giocata).
+  - **Utilità 196–200**: Get Records (196, pesca 1 carta + peek top2 boss deck), Create Records (197, recupera 1 carta dallo scarto o +1L), Einstein Recommendation (198, primo addon del mercato gratis o +2L fallback), Segment Builder (199, scegli deck da cui pescare per 2 turni), Publication List (200, gruppo beneficiario pesca 1, altri scartano 1).
+  - **Difensiva 201–207**: Web Studio (201, carte offensive avversarie -1 danno per turno), Prospect Grade (202, +L in base alla classifica: 1°=5 2°=3 3°=2 4°+=1), Sender Profile (203, soglia dado -2 per 1 round), Delivery Profile (204, blocca danno HP del prossimo round miss), MicroSite (205, +1L per ogni turno senza danno, max 4), Landing Page (206, prossima offensiva vs player → +2L invece di danno), Feedback Management (207, +1L per ogni carta giocata contro di te, max 3).
+  - **Economica 208–210**: Smart Capture Form (208, +1L per giocatore con hand_revealed_this_turn), Activity Score (209, +4L se consecutive_turns_with_cards >= 3), Activity Timeline (210, recupera 1 carta da scarto + +1L).
+  - **combat.py hooks**: `screen_flow_active` (roll ≥ 7 forzato), `sender_profile_threshold_reduction` (threshold -2 consume), `delivery_profile_block_active` (skip HP damage in miss, prima di environment_branch), `autolaunched_flow_ready` (auto -1HP boss se player.hp < 2 post-danno).
+  - **turn.py hooks**: `landing_page_active` (cancella Offensiva → +2L al target), `feedback_management_remaining` (any card vs target → +1L, decrement), `web_studio_active` (+1L refund al target su Offensiva), `consecutive_turns_with_cards` (increment in end_turn se cards_played>0, else reset), `turns_not_attacked` (increment se hp==max_hp in end_turn, else reset), `hand_revealed_this_turn` (clear in end_turn).
 
 - [ ] **Rate limiting WS** — un utente non dovrebbe poter inviare messaggi troppo veloci.
 

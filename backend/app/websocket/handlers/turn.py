@@ -459,6 +459,37 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
                 _cs117.pop("jms_delay_active", None)
                 _immunity_target.combat_state = _cs117
                 card_effect_result = {"card_number": card.number, "applied": False, "blocked_by": "jms_delay"}
+            # Card 206 (Landing Page): next Offensiva targeting this player gives +2L instead of effect
+            elif _immunity_target.combat_state.get("landing_page_active") and card.card_type == "Offensiva":
+                original_cancelled = True
+                _cs206 = dict(_immunity_target.combat_state)
+                _cs206.pop("landing_page_active", None)
+                _immunity_target.combat_state = _cs206
+                _immunity_target.licenze += 2
+                card_effect_result = {"card_number": card.number, "applied": False, "blocked_by": "landing_page", "target_licenze_gained": 2}
+
+    # Card 207 (Feedback Management): any card targeting a player with this flag gives them +1L
+    if card and card_approved and target_player_id and not original_cancelled:
+        _fm_target = next(
+            (p for p in game.players if p.id == target_player_id and p.id != player.id), None
+        )
+        if _fm_target and (_fm_target.combat_state or {}).get("feedback_management_remaining", 0) > 0:
+            _fm_target.licenze += 1
+            _cs_fm = dict(_fm_target.combat_state)
+            _fm_rem = _cs_fm["feedback_management_remaining"] - 1
+            if _fm_rem <= 0:
+                _cs_fm.pop("feedback_management_remaining", None)
+            else:
+                _cs_fm["feedback_management_remaining"] = _fm_rem
+            _fm_target.combat_state = _cs_fm
+
+    # Card 201 (Web Studio): Offensiva targeting this player deals -1 effect (grant +1L refund to target)
+    if card and card_approved and not original_cancelled and target_player_id and card.card_type == "Offensiva":
+        _ws_target = next(
+            (p for p in game.players if p.id == target_player_id and p.id != player.id), None
+        )
+        if _ws_target and (_ws_target.combat_state or {}).get("web_studio_active"):
+            _ws_target.licenze += 1  # compensate 1 damage point
 
     # ── Effetto carta originale (a meno che non sia stato annullato) ──────────
     if not card_effect_result:
@@ -873,6 +904,34 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
         # Card 171 (Copilot Studio): clear per-round boost
         cs.pop("copilot_studio_boost_active", None)
         player.combat_state = cs
+
+    # Card 209 (Activity Score): track consecutive turns where player played at least 1 card
+    if player.cards_played_this_turn > 0:
+        _cs_act = dict(player.combat_state or {})
+        _cs_act["consecutive_turns_with_cards"] = _cs_act.get("consecutive_turns_with_cards", 0) + 1
+        player.combat_state = _cs_act
+    else:
+        _cs_act = dict(player.combat_state or {})
+        if "consecutive_turns_with_cards" in _cs_act:
+            _cs_act["consecutive_turns_with_cards"] = 0
+            player.combat_state = _cs_act
+
+    # Card 205 (MicroSite): track turns where player ended at full HP (not attacked / not damaged)
+    if player.hp >= player.max_hp:
+        _cs_ms = dict(player.combat_state or {})
+        _cs_ms["turns_not_attacked"] = _cs_ms.get("turns_not_attacked", 0) + 1
+        player.combat_state = _cs_ms
+    else:
+        _cs_ms = dict(player.combat_state or {})
+        if "turns_not_attacked" in _cs_ms:
+            _cs_ms["turns_not_attacked"] = 0
+            player.combat_state = _cs_ms
+
+    # Card 208 (Smart Capture Form): clear per-turn hand-reveal flag
+    if player.combat_state and player.combat_state.get("hand_revealed_this_turn"):
+        _cs_hrt = dict(player.combat_state)
+        _cs_hrt.pop("hand_revealed_this_turn", None)
+        player.combat_state = _cs_hrt
 
     player.cards_played_this_turn = 0
 

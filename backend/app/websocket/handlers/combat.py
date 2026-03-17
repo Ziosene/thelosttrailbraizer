@@ -581,6 +581,14 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
     if (player.combat_state or {}).get("copilot_studio_boost_active"):
         roll = min(10, roll + 1)
 
+    # Card 192 (Screen Flow): guided step-by-step — use 7 if roll < 7 (once per card play)
+    if (player.combat_state or {}).get("screen_flow_active"):
+        if roll < 7:
+            roll = 7
+        cs = dict(player.combat_state)
+        cs.pop("screen_flow_active", None)
+        player.combat_state = cs
+
     # Card 26 (Dice Optimizer) / Card 62 (DataWeave Script) / Card 104 (Flow Variable): force next roll
     _forced_roll = (player.combat_state or {}).get("next_roll_forced")
     if _forced_roll is not None:
@@ -637,6 +645,13 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         cs.pop("review_app_active", None)
         player.combat_state = cs
     threshold = max(1, threshold)  # can't go below 1
+
+    # Card 203 (Sender Profile): threshold -2 for this round (boss doesn't recognize the sender)
+    if (player.combat_state or {}).get("sender_profile_threshold_reduction"):
+        threshold = max(1, threshold - (player.combat_state or {}).get("sender_profile_threshold_reduction", 0))
+        cs = dict(player.combat_state)
+        cs.pop("sender_profile_threshold_reduction", None)
+        player.combat_state = cs
 
     # Card 136 (Service Forecast): use threshold as roll instead of the random result (guaranteed border hit)
     if (player.combat_state or {}).get("service_forecast_use_threshold"):
@@ -817,8 +832,14 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             # Card 132 (Escalation Rule): if taking ≥2HP, absorb half (floor)
             if _player_hp_damage >= 2 and (player.combat_state or {}).get("escalation_rule_active"):
                 _player_hp_damage = _player_hp_damage - (_player_hp_damage // 2)
+            # Card 204 (Delivery Profile): block HP damage for one miss round, then clear
+            if _player_hp_damage > 0 and (player.combat_state or {}).get("delivery_profile_block_active"):
+                _player_hp_damage = 0
+                _cs_dp = dict(player.combat_state)
+                _cs_dp.pop("delivery_profile_block_active", None)
+                player.combat_state = _cs_dp
             # Card 153 (Environment Branch): skip HP damage once, then clear
-            if _player_hp_damage > 0 and (player.combat_state or {}).get("environment_branch_active"):
+            elif _player_hp_damage > 0 and (player.combat_state or {}).get("environment_branch_active"):
                 _player_hp_damage = 0
                 _cs_eb = dict(player.combat_state)
                 _cs_eb.pop("environment_branch_active", None)
@@ -889,6 +910,13 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                 if hc_33 and hc_33.player_id == player.id:
                     game.action_discard = (game.action_discard or []) + [hc_33.action_card_id]
                     db.delete(hc_33)
+
+    # Card 191 (Autolaunched Flow): if player HP just dropped below 2, trigger auto-shot on boss
+    if (player.combat_state or {}).get("autolaunched_flow_ready") and player.hp < 2:
+        player.current_boss_hp = max(0, (player.current_boss_hp or 0) - 1)
+        _cs_af = dict(player.combat_state)
+        _cs_af.pop("autolaunched_flow_ready", None)
+        player.combat_state = _cs_af
 
     # Card 169 (Model Builder): track consecutive misses; after 3, force next roll = 10
     if result == "miss" and (player.combat_state or {}).get("model_builder_active"):
