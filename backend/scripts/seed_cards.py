@@ -217,13 +217,20 @@ def seed():
         boss_path = os.path.join(CARDS_DIR, "boss_cards.md")
         boss_cards = parse_boss_cards(boss_path)
         inserted_boss = 0
+        updated_boss = 0
         for card in boss_cards:
             if card["number"] in existing_boss:
+                # Update mutable balance fields (hp, dice_threshold) on existing records
+                existing = db.query(BossCard).filter(BossCard.number == card["number"]).first()
+                if existing and (existing.hp != card["hp"] or existing.dice_threshold != card["dice_threshold"]):
+                    existing.hp = card["hp"]
+                    existing.dice_threshold = card["dice_threshold"]
+                    updated_boss += 1
                 continue
             db.add(BossCard(**card))
             inserted_boss += 1
         db.commit()
-        print(f"Boss cards:   {inserted_boss} inserted, {len(boss_cards) - inserted_boss} skipped")
+        print(f"Boss cards:   {inserted_boss} inserted, {updated_boss} updated, {len(boss_cards) - inserted_boss - updated_boss} skipped")
 
         # --- Addon Cards ---
         addon_path = os.path.join(CARDS_DIR, "addon_cards.md")

@@ -418,8 +418,8 @@
 ---
 
 ### 40. The Net Zero Apocalypse 🏆
-- **HP**: 8
-- **Soglia dado**: 6+
+- **HP**: 6
+- **Soglia dado**: 5+
 - **Abilità**: Ogni round in cui il combattente non infligge danno al boss, tutti i giocatori (incluso il combattente) perdono 1 HP. La crisi non aspetta
 - **Ricompensa**: 7 Licenze + **1 Certificazione**
 - **Difficoltà**: Alta
