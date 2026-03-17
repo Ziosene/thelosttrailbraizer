@@ -488,19 +488,23 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             else:
                 player.hp = max(0, player.hp - 2 * ns)
 
-    # Boss 45 (Agentforce Rebellion): hijack 1 random untapped addon — tap it (boss "uses" it)
-    # Full inverted-effect application deferred until apply_addon_effect is implemented.
+    # Boss 45 (Agentforce Rebellion): each owned addon costs 1L/round; can't pay → addon tapped
     threshold_bonus = 0
-    if round_start["hijack_addon"]:
-        untapped_45 = [pa for pa in player.addons if not pa.is_tapped]
-        if untapped_45:
-            pa_hijack = random.choice(untapped_45)
-            pa_hijack.is_tapped = True
-            hijacked_addon = db.get(AddonCard, pa_hijack.addon_id)
+    if round_start["addon_licenze_drain"]:
+        addons_45 = list(player.addons)
+        tapped_by_drain = []
+        for pa_45 in addons_45:
+            if player.licenze >= 1:
+                player.licenze -= 1
+            else:
+                pa_45.is_tapped = True
+                tapped_by_drain.append(pa_45.addon_id)
+        if tapped_by_drain:
             await manager.broadcast(game.code, {
-                "type": "addon_hijacked_by_boss",
+                "type": "addons_tapped_by_boss",
                 "player_id": player.id,
-                "addon": {"id": hijacked_addon.id, "name": hijacked_addon.name} if hijacked_addon else {},
+                "addon_ids": tapped_by_drain,
+                "reason": "agentforce_rebellion",
             })
 
     # Boss 63 (Loyalty Management Trickster): auto-accept deal — +1 Licenza, threshold +1 this roll

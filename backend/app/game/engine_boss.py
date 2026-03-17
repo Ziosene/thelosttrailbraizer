@@ -49,7 +49,8 @@ _EMPTY_EFFECT: dict = {
     "boss_revive_to_deck": 0,       # boss is defeated but re-enters deck with N HP (once per game; handler tracks flag)
     "aoe_all_players_hp_damage": 0, # ALL players (including combatant) each lose N HP
     "licenza_or_hp_drain": 0,       # drain N licenze from player; if player has 0 licenze, drain N HP instead
-    "hijack_addon": False,          # boss uses 1 of the combatant's untapped addons against them (inverted)
+    "hijack_addon": False,          # (legacy, unused) boss uses 1 of the combatant's untapped addons against them
+    "addon_licenze_drain": False,   # each owned addon costs 1L/round to maintain; can't pay → addon tapped
     "force_extra_card_discard": False,  # combatant must discard 1 additional card this round (involuntarily)
     "entry_fee_licenze": 0,         # pay N licenze at combat start; 1 HP damage per missing licenza
     "corrupt_deck_cards": 0,        # insert N corrupted cards into combatant's action deck; each deals 1 HP if drawn
@@ -755,11 +756,9 @@ def apply_boss_ability(
             return _boss_effect(opponent_gains_licenza=2)
 
         # ── Boss 45 — The Agentforce Rebellion ───────────────────────────────
-        # Every round the boss hijacks 1 of the combatant's available addons and uses it
-        # with inverted effect against them.
-        # Handler: pick a random untapped addon → apply inverted effect → mark it as tapped.
+        # Every round: each owned addon costs 1L to maintain. Can't pay → addon gets tapped.
         case (45, "on_round_start"):
-            return _boss_effect(hijack_addon=True)
+            return _boss_effect(addon_licenze_drain=True)
 
         # ── Boss 46 — The Process Builder Abomination ────────────────────────
         # Every round the combatant involuntarily discards 1 extra card from their hand.

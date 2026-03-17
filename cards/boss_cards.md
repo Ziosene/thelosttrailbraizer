@@ -474,7 +474,7 @@
 ### 45. The Agentforce Rebellion
 - **HP**: 6
 - **Soglia dado**: 6+
-- **Abilità**: Ogni round, il boss usa automaticamente 1 AddOn del combattente contro di lui (effetto invertito)
+- **Abilità**: Ogni round, ogni AddOn posseduto dal combattente costa 1 Licenza di mantenimento. Per ogni AddOn che non riesce a pagare, quell'AddOn viene tappato (inutilizzabile fino al prossimo turno).
 - **Ricompensa**: 5 Licenze
 - **Difficoltà**: Alta
 - **Image prompt**: `A 2D hand-drawn monster in the distinctive art style of The Binding of Isaac. The monster is "The Agentforce Rebellion": a sleek AI robot agent that has gone rogue, eyes glowing red, wearing a cracked Agentforce badge. It turns the player's own tools against them, using their AddOns with inverted effects. Sparks fly from its damaged control module. Thick black outlines, grotesque but cartoonish, flat shading, plain off-white parchment background. Indie game card art.`
