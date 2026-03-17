@@ -1030,6 +1030,17 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             _cs_mb["consecutive_misses"] = 0
         player.combat_state = _cs_mb
 
+    # Boss 81 (Trailhead Jinx): miss → discard 1 random card from hand
+    if result == "miss" and engine.boss_discard_on_miss(boss.id) and player.hand:
+        import random as _random81
+        _jinx_hc = _random81.choice(player.hand)
+        db.delete(_jinx_hc)
+        await manager.broadcast(game.code, {
+            "type": "jinx_discard",
+            "player_id": player.id,
+            "card_id": _jinx_hc.action_card_id,
+        })
+
     # Clear boss 33 declaration after every roll (hit or miss)
     if engine.boss_card_declared_before_roll(boss.id) and player.combat_state:
         cs = dict(player.combat_state)

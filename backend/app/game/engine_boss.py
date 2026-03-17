@@ -515,6 +515,13 @@ def boss_jinx_on_draw(boss_id: int) -> bool:
     handler rolls a d10 on each draw; result of 1–3 means the card is discarded
     immediately without effect (jinxed).
     """
+    return False
+
+
+def boss_discard_on_miss(boss_id: int) -> bool:
+    """
+    Returns True if a miss causes the combatant to discard 1 random card from hand.
+    """
     match boss_id:
         case 81:  # The Trailhead Jinx
             return True

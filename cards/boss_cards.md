@@ -842,7 +842,7 @@
 ### 81. The Trailhead Jinx
 - **HP**: 3
 - **Soglia dado**: 5+
-- **Abilità**: Ogni volta che il combattente pesca una carta azione durante il combattimento, tira il dado — se esce 1-3, la carta è jinxata e viene scartata senza effetto
+- **Abilità**: Porta sfiga — ogni volta che il combattente manca il colpo, scarta 1 carta casuale dalla mano.
 - **Ricompensa**: 2 Licenze
 - **Difficoltà**: Facile
 - **Image prompt**: `A 2D hand-drawn monster in the distinctive art style of The Binding of Isaac. The monster is "The Trailhead Jinx": a black cat wearing Trailhead learning badges on a collar, sitting smugly in the middle of a trail. Every badge it wears corresponds to a learning path it has cursed, and cards drawn near it have a chance of being jinxed into uselessness. Thick black outlines, grotesque but cartoonish, flat shading, plain off-white parchment background. Indie game card art.`
