@@ -102,6 +102,8 @@ def boss_roll_mode(boss_id: int, combat_round: int) -> str | None:
             return "worst_of_2" if combat_round % 2 == 1 else None
         case 39:  # The Bulk API Behemoth — always roll twice, keep only the second result
             return "second_of_2"
+        case 54:  # The Workbench Tinkerer — always roll twice, keep the lower result
+            return "worst_of_2"
     return None
 
 
@@ -798,11 +800,8 @@ def apply_boss_ability(
             return _boss_effect(request_round_prediction=True)
 
         # ── Boss 54 — The Workbench Tinkerer ─────────────────────────────────
-        # At combat start: 3 corrupted cards are shuffled into the combatant's action deck.
-        # When drawn, each corrupted card deals 1 HP to the player instead of having an effect.
-        # Handler adds 3 sentinel card IDs (e.g. -54) to the shared action_deck.
-        case (54, "on_combat_start"):
-            return _boss_effect(corrupt_deck_cards=3)
+        # Roll mode handled by boss_roll_mode (worst_of_2 every round).
+        # No on_combat_start effect needed.
 
         # ── Boss 58 — The Prompt Builder Djinn ───────────────────────────────
         # Each round: pick 1 random card in the combatant's hand and invert its effect

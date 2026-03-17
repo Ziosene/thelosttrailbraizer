@@ -564,7 +564,7 @@
 ### 54. The Workbench Tinkerer
 - **HP**: 3
 - **Soglia dado**: 4+
-- **Abilità**: All'inizio del combattimento, inserisce 3 carte corrotte nel mazzo del combattente — se pescate, causano 1 danno invece di avere effetto
+- **Abilità**: Dado manomesso — per tutta la durata del combattimento, il combattente tira 2 dadi e tiene il risultato più basso.
 - **Ricompensa**: 2 Licenze
 - **Difficoltà**: Facile
 - **Image prompt**: `A 2D hand-drawn monster in the distinctive art style of The Binding of Isaac. The monster is "The Workbench Tinkerer": a manic data tinkerer creature wearing developer goggles, jabbing corrupted test records into the deck with a data insertion tool. Its workshop apron is stained with malformed JSON and bad CSV imports. Thick black outlines, grotesque but cartoonish, flat shading, plain off-white parchment background. Indie game card art.`
