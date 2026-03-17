@@ -867,11 +867,6 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         _cs_hit = dict(player.combat_state or {})
         _cs_hit["combat_hits_dealt"] = _cs_hit.get("combat_hits_dealt", 0) + 1
         player.combat_state = _cs_hit
-        # Card 169 (Model Builder): reset consecutive miss counter on hit
-        if (player.combat_state or {}).get("model_builder_active"):
-            _cs_mb_hit = dict(player.combat_state)
-            _cs_mb_hit["consecutive_misses"] = 0
-            player.combat_state = _cs_mb_hit
         # Card 95 (Heroku CI): if boss HP ≤ 2 before this hit, finish the boss immediately
         if (player.combat_state or {}).get("heroku_ci_active") and (player.current_boss_hp or 0) <= 2:
             player.current_boss_hp = 0
@@ -1031,13 +1026,14 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         _cs_af.pop("autolaunched_flow_ready", None)
         player.combat_state = _cs_af
 
-    # Card 169 (Model Builder): track consecutive misses; after 3, force next roll = 10
+    # Card 169 (Model Builder): track total misses (not consecutive); after 3, force next roll = 10
     if result == "miss" and (player.combat_state or {}).get("model_builder_active"):
         _cs_mb = dict(player.combat_state)
-        _cs_mb["consecutive_misses"] = _cs_mb.get("consecutive_misses", 0) + 1
-        if _cs_mb["consecutive_misses"] >= 3:
+        _cs_mb["model_builder_misses"] = _cs_mb.get("model_builder_misses", 0) + 1
+        if _cs_mb["model_builder_misses"] >= 3:
             _cs_mb["next_roll_forced"] = 10
-            _cs_mb["consecutive_misses"] = 0
+            _cs_mb.pop("model_builder_active", None)
+            _cs_mb.pop("model_builder_misses", None)
         player.combat_state = _cs_mb
 
     # Boss 87 (Pub/Sub API Pestilence): 2 consecutive misses → boss recovers 1 HP

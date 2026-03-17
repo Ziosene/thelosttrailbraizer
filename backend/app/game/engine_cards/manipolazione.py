@@ -250,18 +250,18 @@ def _card_136(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_169(player, game, db, *, target_player_id=None) -> dict:
-    """Model Builder — Dopo 3 miss consecutivi il prossimo tiro è automaticamente 10.
+    """Model Builder — Dopo 3 miss totali (non consecutivi) il prossimo tiro è automaticamente 10.
 
-    Stores model_builder_active=True and consecutive_misses=0 in combat_state.
-    combat.py miss branch: if model_builder_active, increment consecutive_misses;
-      when consecutive_misses >= 3, set next_roll_forced=10 and reset counter.
-    combat.py hit branch: reset consecutive_misses to 0.
+    Stores model_builder_active=True and model_builder_misses=0 in combat_state.
+    combat.py miss branch: if model_builder_active, increment model_builder_misses;
+      when model_builder_misses >= 3, set next_roll_forced=10 and clear both flags.
+    Counter does NOT reset on hit.
     """
     if not player.is_in_combat:
         return {"applied": False, "reason": "not_in_combat"}
     cs = dict(player.combat_state or {})
     cs["model_builder_active"] = True
-    cs.setdefault("consecutive_misses", 0)
+    cs.setdefault("model_builder_misses", 0)
     player.combat_state = cs
     return {"applied": True, "model_builder_active": True}
 

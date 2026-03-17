@@ -1666,7 +1666,7 @@
 ### 169. Model Builder
 - **Tipo**: Manipolazione dado
 - **Quando**: Durante combattimento
-- **Effetto**: Allena il dado — dopo 3 miss consecutivi il tuo prossimo tiro è automaticamente 10
+- **Effetto**: Allena il dado — dopo 3 miss totali in questo combattimento il tuo prossimo tiro è automaticamente 10
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn AI training loop in the art style of The Binding of Isaac. Three consecutive miss symbols feeding into a neural-net diagram, the fourth roll guaranteed to show a perfect 10. Thick black outlines, flat shading, patient perseverance mood. Plain off-white parchment background. Indie game card art.`
 

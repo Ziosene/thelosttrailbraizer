@@ -27,6 +27,7 @@
 - **Carta 136** (Service Forecast): redesign — da "usa valore medio soglia" (ambiguo) a `scegli tu il risultato del dado (1-10)`; flag `service_forecast_choose_roll`; client risponde con `service_forecast_pick` + valore
 - **Carta 153** (Environment Branch): effetto cambiato da "annulla il prossimo danno" a `reindirizza danno al giocatore a sinistra e a destra (1HP ciascuno)`; combat.py trova i vicini per indice e applica il danno; broadcast `environment_branch_redirect`
 - **Carta 163** (Inventory Availability): redesign — da "+1L per tipo addon esaurito" (nessun tracking per tipo) a `+2L per ogni addon in più rispetto all'avversario con meno addon (max 8)`
+- **Carta 169** (Model Builder): cambiato da "3 miss consecutivi" a "3 miss totali" — contatore `model_builder_misses` non si azzera sugli hit; rimosso il reset nel branch hit di combat.py
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
 
