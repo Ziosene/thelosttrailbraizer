@@ -696,21 +696,14 @@ def _card_197(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_198(player, game, db, *, target_player_id=None) -> dict:
-    """Einstein Recommendation — Pesca 1 AddOn dal mazzo gratis se compatibile col tuo Ruolo.
-
-    Simplified: draws the first available addon from the addon market at no cost.
-    Since full role-compatibility check requires catalog data, treat first addon as "recommended".
-    If no addons available in market, grants +2L as fallback.
-    """
+    """Einstein Recommendation — Pesca 1 AddOn dal mazzo gratis."""
     from app.models.game import PlayerAddon as _PA198
-    market = list(game.addon_market or [])
-    if market:
-        addon_id = market.pop(0)
-        game.addon_market = market
-        db.add(_PA198(player_id=player.id, addon_id=addon_id, is_tapped=False))
-        return {"applied": True, "addon_id": addon_id, "free": True}
-    player.licenze += 2
-    return {"applied": True, "licenze_gained": 2, "reason": "no_addon_available"}
+    src = game.addon_deck_1 if game.addon_deck_1 else game.addon_deck_2
+    if not src:
+        return {"applied": False, "reason": "no_addon_available"}
+    addon_id = src.pop(0)
+    db.add(_PA198(player_id=player.id, addon_id=addon_id, is_tapped=False))
+    return {"applied": True, "addon_id": addon_id, "free": True}
 
 
 def _card_199(player, game, db, *, target_player_id=None) -> dict:

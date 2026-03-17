@@ -1941,7 +1941,7 @@
 ### 198. Einstein Recommendation
 - **Tipo**: Utilità
 - **Quando**: Fuori dal combattimento
-- **Effetto**: Il sistema consiglia — pesca 1 AddOn dal mazzo gratis, ma puoi tenerlo solo se è compatibile con il tuo Ruolo (altrimenti torna nel mazzo)
+- **Effetto**: Pesca 1 AddOn dal mazzo gratuitamente
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn glowing robot brain floating above a card deck offering a single item in the art style of The Binding of Isaac. A mechanical Einstein-like head with circuit-pattern hair extending a claw arm holding one glowing AddOn card toward the player. Thick black outlines, flat shading, wise algorithmic mood. Plain off-white parchment background. Indie game card art.`
 
