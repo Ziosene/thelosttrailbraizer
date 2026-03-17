@@ -346,7 +346,7 @@
 ### 33. Quick Action
 - **Tipo**: Utilità
 - **Quando**: In qualsiasi momento
-- **Effetto**: Questa carta non conta come una delle 2 carte giocabili per turno
+- **Effetto**: Questa carta non conta come una delle 2 carte giocabili per turno. Pesca 2 carte azione
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn card with a speed flash bypassing the play counter tally in the art style of The Binding of Isaac. A card zipping past a turn-counter tally mark without incrementing it, leaving the limit untouched. Thick black outlines, flat shading, swift mood. Plain off-white parchment background. Indie game card art.`
 

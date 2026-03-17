@@ -53,12 +53,19 @@ def _card_32(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_33(player, game, db, *, target_player_id=None) -> dict:
-    """Quick Action — Questa carta non conta come una delle 2 carte giocabili per turno.
+    """Quick Action — Non conta come una delle 2 carte giocabili per turno; pesca 2 carte.
 
     Decrements cards_played_this_turn by 1 to cancel the +1 applied before this call.
     """
+    from app.models.game import PlayerHandCard
     player.cards_played_this_turn = max(0, player.cards_played_this_turn - 1)
-    return {"applied": True, "card_did_not_count": True}
+    drew = 0
+    for _ in range(2):
+        src = game.action_deck_1 if game.action_deck_1 else game.action_deck_2
+        if src:
+            db.add(PlayerHandCard(player_id=player.id, action_card_id=src.pop(0)))
+            drew += 1
+    return {"applied": True, "card_did_not_count": True, "drew": drew}
 
 
 def _card_34(player, game, db, *, target_player_id=None) -> dict:
