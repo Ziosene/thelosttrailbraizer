@@ -1724,7 +1724,7 @@
 ### 175. Profile Explorer
 - **Tipo**: Utilità
 - **Quando**: In qualsiasi momento
-- **Effetto**: Vedi tutti gli AddOn posseduti, gli HP e le Licenze di tutti i giocatori per 1 turno
+- **Effetto**: Pesca 2 carte azione e guadagna 2 Licenze
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn player profile scanner in the art style of The Binding of Isaac. A scanning beam sweeping all player figures, revealing their addon inventory, heart count, and coin total in floating stat panels. Thick black outlines, flat shading, intel-gathering mood. Plain off-white parchment background. Indie game card art.`
 

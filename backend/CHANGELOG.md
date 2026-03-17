@@ -28,6 +28,7 @@
 - **Carta 153** (Environment Branch): effetto cambiato da "annulla il prossimo danno" a `reindirizza danno al giocatore a sinistra e a destra (1HP ciascuno)`; combat.py trova i vicini per indice e applica il danno; broadcast `environment_branch_redirect`
 - **Carta 163** (Inventory Availability): redesign — da "+1L per tipo addon esaurito" (nessun tracking per tipo) a `+2L per ogni addon in più rispetto all'avversario con meno addon (max 8)`
 - **Carta 169** (Model Builder): cambiato da "3 miss consecutivi" a "3 miss totali" — contatore `model_builder_misses` non si azzera sugli hit; rimosso il reset nel branch hit di combat.py
+- **Carta 175** (Profile Explorer): redesign — da "vedi addon/HP/licenze di tutti" (info già pubblica) a `pesca 2 carte + guadagna 2L`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
 

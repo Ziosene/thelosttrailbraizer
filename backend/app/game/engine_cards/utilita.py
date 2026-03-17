@@ -560,17 +560,16 @@ def _card_174(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_175(player, game, db, *, target_player_id=None) -> dict:
-    """Profile Explorer — Vedi AddOn, HP e Licenze di tutti i giocatori per 1 turno (info broadcast)."""
-    snapshot = [
-        {
-            "player_id": p.id,
-            "hp": p.hp,
-            "licenze": p.licenze,
-            "addon_count": len(list(p.addons)),
-        }
-        for p in game.players
-    ]
-    return {"applied": True, "player_snapshots": snapshot}
+    """Profile Explorer — Pesca 2 carte e guadagna 2 Licenze."""
+    from app.models.game import PlayerHandCard as _PHC175
+    drew = 0
+    for _ in range(2):
+        src = game.action_deck_1 if game.action_deck_1 else game.action_deck_2
+        if src:
+            db.add(_PHC175(player_id=player.id, action_card_id=src.pop(0)))
+            drew += 1
+    player.licenze += 2
+    return {"applied": True, "drew": drew, "licenze_gained": 2}
 
 
 def _card_176(player, game, db, *, target_player_id=None) -> dict:
