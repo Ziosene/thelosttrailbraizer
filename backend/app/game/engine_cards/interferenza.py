@@ -721,6 +721,20 @@ def _card_246(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "unification_rule_card_type": "Economica", "players_affected": len(list(game.players))}
 
 
+def _card_268(player, game, db, *, target_player_id=None) -> dict:
+    """ISV Summit — Tutti mostrano 1 addon; chi non ne ha -1L; player +1L per addon mostrato."""
+    shown = 0
+    for gp in game.players:
+        if gp.id == player.id:
+            continue
+        if list(gp.addons):
+            shown += 1
+        else:
+            gp.licenze = max(0, gp.licenze - 1)
+    player.licenze += shown
+    return {"applied": True, "licenze_gained": shown, "penalized_players": len(list(game.players)) - 1 - shown}
+
+
 INTERFERENZA: dict = {
     38:  _card_38,
     39:  _card_39,
@@ -764,4 +778,5 @@ INTERFERENZA: dict = {
     236: _card_236,
     237: _card_237,
     246: _card_246,
+    268: _card_268,
 }

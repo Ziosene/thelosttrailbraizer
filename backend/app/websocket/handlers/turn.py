@@ -999,6 +999,11 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
             cs["cadence_no_combat_turns"] = 0
         # Card 236 (API Governance): one-turn declaration rule expires
         cs.pop("api_governance_active", None)
+        # Card 258 (Salesforce Tower): one-turn HP floor expires
+        cs.pop("salesforce_tower_active", None)
+        # Card 262 (World Tour Event): one-turn boss reward bonus expires
+        cs.pop("world_tour_event_active", None)
+        cs.pop("world_tour_event_first_bonus", None)
         # Card 242 (App Builder): clear type counters if not triggered
         cs.pop("app_builder_type_counts", None)
         cs.pop("app_builder_active", None)

@@ -706,6 +706,37 @@ def _card_240(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "batch_scope_dot_rounds": cs["batch_scope_dot_rounds"]}
 
 
+def _card_261(player, game, db, *, target_player_id=None) -> dict:
+    """CTA Board — Boss con HP ≤ 3 → sconfitto immediatamente (esame fallito)."""
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    current_hp = player.current_boss_hp or 0
+    if current_hp <= 3:
+        player.current_boss_hp = 0
+        return {"applied": True, "boss_defeated": True, "boss_hp_was": current_hp}
+    return {"applied": False, "reason": "boss_hp_too_high", "boss_hp": current_hp}
+
+
+def _card_262(player, game, db, *, target_player_id=None) -> dict:
+    """World Tour Event — Tutte le ricompense boss +2L per 1 turno; chi combatte primo +1L extra.
+
+    Stores world_tour_event_turns=1 + world_tour_event_first_bonus=True in player's combat_state.
+    combat.py boss defeat: if world_tour_event_active in any player's state, add +2L to reward.
+    Simplified: set flag for all players; combat.py bonus at boss defeat checks it.
+    """
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    for gp in game.players:
+        cs = dict(gp.combat_state or {})
+        cs["world_tour_event_active"] = True
+        gp.combat_state = cs
+    # First combat bonus stored on the caster
+    cs_caster = dict(player.combat_state)
+    cs_caster["world_tour_event_first_bonus"] = True
+    player.combat_state = cs_caster
+    return {"applied": True, "players_affected": len(list(game.players))}
+
+
 OFFENSIVA: dict = {
     9:   _card_9,
     10:  _card_10,
@@ -754,4 +785,6 @@ OFFENSIVA: dict = {
     231: _card_231,
     233: _card_233,
     240: _card_240,
+    261: _card_261,
+    262: _card_262,
 }

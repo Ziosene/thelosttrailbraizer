@@ -532,6 +532,51 @@ def _card_207(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "feedback_management_remaining": 3}
 
 
+def _card_258(player, game, db, *, target_player_id=None) -> dict:
+    """Salesforce Tower — Per 1 turno l'HP non può scendere sotto 1 (bastione).
+
+    Stores salesforce_tower_active=True. combat.py miss branch: player.hp = max(1, new_hp).
+    Cleared in end_turn.
+    """
+    cs = dict(player.combat_state or {})
+    cs["salesforce_tower_active"] = True
+    player.combat_state = cs
+    return {"applied": True, "salesforce_tower_active": True}
+
+
+def _card_259(player, game, db, *, target_player_id=None) -> dict:
+    """Nonprofit Success Pack — +2HP; il giocatore con meno HP recupera anche 1HP."""
+    player.hp = min(player.max_hp, player.hp + 2)
+    # Also heal the most injured player (excluding self if not worst)
+    weakest = min(game.players, key=lambda p: p.hp)
+    if weakest.id != player.id:
+        weakest.hp = min(weakest.max_hp, weakest.hp + 1)
+        return {"applied": True, "self_healed": 2, "weakest_healed": weakest.id}
+    return {"applied": True, "self_healed": 2}
+
+
+def _card_260(player, game, db, *, target_player_id=None) -> dict:
+    """Admin Hero — +2HP e draw 1 se Ruolo è Administrator; altrimenti +1HP.
+
+    Checks player.role (Mapped[str | None]). Admin roles: 'Administrator', 'Advanced Administrator'.
+    """
+    from app.models.game import PlayerHandCard as _PHC260
+    admin_roles = {"Administrator", "Advanced Administrator", "administrator", "advanced_administrator"}
+    is_admin = (player.role or "") in admin_roles
+    if is_admin:
+        player.hp = min(player.max_hp, player.hp + 2)
+        drew = False
+        if game.action_deck_1:
+            db.add(_PHC260(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+            drew = True
+        elif game.action_deck_2:
+            db.add(_PHC260(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+            drew = True
+        return {"applied": True, "healed": 2, "drew_card": drew, "admin": True}
+    player.hp = min(player.max_hp, player.hp + 1)
+    return {"applied": True, "healed": 1, "admin": False}
+
+
 DIFENSIVA: dict = {
     19:  _card_19,
     20:  _card_20,
@@ -569,4 +614,7 @@ DIFENSIVA: dict = {
     205: _card_205,
     206: _card_206,
     207: _card_207,
+    258: _card_258,
+    259: _card_259,
+    260: _card_260,
 }

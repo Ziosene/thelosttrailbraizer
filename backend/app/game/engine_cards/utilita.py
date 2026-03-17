@@ -995,6 +995,141 @@ def _card_250(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "card_moved_to_top": card_id}
 
 
+def _card_263(player, game, db, *, target_player_id=None) -> dict:
+    """Architect Guild — Tutti i giocatori Architecture pescano 1; tu peschi 2."""
+    from app.models.game import PlayerHandCard as _PHC263
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    arch_roles = {"architect", "Architect", "Solution Architect", "Technical Architect"}
+    drew_self = 0
+    drew_others = 0
+    for gp in game.players:
+        is_arch = (gp.role or "") in arch_roles
+        n = 2 if gp.id == player.id else (1 if is_arch else 0)
+        for _ in range(n):
+            if game.action_deck_1:
+                db.add(_PHC263(player_id=gp.id, action_card_id=game.action_deck_1.pop(0)))
+            elif game.action_deck_2:
+                db.add(_PHC263(player_id=gp.id, action_card_id=game.action_deck_2.pop(0)))
+            if gp.id == player.id:
+                drew_self += 1
+            else:
+                drew_others += 1
+    return {"applied": True, "drew_self": drew_self, "drew_others": drew_others}
+
+
+def _card_264(player, game, db, *, target_player_id=None) -> dict:
+    """Trailhead Playground — Pesca 3 carte, tienine 1, le altre tornano mescolate.
+
+    Auto-pick: keep first, return the other two to deck shuffled.
+    """
+    from app.models.game import PlayerHandCard as _PHC264
+    from app.game import engine as _eng264
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    taken = []
+    for _ in range(3):
+        if game.action_deck_1:
+            taken.append(game.action_deck_1.pop(0))
+        elif game.action_deck_2:
+            taken.append(game.action_deck_2.pop(0))
+    if not taken:
+        return {"applied": False, "reason": "empty_decks"}
+    # Keep first → hand; shuffle rest back into deck_1
+    db.add(_PHC264(player_id=player.id, action_card_id=taken[0]))
+    if len(taken) > 1:
+        remaining = taken[1:]
+        game.action_deck_1 = _eng264.shuffle_deck(remaining + list(game.action_deck_1 or []))
+    return {"applied": True, "kept_card_id": taken[0], "returned": len(taken) - 1}
+
+
+def _card_265(player, game, db, *, target_player_id=None) -> dict:
+    """Trailmix — Scegli 1 carta per tipo (offensiva/difensiva/economica) dagli ultimi 9 scarti.
+
+    Auto-pick: finds first card of each type from discard tail; adds to hand.
+    """
+    from app.models.game import PlayerHandCard as _PHC265
+    from app.models.card import ActionCard as _AC265
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    discard = list(game.action_discard or [])
+    last9 = discard[-9:] if len(discard) >= 9 else discard[:]
+    targets = {"Offensiva": None, "Difensiva": None, "Economica": None}
+    for cid in reversed(last9):
+        c = db.get(_AC265, cid)
+        if c and c.card_type in targets and targets[c.card_type] is None:
+            targets[c.card_type] = cid
+    picked = [cid for cid in targets.values() if cid is not None]
+    for cid in picked:
+        discard.remove(cid)
+        db.add(_PHC265(player_id=player.id, action_card_id=cid))
+    game.action_discard = discard
+    return {"applied": True, "picked": picked, "count": len(picked)}
+
+
+def _card_266(player, game, db, *, target_player_id=None) -> dict:
+    """Salesforce Ben — Pesca 2 carte + guarda prossima carta del mazzo boss."""
+    from app.models.game import PlayerHandCard as _PHC266
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    drew = 0
+    for _ in range(2):
+        if game.action_deck_1:
+            db.add(_PHC266(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+            drew += 1
+        elif game.action_deck_2:
+            db.add(_PHC266(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+            drew += 1
+    boss_peek = (game.boss_deck or [])[:1]
+    return {"applied": True, "drew_cards": drew, "boss_deck_top1": boss_peek}
+
+
+def _card_267(player, game, db, *, target_player_id=None) -> dict:
+    """Buyer Relationship Map — Guarda tutti gli AddOn di tutti i giocatori (snapshot)."""
+    from app.models.card import AddonCard as _ADC267
+    snapshot = {}
+    for gp in game.players:
+        snapshot[gp.id] = [
+            {"addon_id": pa.addon_id, "is_tapped": pa.is_tapped}
+            for pa in gp.addons
+        ]
+    return {"applied": True, "addon_snapshot": snapshot}
+
+
+def _card_269(player, game, db, *, target_player_id=None) -> dict:
+    """Trailhead GO — Istantanea: gioca questa carta senza consumare slot (refund 1 card play).
+
+    Grants einstein_gpt_free_play so the next card played this turn is also free, OR
+    simply refunds the slot consumed playing this card.
+    """
+    # Refund the card slot consumed for playing this card
+    player.cards_played_this_turn = max(0, player.cards_played_this_turn - 1)
+    return {"applied": True, "card_slot_refunded": True}
+
+
+def _card_270(player, game, db, *, target_player_id=None) -> dict:
+    """Success Community — Un avversario ti dà 1 carta dalla sua mano (a sua scelta).
+
+    Simplified: takes last card from target's hand (target "chooses" to give cheapest / last).
+    Requires target_player_id.
+    """
+    if not target_player_id:
+        return {"applied": False, "reason": "target_required"}
+    from app.game.engine_cards.helpers import get_target
+    from app.models.game import PlayerHandCard as _PHC270
+    target = get_target(game, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "target_not_found"}
+    hand = list(target.hand)
+    if not hand:
+        return {"applied": False, "reason": "target_has_no_cards"}
+    given = hand[-1]
+    card_id = given.action_card_id
+    db.delete(given)
+    db.add(_PHC270(player_id=player.id, action_card_id=card_id))
+    return {"applied": True, "received_card_id": card_id}
+
+
 UTILITA: dict = {
     31:  _card_31,
     32:  _card_32,
@@ -1039,6 +1174,13 @@ UTILITA: dict = {
     227: _card_227,
     232: _card_232,
     234: _card_234,
+    263: _card_263,
+    264: _card_264,
+    265: _card_265,
+    266: _card_266,
+    267: _card_267,
+    269: _card_269,
+    270: _card_270,
     238: _card_238,
     239: _card_239,
     242: _card_242,

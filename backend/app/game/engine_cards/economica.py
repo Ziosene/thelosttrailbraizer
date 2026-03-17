@@ -655,6 +655,96 @@ def _card_244(player, game, db, *, target_player_id=None) -> dict:
     return {"applied": True, "licenze_gained": reward, "passive_addons": passive_count}
 
 
+def _card_251(player, game, db, *, target_player_id=None) -> dict:
+    """Trailblazer Community — +1L per ogni giocatore che ha almeno 1 Certificazione."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    certified = sum(1 for p in game.players if (p.certificazioni or 0) >= 1)
+    player.licenze += certified
+    return {"applied": True, "licenze_gained": certified, "certified_players": certified}
+
+
+def _card_252(player, game, db, *, target_player_id=None) -> dict:
+    """AppExchange Partner — +2L; +5L se possiedi ≥5 AddOn."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    reward = 5 if len(list(player.addons)) >= 5 else 2
+    player.licenze += reward
+    return {"applied": True, "licenze_gained": reward, "addon_count": len(list(player.addons))}
+
+
+def _card_253(player, game, db, *, target_player_id=None) -> dict:
+    """Dreamforce Badge — +3L e pesca 1 carta extra."""
+    from app.models.game import PlayerHandCard as _PHC253
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    player.licenze += 3
+    drew = False
+    if game.action_deck_1:
+        db.add(_PHC253(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+        drew = True
+    elif game.action_deck_2:
+        db.add(_PHC253(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+        drew = True
+    return {"applied": True, "licenze_gained": 3, "drew_card": drew}
+
+
+def _card_254(player, game, db, *, target_player_id=None) -> dict:
+    """MVP Award — +5L se hai giocato ≥2 carte di tipo diverso questo turno."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    types_played = list((player.combat_state or {}).get("card_types_played_this_turn") or [])
+    if len(set(types_played)) >= 2:
+        player.licenze += 5
+        return {"applied": True, "licenze_gained": 5, "types_played": types_played}
+    return {"applied": False, "reason": "need_2_different_types", "types_played": types_played}
+
+
+def _card_255(player, game, db, *, target_player_id=None) -> dict:
+    """Platinum Partner — +3L per ogni Certificazione posseduta."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    certs = player.certificazioni or 0
+    reward = certs * 3
+    if reward == 0:
+        return {"applied": False, "reason": "no_certifications"}
+    player.licenze += reward
+    return {"applied": True, "licenze_gained": reward, "certifications": certs}
+
+
+def _card_256(player, game, db, *, target_player_id=None) -> dict:
+    """Green IT — +3L; +5L se non hai usato carte Offensive questo turno."""
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    types_played = list((player.combat_state or {}).get("card_types_played_this_turn") or [])
+    reward = 3 if "Offensiva" in types_played else 5
+    player.licenze += reward
+    return {"applied": True, "licenze_gained": reward, "no_offensive": "Offensiva" not in types_played}
+
+
+def _card_257(player, game, db, *, target_player_id=None) -> dict:
+    """Education Cloud — Il giocatore con meno boss sconfitti pesca 1 carta (2 se sei tu)."""
+    from app.models.game import PlayerHandCard as _PHC257
+    if player.is_in_combat:
+        return {"applied": False, "reason": "in_combat"}
+    min_bosses = min(p.bosses_defeated for p in game.players)
+    beneficiaries = [p for p in game.players if p.bosses_defeated == min_bosses]
+    drew_self = 0
+    drew_others = 0
+    for bp in beneficiaries:
+        n = 2 if bp.id == player.id else 1
+        for _ in range(n):
+            if game.action_deck_1:
+                db.add(_PHC257(player_id=bp.id, action_card_id=game.action_deck_1.pop(0)))
+            elif game.action_deck_2:
+                db.add(_PHC257(player_id=bp.id, action_card_id=game.action_deck_2.pop(0)))
+            if bp.id == player.id:
+                drew_self += 1
+            else:
+                drew_others += 1
+    return {"applied": True, "drew_self": drew_self, "drew_others": drew_others}
+
+
 ECONOMICA: dict = {
     1:   _card_1,
     2:   _card_2,
@@ -706,4 +796,11 @@ ECONOMICA: dict = {
     235: _card_235,
     241: _card_241,
     244: _card_244,
+    251: _card_251,
+    252: _card_252,
+    253: _card_253,
+    254: _card_254,
+    255: _card_255,
+    256: _card_256,
+    257: _card_257,
 }

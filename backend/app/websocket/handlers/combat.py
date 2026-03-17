@@ -852,7 +852,11 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                 _cs_tt = dict(player.combat_state)
                 _cs_tt.pop("travel_time_calc_active", None)
                 player.combat_state = _cs_tt
-            player.hp = max(0, player.hp - _player_hp_damage)
+            # Card 258 (Salesforce Tower): HP cannot drop below 1 this turn
+            if (player.combat_state or {}).get("salesforce_tower_active"):
+                player.hp = max(1, player.hp - _player_hp_damage)
+            else:
+                player.hp = max(0, player.hp - _player_hp_damage)
             player_took_damage = True
             if _player_hp_damage > 0:
                 # Card 152 (Net Zero Commitment): +1L per HP lost
@@ -1132,6 +1136,14 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
 
         # Step 2: award Licenze reward
         player.licenze += boss.reward_licenze
+        # Card 262 (World Tour Event): bonus +2L on boss defeat if event active; first combatant +1L extra
+        if (player.combat_state or {}).get("world_tour_event_active"):
+            player.licenze += 2
+            if (player.combat_state or {}).get("world_tour_event_first_bonus"):
+                player.licenze += 1
+                _cs_wte = dict(player.combat_state)
+                _cs_wte.pop("world_tour_event_first_bonus", None)
+                player.combat_state = _cs_wte
 
         # Step 3: award Certification (if cert boss)
         if boss.has_certification:

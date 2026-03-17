@@ -135,15 +135,15 @@ backend/
 │       ├── __init__.py           ✅
 │       ├── engine.py             ✅ funzioni pure core (~165 righe): roll, combat, deck, death, ELO + re-export engine_boss
 │       ├── engine_boss.py        ✅ boss ability system (~1000 righe): tutti i 100 boss, query helper, apply_boss_ability
-│       └── engine_cards/         ✅ effetti carte azione (250/300 implementate)
+│       └── engine_cards/         ✅ effetti carte azione (270/300 implementate)
 │           ├── __init__.py       ✅ dispatcher apply_action_card_effect
 │           ├── helpers.py        ✅ get_target()
-│           ├── economica.py      ✅ carte 1–8, 41–48, 81–88, 121–125, 159–168, 208–214, 230, 235, 241, 244
-│           ├── offensiva.py      ✅ carte 9–18, 49–54, 89–95, 126–130, 141–150, 191–195, 228, 231, 233, 240
-│           ├── difensiva.py      ✅ carte 19–25, 55–58, 96–100, 131–135, 151–158, 201–207
+│           ├── economica.py      ✅ carte 1–8, 41–48, 81–88, 121–125, 159–168, 208–214, 230, 235, 241, 244, 251–257
+│           ├── offensiva.py      ✅ carte 9–18, 49–54, 89–95, 126–130, 141–150, 191–195, 228, 231, 233, 240, 261–262
+│           ├── difensiva.py      ✅ carte 19–25, 55–58, 96–100, 131–135, 151–158, 201–207, 258–260
 │           ├── manipolazione.py  ✅ carte 26–30, 59–62, 101–105, 136, 169–171, 216–220
-│           ├── utilita.py        ✅ carte 31–37, 63–69, 80, 106–110, 137–138, 172–180, 196–200, 215, 221, 223, 226–227, 232, 234, 238–239, 242–243, 245, 247–250
-│           └── interferenza.py   ✅ carte 38–40, 70–79, 111–120, 139–140, 181–190, 222, 224–225, 229, 236–237, 246
+│           ├── utilita.py        ✅ carte 31–37, 63–69, 80, 106–110, 137–138, 172–180, 196–200, 215, 221, 223, 226–227, 232, 234, 238–239, 242–243, 245, 247–250, 263–267, 269–270
+│           └── interferenza.py   ✅ carte 38–40, 70–79, 111–120, 139–140, 181–190, 222, 224–225, 229, 236–237, 246, 268
 ├── scripts/
 │   └── seed_cards.py             ✅ parser .md → insert DB (idempotente, safe re-run)
 └── tests/
@@ -620,6 +620,15 @@ MORTE DEL GIOCATORE
   - **Interferenza 236, 237, 246**: API Governance (236, tutti devono dichiarare le carte per 1 turno), Dataflow (237, ruba 1 carta dalla mano del target), Agent Topic (246, come Unification Rule con tipo "Economica").
   - **combat.py hooks**: `batch_scope_dot_rounds` (DOT -1HP boss ogni round, decrement/clear).
   - **turn.py hooks**: `einstein_gpt_free_play` (skip cards_played_this_turn increment per 1 carta), `integration_pattern_boost` (+1L alla 2a carta giocata), `app_builder_active`+`app_builder_type_counts` (draw quando tipo raggiunge 2 play), `sftp_reserve_card_ids` (restituzione carte in draw_card), `work_item_active` (recupera 1 scarto in end_turn), `api_governance_active` (clear in end_turn).
+
+- [x] **Carte azione 251–270 — Batch 11 (Salesforce Community, Difensiva, CTA, Utility avanzata)**
+  - **Economica 251–257**: Trailblazer Community (251, +1L/giocatore certificato), AppExchange Partner (252, +2L o +5L con ≥5 addon), Dreamforce Badge (253, +3L+draw), MVP Award (254, +5L se ≥2 tipi diversi giocati), Platinum Partner (255, +3L/certificazione), Green IT (256, +3L; +5L se no Offensiva), Education Cloud (257, giocatore con meno boss pesca 1; se tu peschi 2).
+  - **Difensiva 258–260**: Salesforce Tower (258, HP floor=1 per 1 turno), Nonprofit Success Pack (259, +2HP + +1HP al giocatore più debole), Admin Hero (260, +2HP+draw se Admin role; +1HP altrimenti).
+  - **Offensiva 261–262**: CTA Board (261, boss con ≤3HP → sconfitto immediatamente), World Tour Event (262, +2L su ogni boss defeat per 1 turno; primo combattente +1L extra).
+  - **Utilità 263–267, 269–270**: Architect Guild (263, Architecture players pescano 1; tu peschi 2), Trailhead Playground (264, pesca 3 tieni 1 altri tornano nel mazzo), Trailmix (265, prendi 1 per tipo dagli ultimi 9 scarti), Salesforce Ben (266, draw2 + peek boss deck), Buyer Relationship Map (267, snapshot addon di tutti), Trailhead GO (269, refund slot carta), Success Community (270, target ti dà 1 carta).
+  - **Interferenza 268**: ISV Summit (tutti mostrano 1 addon; chi non ne ha -1L; player +1L per addon mostrato).
+  - **combat.py hooks**: `salesforce_tower_active` (HP = max(1, hp-damage)), `world_tour_event_active`+`world_tour_event_first_bonus` (+2L/+1L su boss defeat).
+  - **turn.py end_turn**: cleanup `salesforce_tower_active`, `world_tour_event_active`, `world_tour_event_first_bonus`.
 
 - [ ] **Rate limiting WS** — un utente non dovrebbe poter inviare messaggi troppo veloci.
 
