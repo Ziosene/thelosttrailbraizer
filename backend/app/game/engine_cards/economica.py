@@ -483,21 +483,10 @@ def _card_168(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_208(player, game, db, *, target_player_id=None) -> dict:
-    """Smart Capture Form — +1L per ogni giocatore che ha mostrato la propria mano in questo turno.
-
-    Checks hand_revealed_this_turn flag in each player's combat_state.
-    Always counts self (player just played this card = "submitted form").
-    """
-    if player.is_in_combat:
-        return {"applied": False, "reason": "in_combat"}
-    revealed_count = 1  # self
-    for p in game.players:
-        if p.id != player.id:
-            cs = p.combat_state or {}
-            if cs.get("hand_revealed_this_turn"):
-                revealed_count += 1
-    player.licenze += revealed_count
-    return {"applied": True, "licenze_gained": revealed_count, "revealed_count": revealed_count}
+    """Smart Capture Form — +1L per ogni carta in mano adesso."""
+    hand_count = len(list(player.hand))
+    player.licenze += hand_count
+    return {"applied": True, "licenze_gained": hand_count, "hand_count": hand_count}
 
 
 def _card_209(player, game, db, *, target_player_id=None) -> dict:

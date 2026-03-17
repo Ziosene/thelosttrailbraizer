@@ -2038,8 +2038,8 @@
 
 ### 208. Smart Capture Form
 - **Tipo**: Economica
-- **Quando**: Fuori dal combattimento
-- **Effetto**: Guadagna 1 Licenza per ogni giocatore che ha mostrato la propria mano in questo turno (inclusa la tua)
+- **Quando**: Durante il tuo turno
+- **Effetto**: Guadagna 1 Licenza per ogni carta che hai in mano in questo momento.
 - **Rarità**: Comune
 - **Image prompt**: `A 2D hand-drawn smart form collecting submissions in the art style of The Binding of Isaac. A capture form receiving one coin per player who has revealed their hand, the counter ticking up for each transparent player at the table. Thick black outlines, flat shading, data-harvesting mood. Plain off-white parchment background. Indie game card art.`
 
