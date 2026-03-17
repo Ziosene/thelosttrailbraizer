@@ -952,7 +952,7 @@
 ### 92. The Einstein Copilot Seraph
 - **HP**: 6
 - **Soglia dado**: 6+
-- **Abilità**: Sembra un alleato — il boss offre aiuto: il combattente pesca 2 carte extra. Ma ogni carta pescata in questo combattimento causa 1 danno aggiuntivo al combattente (il Seraph corrompe ogni aiuto)
+- **Abilità**: Sembra un alleato — il boss offre aiuto: il combattente pesca 1 carta extra. Ma ogni carta pescata in questo combattimento causa 1 danno aggiuntivo al combattente (il Seraph corrompe ogni aiuto)
 - **Ricompensa**: 5 Licenze
 - **Difficoltà**: Alta
 - **Image prompt**: `A 2D hand-drawn monster in the distinctive art style of The Binding of Isaac. The monster is "The Einstein Copilot Seraph": a corrupted AI angel with beautiful wings made of helpful suggestion bubbles — each bubble concealing a hidden damage barb. It extends cards as gifts with a serene smile, but each gift is poisoned. Its halo flickers between angelic gold and malevolent red. Thick black outlines, grotesque but cartoonish, flat shading, plain off-white parchment background. Indie game card art.`

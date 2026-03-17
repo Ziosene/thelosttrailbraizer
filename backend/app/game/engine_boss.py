@@ -974,9 +974,9 @@ def apply_boss_ability(
         # ── Boss 92 — The Einstein Copilot Seraph ────────────────────────────
         # At combat start: combatant draws 2 extra cards (seraph's "gift").
         # Every card drawn during this combat costs 1 HP (tracked via boss_draw_costs_hp() helper).
-        # The 2 bonus draws at start also trigger the HP cost.
+        # The 1 bonus draw at start also triggers the HP cost.
         case (92, "on_combat_start"):
-            return _boss_effect(draw_bonus_cards=2)
+            return _boss_effect(draw_bonus_cards=1)
 
         # ── Boss 93 — The Subscription Management Tormentor ──────────────────
         # Every round: pay 1 Licenza or take 2 HP damage instead.
