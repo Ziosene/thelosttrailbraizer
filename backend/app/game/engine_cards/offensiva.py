@@ -579,20 +579,14 @@ def _card_192(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_193(player, game, db, *, target_player_id=None) -> dict:
-    """Decision Element — Interferenza. Presenta 2 opzioni al target; tu applichi l'effetto opposto.
-
-    Simplified: target perde 1HP → player guadagna 2L.
-    Requires target_player_id.
-    """
-    if not target_player_id:
-        return {"applied": False, "reason": "target_required"}
+    """Decision Element — Un avversario perde 2L e 1HP."""
     from app.game.engine_cards.helpers import get_target
-    target = get_target(game, target_player_id)
+    target = get_target(game, player, target_player_id)
     if not target:
-        return {"applied": False, "reason": "target_not_found"}
+        return {"applied": False, "reason": "no_target"}
+    target.licenze = max(0, target.licenze - 2)
     target.hp = max(0, target.hp - 1)
-    player.licenze += 2
-    return {"applied": True, "target_hp_lost": 1, "licenze_gained": 2}
+    return {"applied": True, "target_id": target.id, "licenze_lost": 2, "hp_lost": 1}
 
 
 def _card_194(player, game, db, *, target_player_id=None) -> dict:

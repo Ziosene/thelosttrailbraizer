@@ -35,6 +35,7 @@
 - **Carta 189** (Delete Records): rimossa restrizione riacquisto 3 turni — ora l'addon torna semplicemente nel mazzo disponibile per tutti
 - **Carta 190** (Unification Rule): redesign — da "forza tipo carta su tutti" (non implementabile) a `ruba 1 addon da un avversario`; sposta `PlayerAddon` dal target al caster
 - **Carta 191** (Autolaunched Flow): redesign — da "trigger automatico sotto 2HP" (complesso) a `-2HP al boss, giocatore va a 1HP`; rimosso hook `autolaunched_flow_ready` da combat.py
+- **Carta 193** (Decision Element): redesign — da "opzioni con effetto opposto" (ambiguo/complesso) a `avversario perde 2L e 1HP`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
 

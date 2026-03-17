@@ -1896,7 +1896,7 @@
 ### 193. Decision Element
 - **Tipo**: Offensiva / Interferenza
 - **Quando**: Fuori dal proprio turno
-- **Effetto**: Presenta 2 opzioni a un avversario — lui sceglie, tu applichi l'effetto opposto (es. sceglie di perdere 1 HP → tu guadagni 2 Licenze)
+- **Effetto**: Un avversario perde 2 Licenze e 1 HP
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn diamond-shaped decision node with two branching paths in the art style of The Binding of Isaac. A confused tiny figure standing at a fork choosing between two options labeled A and B, while a shadowy hand behind pulls strings. Thick black outlines, flat shading, tricky mischievous mood. Plain off-white parchment background. Indie game card art.`
 
