@@ -979,7 +979,7 @@ def apply_boss_ability(
             return _boss_effect(draw_bonus_cards=1)
 
         # ── Boss 93 — The Subscription Management Tormentor ──────────────────
-        # Every round: if combatant has 0 licenze, deal 1 HP damage.
+        # Every round: combatant loses 1L; if already at 0L, takes 1 HP damage instead.
         case (93, "on_round_start"):
             return _boss_effect(subscription_drain=1)
 

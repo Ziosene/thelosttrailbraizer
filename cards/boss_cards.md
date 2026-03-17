@@ -962,7 +962,7 @@
 ### 93. The Subscription Management Tormentor 🏆
 - **HP**: 5
 - **Soglia dado**: 5+
-- **Abilità**: Abbonamento scaduto — ogni round in cui il combattente ha 0 Licenze, subisce 1 HP di danno.
+- **Abilità**: Abbonamento in scadenza — ogni round il combattente perde 1 Licenza. Quando arriva a 0, ogni round subisce 1 HP di danno invece.
 - **Ricompensa**: 8 Licenze + **1 Certificazione**
 - **Difficoltà**: Media
 - **Image prompt**: `A 2D hand-drawn monster in the distinctive art style of The Binding of Isaac. The monster is "The Subscription Management Tormentor": a relentless creature in subscription billing gear, showing up every round with a "PAYMENT DUE" invoice. It can't be ignored — miss a payment and take double damage. Its face is a recurring billing cycle calendar. Thick black outlines, grotesque but cartoonish, flat shading, plain off-white parchment background. Indie game card art.`

@@ -437,9 +437,11 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             "prediction": prediction,
         })
 
-    # Boss 93 (Subscription Management Tormentor): if player has 0 licenze, take 1 HP
+    # Boss 93 (Subscription Management Tormentor): lose 1L/round; if at 0L take 1 HP instead
     if round_start["subscription_drain"] > 0:
-        if player.licenze == 0:
+        if player.licenze > 0:
+            player.licenze -= 1
+        else:
             player.hp = max(0, player.hp - 1)
 
     # Boss 100 (Omega): apply last legendary boss's on_round_start effects in parallel
@@ -458,7 +460,9 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             else:
                 player.hp = max(0, player.hp - n)
         if omega_rs["subscription_drain"] > 0:
-            if player.licenze == 0:
+            if player.licenze > 0:
+                player.licenze -= 1
+            else:
                 player.hp = max(0, player.hp - 1)
 
     # Boss 55 / Boss 74: apply shadow copy's on_round_start effects
@@ -485,7 +489,9 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             else:
                 player.hp = max(0, player.hp - copy_rs["force_discard_or_damage"])
         if copy_rs["subscription_drain"] > 0:
-            if player.licenze == 0:
+            if player.licenze > 0:
+                player.licenze -= 1
+            else:
                 player.hp = max(0, player.hp - 1)
 
     # Boss 45 (Agentforce Rebellion): each owned addon costs 1L/round; can't pay → addon tapped
