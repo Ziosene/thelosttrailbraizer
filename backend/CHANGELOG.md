@@ -17,6 +17,7 @@
 - **Carta 71** (Anypoint MQ): redesign — da "forza carta in coda avversario" a `blocca avversario: non può giocare carte per 1 turno`; riusa flag `locked_out` già gestito da turn.py
 - **Carta 75** (Triggered Send): effetto modificato — le 2L si guadagnano solo se l'avversario bersaglio sconfigge il boss; flag `triggered_send_thief_id` in combat_state del target; hook in combat.py prima di Step 2
 - **Carta 93** (Live Message): chiarito che la carta ceduta va al caster; rimosso TODO — ora implementato con flag `live_message_pending_caster_id` in combat_state del target; ClientAction `live_message_respond` gestisce la scelta
+- **Carta 94** (Territory Assignment Rule): redesign — da "assegna boss a avversario con penale" a `guarda i primi 3 boss di un mazzo e scegli quale pescare`; flag `territory_pending_choices` in combat_state; ClientAction `territory_assignment_pick`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
 

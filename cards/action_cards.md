@@ -937,7 +937,7 @@
 ### 94. Territory Assignment Rule
 - **Tipo**: Offensiva
 - **Quando**: Fuori dal proprio turno
-- **Effetto**: Assegna il prossimo boss nel mazzo a un avversario — deve combatterlo subito o perdere 2 Licenze
+- **Effetto**: Guarda i primi 3 boss di uno dei due mazzi e scegli quale pescare come prossimo tuo boss
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn territory stamp in the art style of The Binding of Isaac. A red territory seal stamped onto a boss monster card and shoved toward a panicking opponent figure holding a lose-2-coins alternative. Thick black outlines, flat shading, imperious mood. Plain off-white parchment background. Indie game card art.`
 
