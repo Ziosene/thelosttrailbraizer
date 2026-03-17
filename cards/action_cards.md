@@ -1950,7 +1950,7 @@
 ### 199. Segment Builder
 - **Tipo**: Utilità
 - **Quando**: Fuori dal combattimento
-- **Effetto**: Dividi il mazzo azione in 2 pile — scegli da quale pescare per i prossimi 2 turni
+- **Effetto**: Scarta fino a 3 carte dalla tua mano e pesca lo stesso numero di carte
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn deck of cards being split down the middle into two separate piles in the art style of The Binding of Isaac. Two hands pulling a card deck apart, each half glowing a different color, a tiny figure standing between them deciding which pile to choose. Thick black outlines, flat shading, strategic decisive mood. Plain off-white parchment background. Indie game card art.`
 

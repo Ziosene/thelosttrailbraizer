@@ -39,6 +39,7 @@
 - **Carta 195** (Subflow): redesign — da "potenzia carta già giocata" (non implementabile) a `recupera 1HP + boss -1HP`
 - **Carta 197** (Create Records): redesign — da "crea carta jolly on-the-fly" (non implementabile senza ActionCard in DB) a `pesca 2 carte`
 - **Carta 198** (Einstein Recommendation): rimosso controllo compatibilità ruolo — ora pesca semplicemente 1 addon gratis dal mazzo
+- **Carta 199** (Segment Builder): redesign — da "dividi mazzo in 2 pile" (complesso) a `scarta fino a 3 carte e pesca lo stesso numero`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
 

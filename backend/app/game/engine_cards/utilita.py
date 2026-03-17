@@ -707,20 +707,30 @@ def _card_198(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_199(player, game, db, *, target_player_id=None) -> dict:
-    """Segment Builder — Dividi il mazzo azione in 2 pile; scegli da quale pescare per 2 turni.
+    """Segment Builder — Scarta fino a 3 carte dalla mano e pesca lo stesso numero.
 
-    Stores segment_builder_deck_pref=1 (deck_1 preferred) and segment_builder_turns=2.
-    turn.py draw_card: if flag set, draw from deck_1 first (or deck_2 if pref=2). Decrement per turn.
-    Default preference = 1 (longest deck).
+    Discards all cards the player wants to replace (up to 3 from hand), then draws equal count.
+    Simplified: discards the first min(3, hand_size) cards and redraws that many.
+    Client can implement selection via segment_builder_discard action with hand_card_ids.
     """
-    deck1_len = len(game.action_deck_1 or [])
-    deck2_len = len(game.action_deck_2 or [])
-    pref = 1 if deck1_len >= deck2_len else 2
-    cs = dict(player.combat_state or {})
-    cs["segment_builder_deck_pref"] = pref
-    cs["segment_builder_turns"] = 2
-    player.combat_state = cs
-    return {"applied": True, "deck_pref": pref, "turns": 2}
+    from app.models.game import PlayerHandCard as _PHC199
+    hand = list(player.hand)
+    to_discard = hand[:3]
+    count = len(to_discard)
+    if count == 0:
+        return {"applied": False, "reason": "no_cards_in_hand"}
+    discarded = []
+    for hc in to_discard:
+        discarded.append(hc.action_card_id)
+        db.delete(hc)
+    game.action_discard = (game.action_discard or []) + discarded
+    drew = 0
+    for _ in range(count):
+        src = game.action_deck_1 if game.action_deck_1 else game.action_deck_2
+        if src:
+            db.add(_PHC199(player_id=player.id, action_card_id=src.pop(0)))
+            drew += 1
+    return {"applied": True, "discarded": len(discarded), "drew": drew}
 
 
 def _card_200(player, game, db, *, target_player_id=None) -> dict:
