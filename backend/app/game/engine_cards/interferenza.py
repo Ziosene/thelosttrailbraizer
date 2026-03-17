@@ -611,27 +611,14 @@ def _card_222(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_224(player, game, db, *, target_player_id=None) -> dict:
-    """Canvas — Sostituisce boss con versione semplificata: 1HP e nessuna abilità per 1 combattimento.
-
-    Applied to the caster's current combat (or to target's next combat).
-    Sets boss_ability_disabled_until_round=9999 and forces current_boss_hp to 1.
-    """
-    if player.is_in_combat:
-        player.current_boss_hp = min(player.current_boss_hp or 1, 1)
-        cs = dict(player.combat_state or {})
-        cs["boss_ability_disabled_until_round"] = max(cs.get("boss_ability_disabled_until_round", 0), 9999)
-        player.combat_state = cs
-        return {"applied": True, "canvas_applied": True, "boss_hp_forced": 1}
-    # If not in combat, apply to target so it affects their next fight
-    if target_player_id:
-        from app.game.engine_cards.helpers import get_target
-        target = get_target(game, target_player_id)
-        if target:
-            cs = dict(target.combat_state or {})
-            cs["boss_ability_disabled_until_round"] = 9999
-            target.combat_state = cs
-            return {"applied": True, "target_id": target.id, "canvas_applied": True}
-    return {"applied": False, "reason": "not_in_combat_and_no_target"}
+    """Canvas — Boss -2HP; soglia dado -2 per il resto del combattimento."""
+    if not player.is_in_combat:
+        return {"applied": False, "reason": "not_in_combat"}
+    player.current_boss_hp = max(0, (player.current_boss_hp or 0) - 2)
+    cs = dict(player.combat_state or {})
+    cs["boss_threshold_reduction"] = cs.get("boss_threshold_reduction", 0) + 2
+    player.combat_state = cs
+    return {"applied": True, "boss_hp_lost": 2, "boss_threshold_reduction": cs["boss_threshold_reduction"]}
 
 
 def _card_225(player, game, db, *, target_player_id=None) -> dict:

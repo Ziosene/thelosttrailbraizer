@@ -2190,8 +2190,8 @@
 
 ### 224. Canvas
 - **Tipo**: Interferenza
-- **Quando**: Fuori dal proprio turno
-- **Effetto**: Disegna uno scenario alternativo — sostituisci l'abilità di un boss con una versione semplificata (solo 1 HP e nessuna abilità) per 1 combattimento
+- **Quando**: Durante combattimento
+- **Effetto**: Il boss perde 2 HP. La soglia dado del boss si riduce di 2 per il resto del combattimento.
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn canvas rewrite in the art style of The Binding of Isaac. An artist's brush painting over a terrifying boss card and replacing it with a simplified weak sketch version with just one health pip and no special ability. Thick black outlines, flat shading, creative override mood. Plain off-white parchment background. Indie game card art.`
 
