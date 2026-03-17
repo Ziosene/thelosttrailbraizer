@@ -1760,7 +1760,7 @@
 ### 179. API Autodiscovery
 - **Tipo**: Utilità
 - **Quando**: Fuori dal combattimento
-- **Effetto**: Rivela automaticamente l'abilità dei prossimi 2 boss nel mazzo senza pescarli
+- **Effetto**: Guarda i prossimi 3 boss nel mazzo e rimettili nell'ordine che preferisci
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn API discovery probe in the art style of The Binding of Isaac. A scanning antenna pinging the boss deck and surfacing two monster ability previews in transparent bubbles without drawing them. Thick black outlines, flat shading, advance-intel mood. Plain off-white parchment background. Indie game card art.`
 

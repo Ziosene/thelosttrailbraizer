@@ -30,6 +30,7 @@
 - **Carta 169** (Model Builder): cambiato da "3 miss consecutivi" a "3 miss totali" — contatore `model_builder_misses` non si azzera sugli hit; rimosso il reset nel branch hit di combat.py
 - **Carta 175** (Profile Explorer): redesign — da "vedi addon/HP/licenze di tutti" (info già pubblica) a `pesca 2 carte + guadagna 2L`
 - **Carta 178** (VM Queue): redesign — da "coda auto-play 3 carte" (troppo complessa) a `scarta tutta la mano e pesca lo stesso numero di carte`
+- **Carta 179** (API Autodiscovery): redesign — da "rivela abilità 2 boss" (info già pubblica) a `guarda i prossimi 3 boss e riordinali`; flag `api_autodiscovery_pending`; client risponde con `api_autodiscovery_reorder`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
 
