@@ -1514,7 +1514,7 @@
 ### 153. Environment Branch
 - **Tipo**: Difensiva
 - **Quando**: Fuori dal proprio turno
-- **Effetto**: Crea un "fork" del tuo stato — il prossimo danno che subisci colpisce il ramo isolato e non te
+- **Effetto**: Il prossimo danno che subisci viene reindirizzato — il giocatore alla tua sinistra e quello alla tua destra perdono 1 HP ciascuno, tu non perdi nulla
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn git branch scene in the art style of The Binding of Isaac. A player forking into two paths, the incoming attack striking the ghost branch while the real figure walks away unharmed. Thick black outlines, flat shading, clever evasion mood. Plain off-white parchment background. Indie game card art.`
 

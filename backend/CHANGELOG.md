@@ -25,6 +25,7 @@
 - **Carta 112** (Visitor Activity): redesign — da "dichiara carte prima di giocarle" (non implementabile) a `scarta 2 carte a caso dalla mano del target`
 - **Carta 129** (Boss Dossier): redesign — da "rivela abilità boss + -1HP" (info già pubblica) a `-2HP al boss, -1L al giocatore`
 - **Carta 136** (Service Forecast): redesign — da "usa valore medio soglia" (ambiguo) a `scegli tu il risultato del dado (1-10)`; flag `service_forecast_choose_roll`; client risponde con `service_forecast_pick` + valore
+- **Carta 153** (Environment Branch): effetto cambiato da "annulla il prossimo danno" a `reindirizza danno al giocatore a sinistra e a destra (1HP ciascuno)`; combat.py trova i vicini per indice e applica il danno; broadcast `environment_branch_redirect`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
 

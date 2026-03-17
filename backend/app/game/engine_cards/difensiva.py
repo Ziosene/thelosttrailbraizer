@@ -319,10 +319,11 @@ def _card_152(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_153(player, game, db, *, target_player_id=None) -> dict:
-    """Environment Branch — Il prossimo danno HP che subisci viene annullato (una volta).
+    """Environment Branch — Il prossimo danno che subisci viene reindirizzato al giocatore a sinistra e a destra (1HP ciascuno).
 
     Stores environment_branch_active=True.
-    combat.py miss branch: before applying HP damage, if flag set, skip damage once and clear flag.
+    combat.py miss branch: if flag set, skip own HP damage, find left/right neighbours by
+    player order index and deal 1HP to each, then clear flag.
     """
     cs = dict(player.combat_state or {})
     cs["environment_branch_active"] = True

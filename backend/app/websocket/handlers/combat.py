@@ -924,12 +924,26 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                 _cs_dp = dict(player.combat_state)
                 _cs_dp.pop("delivery_profile_block_active", None)
                 player.combat_state = _cs_dp
-            # Card 153 (Environment Branch): skip HP damage once, then clear
+            # Card 153 (Environment Branch): redirect damage to left/right neighbours, skip own HP loss
             elif _player_hp_damage > 0 and (player.combat_state or {}).get("environment_branch_active"):
                 _player_hp_damage = 0
                 _cs_eb = dict(player.combat_state)
                 _cs_eb.pop("environment_branch_active", None)
                 player.combat_state = _cs_eb
+                _all_players = list(game.players)
+                _idx = next((i for i, p in enumerate(_all_players) if p.id == player.id), None)
+                if _idx is not None and len(_all_players) > 1:
+                    _left = _all_players[(_idx - 1) % len(_all_players)]
+                    _right = _all_players[(_idx + 1) % len(_all_players)]
+                    for _nb in (_left, _right):
+                        if _nb.id != player.id:
+                            _nb.hp = max(0, _nb.hp - 1)
+                    await manager.broadcast(game.code, {
+                        "type": "environment_branch_redirect",
+                        "left_player_id": _left.id,
+                        "right_player_id": _right.id,
+                        "damage_each": 1,
+                    })
             # Card 156 (Travel Time Calc): if roll exactly == threshold-1, skip damage
             elif _player_hp_damage > 0 and (player.combat_state or {}).get("travel_time_calc_active") and roll == threshold - 1:
                 _player_hp_damage = 0
