@@ -2325,8 +2325,8 @@
 
 ### 239. SFTP Connector
 - **Tipo**: Utilità
-- **Quando**: In qualsiasi momento
-- **Effetto**: Trasferisci file — sposta fino a 2 carte dalla tua mano in una "riserva" esterna; le recuperi quando vuoi (non contano per il limite di 10)
+- **Quando**: Durante il tuo turno
+- **Effetto**: Scarta le ultime 2 carte dalla tua mano. Pesca 3 carte.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn secure file transfer in the art style of The Binding of Isaac. Two cards being tucked into an external vault outside the hand zone, a retrieval key dangling ready for whenever they are needed. Thick black outlines, flat shading, secure storage mood. Plain off-white parchment background. Indie game card art.`
 

@@ -51,13 +51,6 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
             _cs_init.pop("drip_program_remaining", None)
         else:
             _cs_init["drip_program_remaining"] = _drip - 1
-    # Card 239 (SFTP Connector): auto-return stored cards at start of turn
-    _sftp_ids = list(_cs_init.pop("sftp_reserve_card_ids", None) or [])
-    if _sftp_ids:
-        from app.models.game import PlayerHandCard as _PHCSFTP
-        for _sid in _sftp_ids:
-            if len(list(player.hand)) < engine.MAX_HAND_SIZE:
-                db.add(_PHCSFTP(player_id=player.id, action_card_id=_sid))
     # Card 42 (Engagement Studio): clear fought_this_turn so it's fresh for this new turn
     _cs_init.pop("fought_this_turn", None)
     # Card 70 (Suppression List): skip draw this turn if suppressed

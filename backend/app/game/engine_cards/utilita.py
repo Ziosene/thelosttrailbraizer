@@ -875,25 +875,25 @@ def _card_238(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_239(player, game, db, *, target_player_id=None) -> dict:
-    """SFTP Connector — Archivia fino a 2 carte dalla mano in riserva esterna (non conta per limite).
-
-    Stores sftp_reserve_card_ids=[card_id, ...] in combat_state.
-    Cards removed from hand. Auto-returned at start of next turn via turn.py draw_card hook.
-    """
+    """SFTP Connector — Scarta 2 carte dalla mano, pesca 3."""
     from app.models.game import PlayerHandCard as _PHC239
     hand = list(player.hand)
-    if not hand:
-        return {"applied": False, "reason": "empty_hand"}
-    to_store = hand[-min(2, len(hand)):]
-    card_ids = []
-    for hc in to_store:
-        card_ids.append(hc.action_card_id)
+    if len(hand) < 2:
+        return {"applied": False, "reason": "need_at_least_2_cards"}
+    discarded = []
+    for hc in hand[-2:]:
+        game.action_discard = (game.action_discard or []) + [hc.action_card_id]
         db.delete(hc)
-    cs = dict(player.combat_state or {})
-    existing = list(cs.get("sftp_reserve_card_ids") or [])
-    cs["sftp_reserve_card_ids"] = existing + card_ids
-    player.combat_state = cs
-    return {"applied": True, "stored_count": len(card_ids), "stored_card_ids": card_ids}
+        discarded.append(hc.action_card_id)
+    drawn = []
+    for deck in (game.action_deck_1, game.action_deck_2) * 3:
+        if len(drawn) >= 3:
+            break
+        if deck:
+            drawn.append(deck.pop(0))
+    for card_id in drawn:
+        db.add(_PHC239(player_id=player.id, action_card_id=card_id))
+    return {"applied": True, "discarded": len(discarded), "drawn": len(drawn)}
 
 
 def _card_242(player, game, db, *, target_player_id=None) -> dict:
