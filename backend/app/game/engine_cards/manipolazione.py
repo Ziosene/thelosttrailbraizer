@@ -96,17 +96,19 @@ def _card_59(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_60(player, game, db, *, target_player_id=None) -> dict:
-    """Einstein STO — Ottimizza il timing del tiro: +1 al prossimo tiro di dado.
+    """Einstein STO — Al prossimo tiro tira 2 dadi e scegli quale usare.
 
-    Stores einstein_sto_next_roll_bonus=1 in combat_state.
-    combat.py: adds 1 to the roll after base roll (before other modifiers), capped at 10.
+    Stores einstein_sto_dual_roll=True in combat_state.
+    combat.py: when flag is set, rolls twice and sends both values to client
+    via 'dual_roll_choice' event; waits for client 'choose_roll' response
+    before resolving hit/miss. Clears flag after use.
     """
     if not player.is_in_combat:
         return {"applied": False, "reason": "not_in_combat"}
     cs = dict(player.combat_state or {})
-    cs["einstein_sto_next_roll_bonus"] = 1
+    cs["einstein_sto_dual_roll"] = True
     player.combat_state = cs
-    return {"applied": True, "einstein_sto_next_roll_bonus": 1}
+    return {"applied": True, "einstein_sto_dual_roll": True}
 
 
 def _card_61(player, game, db, *, target_player_id=None) -> dict:

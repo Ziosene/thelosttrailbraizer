@@ -13,6 +13,7 @@
 - **Carta 33** (Quick Action): aggiunto `pesca 2 carte` — ora la carta non conta sul limite E genera valore immediato
 - **Carta 44** (Object Store → Cache Hit): redesign completo — pesca 3 carte, tienine 1, rimetti le 2 in cima al mazzo; client followup `cache_hit_keep` con `hand_card_id`; flag `cache_hit_pending` in combat_state
 - **Carta 53** (AMPscript Block): redesign — da "abilità si ritorce contro il boss" (non implementabile) a `blocca abilità boss per 2 round` (riusa flag `boss_ability_disabled_until_round`)
+- **Carta 60** (Einstein STO): redesign — da "+1 al prossimo tiro" a `tira 2 dadi, scegli quale usare`; flag `einstein_sto_dual_roll` in combat_state; combat.py invia `dual_roll_choice` al client e attende `choose_roll`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
 

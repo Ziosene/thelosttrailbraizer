@@ -613,7 +613,7 @@
 ### 60. Einstein STO
 - **Tipo**: Manipolazione dado
 - **Quando**: Durante combattimento
-- **Effetto**: Scegli se tirare il dado all'inizio o alla fine del round (ottimizza il timing)
+- **Effetto**: Al prossimo tiro di dado, tira 2 dadi e scegli quale risultato usare
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn Einstein brain with a clock and a die in the art style of The Binding of Isaac. A brainy figure with wild hair holding a timeline arrow, choosing the perfect moment to drop a die marked with a star. Thick black outlines, flat shading, strategic mood. Plain off-white parchment background. Indie game card art.`
 
