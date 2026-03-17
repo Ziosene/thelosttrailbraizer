@@ -522,6 +522,21 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                 "reason": "agentforce_rebellion",
             })
 
+    # Boss 58 (Prompt Builder Djinn): roll d4 each round → set random threshold
+    if round_start["randomize_threshold"]:
+        _d4 = random.randint(1, 4)
+        _djinn_thresholds = {1: 2, 2: 4, 3: 6, 4: 8}
+        _djinn_t = _djinn_thresholds[_d4]
+        cs = dict(player.combat_state or {})
+        cs["djinn_threshold"] = _djinn_t
+        player.combat_state = cs
+        await manager.broadcast(game.code, {
+            "type": "djinn_threshold_set",
+            "player_id": player.id,
+            "threshold": _djinn_t,
+            "roll": _d4,
+        })
+
     # Boss 63 (Loyalty Management Trickster): auto-accept deal — +1 Licenza, threshold +1 this roll
     if round_start["deal_offer"]:
         player.licenze += 1
@@ -678,6 +693,10 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         cs.pop("review_app_active", None)
         player.combat_state = cs
     threshold = max(1, threshold)  # can't go below 1
+    # Boss 58 (Prompt Builder Djinn): random threshold set this round overrides everything
+    _djinn_t = (player.combat_state or {}).get("djinn_threshold")
+    if _djinn_t is not None:
+        threshold = _djinn_t
     # Card 281 (World's Most Innovative): override threshold to 1 for this combat
     if (player.combat_state or {}).get("boss_threshold_override_1"):
         threshold = 1

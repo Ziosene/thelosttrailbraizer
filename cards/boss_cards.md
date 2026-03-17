@@ -604,7 +604,7 @@
 ### 58. The Prompt Builder Djinn 🏆
 - **HP**: 6
 - **Soglia dado**: 6+
-- **Abilità**: Ogni round, riscrive l'effetto di 1 carta azione casuale in mano al combattente — l'effetto diventa il contrario per tutta la durata del combattimento
+- **Abilità**: Dado della soglia — ogni round il Djinn riscrive la soglia dado tirando un d4: 1→2+, 2→4+, 3→6+, 4→8+. La soglia viene rivelata all'inizio di ogni round. Il combattente non sa mai cosa lo aspetta.
 - **Ricompensa**: 5 Licenze + **1 Certificazione**
 - **Difficoltà**: Alta
 - **Image prompt**: `A 2D hand-drawn monster in the distinctive art style of The Binding of Isaac. The monster is "The Prompt Builder Djinn": a swirling djinn emerging from a prompt template lamp, its smoke body made of rewritten instructions and twisted context windows. It warps the meaning of any card it touches, inverting its effect with a grin. Three wishes, all corrupted. Thick black outlines, grotesque but cartoonish, flat shading, plain off-white parchment background. Indie game card art.`

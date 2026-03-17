@@ -57,6 +57,7 @@ _EMPTY_EFFECT: dict = {
     "makes_prediction": False,      # boss predicts hit/miss before roll; if correct, double the round effect
     "request_round_prediction": False,  # boss 53: player declares predicted round count; ±1 → +3L, else -2L
     "invert_random_hand_card": False,   # invert the effect of 1 random card in combatant's hand for this combat
+    "randomize_threshold": False,       # boss 58: roll d4 each round to set new threshold (1→2,2→4,3→6,4→8)
     "exam_roll": False,             # handler rolls d10 before combat: ≥7 → player +1 HP; ≤3 → player -1 HP
     "deal_offer": False,            # boss offers 1 free licenza; if accepted, threshold +1 this round (player chooses)
     "bonus_hp_per_player_addon": False,  # boss starts combat with +1 HP for each addon the combatant owns
@@ -812,10 +813,10 @@ def apply_boss_ability(
         # No on_combat_start effect needed.
 
         # ── Boss 58 — The Prompt Builder Djinn ───────────────────────────────
-        # Each round: pick 1 random card in the combatant's hand and invert its effect
-        # for the remainder of this combat (tracked in combat state as a set of card IDs).
+        # Each round: roll d4 → new threshold (1→2, 2→4, 3→6, 4→8). Player never knows
+        # the threshold until the round begins.
         case (58, "on_round_start"):
-            return _boss_effect(invert_random_hand_card=True)
+            return _boss_effect(randomize_threshold=True)
 
         # ── Boss 60 — The Connected App Infiltrator (Legendary) ──────────────
         # Every even round: auto-discard 1 random card from combatant's hand.
