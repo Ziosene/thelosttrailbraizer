@@ -97,10 +97,10 @@ def _card_8(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_41(player, game, db, *, target_player_id=None) -> dict:
-    """Journey Builder — +1L per ogni boss sconfitto in questa partita (max 6)."""
+    """Journey Builder — +1L per ogni boss sconfitto in questa partita (max 5)."""
     if player.is_in_combat:
         return {"applied": False, "reason": "in_combat"}
-    amount = min(player.bosses_defeated, 6)
+    amount = min(player.bosses_defeated, 5)
     player.licenze += amount
     return {"applied": True, "licenze_gained": amount, "bosses_defeated": player.bosses_defeated}
 
@@ -158,10 +158,10 @@ def _card_44(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_45(player, game, db, *, target_player_id=None) -> dict:
-    """Prospect Score — Guadagna Licenze pari ai boss sconfitti in questa partita (max 5)."""
+    """Prospect Score — +2L per ogni boss sconfitto in questa partita (max 10)."""
     if player.is_in_combat:
         return {"applied": False, "reason": "in_combat"}
-    amount = min(player.bosses_defeated, 5)
+    amount = min(player.bosses_defeated * 2, 10)
     player.licenze += amount
     return {"applied": True, "licenze_gained": amount, "bosses_defeated": player.bosses_defeated}
 

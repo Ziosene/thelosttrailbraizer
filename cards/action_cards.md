@@ -430,7 +430,7 @@
 ### 41. Journey Builder
 - **Tipo**: Economica
 - **Quando**: Fuori dal combattimento
-- **Effetto**: Guadagna 1 Licenza per ogni boss sconfitto durante questa partita (max 6)
+- **Effetto**: Guadagna 1 Licenza per ogni boss sconfitto durante questa partita (max 5)
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn customer journey map with boss skull checkpoints each earning one coin in the art style of The Binding of Isaac. A winding journey path with defeated boss markers as milestones, a coin dropping per completed step up to six. Thick black outlines, flat shading, methodical mood. Plain off-white parchment background. Indie game card art.`
 
@@ -466,7 +466,7 @@
 ### 45. Prospect Score
 - **Tipo**: Economica
 - **Quando**: Fuori dal combattimento
-- **Effetto**: Guadagna Licenze pari al numero di boss già sconfitti in questa partita (max 5)
+- **Effetto**: Guadagna 2 Licenze per ogni boss sconfitto durante questa partita (max 10)
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn prospect scoring meter converting boss skull trophies into coins one-to-one in the art style of The Binding of Isaac. A scoring gauge with defeated boss icons on one side converting directly into coins on the other, capped at five. Thick black outlines, flat shading, analytical mood. Plain off-white parchment background. Indie game card art.`
 
