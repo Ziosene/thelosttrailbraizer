@@ -93,26 +93,18 @@ def _card_70(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_71(player, game, db, *, target_player_id=None) -> dict:
-    """Anypoint MQ — Metti 1 carta dalla tua mano nella coda di un avversario (la pesca per prima).
+    """Anypoint MQ — Un avversario non può giocare carte nel suo prossimo turno.
 
-    Takes a random card from player's hand, queues it for target's next draw.
-    Stores forced_queue_card_id=N in target's combat_state.
-    turn.py _handle_draw_card: if flag set, gives that card first (instead of deck draw), clears flag.
+    Stores locked_out=True in target's combat_state.
+    turn.py _handle_play_card: if flag set, rejects card plays and clears flag at turn end.
     """
     target = get_target(game, player, target_player_id)
     if not target:
         return {"applied": False, "reason": "no_target"}
-    hand = list(player.hand)
-    if not hand:
-        return {"applied": False, "reason": "no_cards_in_hand"}
-    import random as _rnd
-    hc = _rnd.choice(hand)
-    queued_card_id = hc.action_card_id
-    db.delete(hc)
     cs = dict(target.combat_state or {})
-    cs["forced_queue_card_id"] = queued_card_id
+    cs["locked_out"] = True
     target.combat_state = cs
-    return {"applied": True, "target_player_id": target.id, "queued_card_id": queued_card_id}
+    return {"applied": True, "target_player_id": target.id, "locked_out": True}
 
 
 def _card_72(player, game, db, *, target_player_id=None) -> dict:

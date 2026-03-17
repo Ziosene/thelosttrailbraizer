@@ -720,7 +720,7 @@
 ### 71. Anypoint MQ
 - **Tipo**: Interferenza
 - **Quando**: Fuori dal proprio turno
-- **Effetto**: Metti 1 carta dalla tua mano nella "coda" di un avversario — lui la pesca per forza come prima carta al suo prossimo turno
+- **Effetto**: Un avversario non può giocare carte nel suo prossimo turno
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn message queue scene in the art style of The Binding of Isaac. A hand slipping a glowing card into a queue tube leading into an unsuspecting opponent's hand, locking it as first draw. Thick black outlines, flat shading, sneaky mood. Plain off-white parchment background. Indie game card art.`
 
