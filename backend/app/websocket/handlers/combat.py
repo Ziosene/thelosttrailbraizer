@@ -321,6 +321,21 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
             "options": ["Offensiva", "Difensiva"],
         })
 
+    # Boss 53 (Einstein Discovery Oracle): ask combatant to predict fight duration in rounds
+    if start_effect["request_round_prediction"]:
+        await manager.send_to_player(game.code, player.user_id, {
+            "type": "oracle_prediction_request",
+            "player_id": player.id,
+            "timeout_ms": 15000,
+        })
+        pred_response = await open_reaction_window(game.code, player.id, timeout=15.0)
+        if pred_response and pred_response.get("action") == "predict":
+            predicted = pred_response.get("rounds")
+            if isinstance(predicted, int) and predicted > 0:
+                cs = dict(player.combat_state or {})
+                cs["oracle_predicted_rounds"] = predicted
+                player.combat_state = cs
+
     db.commit()
     db.refresh(game)
 
@@ -1158,6 +1173,18 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                 _cs_wte = dict(player.combat_state)
                 _cs_wte.pop("world_tour_event_first_bonus", None)
                 player.combat_state = _cs_wte
+
+        # Boss 53 (Einstein Discovery Oracle): check prediction accuracy on boss defeat
+        _oracle_pred = (player.combat_state or {}).get("oracle_predicted_rounds")
+        if _oracle_pred is not None:
+            _actual_rounds = player.combat_round  # 0-indexed; equals total rounds completed
+            if abs(_actual_rounds - _oracle_pred) <= 1:
+                player.licenze += 3
+            else:
+                player.licenze = max(0, player.licenze - 2)
+            _cs_oracle = dict(player.combat_state)
+            _cs_oracle.pop("oracle_predicted_rounds", None)
+            player.combat_state = _cs_oracle
 
         # Card 273 (Trailhead Quest): +5L if no cards played this turn
         if (player.combat_state or {}).get("trailhead_quest_active") and player.cards_played_this_turn == 0:

@@ -554,7 +554,7 @@
 ### 53. The Einstein Discovery Oracle
 - **HP**: 4
 - **Soglia dado**: 5+
-- **Abilità**: Prima di ogni tiro, il boss predice il risultato (≥ soglia o < soglia). Se la previsione è corretta, l'effetto del tiro è raddoppiato in entrambe le direzioni
+- **Abilità**: All'inizio del combattimento, il combattente deve dichiarare quanti round pensa che durerà il combattimento. Se la previsione è corretta (±1 round), guadagna 3 Licenze al termine. Se sbaglia, perde 2 Licenze. Se non risponde entro 15 secondi, nessuna conseguenza.
 - **Ricompensa**: 3 Licenze
 - **Difficoltà**: Media
 - **Image prompt**: `A 2D hand-drawn monster in the distinctive art style of The Binding of Isaac. The monster is "The Einstein Discovery Oracle": a many-eyed creature with prediction model graphs embedded in each eye, surrounded by crystal ball orbs showing probability curves. It predicts the future before it happens and doubles consequences accordingly. Thick black outlines, grotesque but cartoonish, flat shading, plain off-white parchment background. Indie game card art.`

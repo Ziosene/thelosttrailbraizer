@@ -55,6 +55,7 @@ _EMPTY_EFFECT: dict = {
     "entry_fee_licenze": 0,         # pay N licenze at combat start; 1 HP damage per missing licenza
     "corrupt_deck_cards": 0,        # insert N corrupted cards into combatant's action deck; each deals 1 HP if drawn
     "makes_prediction": False,      # boss predicts hit/miss before roll; if correct, double the round effect
+    "request_round_prediction": False,  # boss 53: player declares predicted round count; ±1 → +3L, else -2L
     "invert_random_hand_card": False,   # invert the effect of 1 random card in combatant's hand for this combat
     "exam_roll": False,             # handler rolls d10 before combat: ≥7 → player +1 HP; ≤3 → player -1 HP
     "deal_offer": False,            # boss offers 1 free licenza; if accepted, threshold +1 this round (player chooses)
@@ -790,12 +791,11 @@ def apply_boss_ability(
             return _boss_effect(entry_fee_licenze=3)
 
         # ── Boss 53 — The Einstein Discovery Oracle ───────────────────────────
-        # Before each roll the boss makes a random prediction (hit / miss).
-        # Handler stores the prediction, then after the roll doubles the effect if correct:
-        #   correct hit prediction  → boss takes 2 HP instead of 1
-        #   correct miss prediction → player takes 2 HP instead of 1
-        case (53, "on_round_start"):
-            return _boss_effect(makes_prediction=True)
+        # At combat start: player declares how many rounds they predict the fight will last.
+        # On boss defeat: if actual rounds within ±1 of prediction → +3L; else -2L.
+        # If player doesn't respond within timeout → no bonus/penalty.
+        case (53, "on_combat_start"):
+            return _boss_effect(request_round_prediction=True)
 
         # ── Boss 54 — The Workbench Tinkerer ─────────────────────────────────
         # At combat start: 3 corrupted cards are shuffled into the combatant's action deck.
