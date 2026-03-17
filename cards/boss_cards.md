@@ -1033,6 +1033,6 @@
 - **HP**: 15
 - **Soglia dado**: 8+
 - **Abilità**: IL BOSS FINALE. Appare solo se sono già stati sconfitti almeno 10 boss nella partita. Ha 5 fasi — in ogni fase copia l'abilità del boss Leggendario più recente sconfitto nella partita. Chi lo sconfigge vince immediatamente, anche senza 5 Certificazioni
-- **Ricompensa**: 15 Licenze + **2 Certificazioni**
+- **Ricompensa**: **5 Certificazioni**
 - **Difficoltà**: Leggendaria
 - **Image prompt**: `A 2D hand-drawn monster in the distinctive art style of The Binding of Isaac. The monster is "The Lost Trailblazer Omega": the ultimate final boss — a massive, terrifying corrupted amalgamation of every Salesforce product and every legendary boss absorbed into one overwhelming entity. It wears the remnants of Astro's hoodie as a war trophy, its five phases visible as layered corrupted auras. Salesforce clouds, Apex flames, MuleSoft cables, and Einstein AI fractals spiral around a face of pure corrupted ambition. It is everything the platform ever was, gone wrong. Epic scale, dramatic lighting, the creature fills the entire card frame. Thick black outlines, grotesque but cartoonish, flat shading, plain off-white parchment background. Indie game card art.`

@@ -1325,6 +1325,7 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                     p_help.licenze += defeated_effect["bonus_licenze_to_helpers"]
         # Boss 100 (Lost Trailblazer Omega): instant win regardless of cert count
         if defeated_effect["instant_win"]:
+            player.certificazioni += 5  # Boss 100 reward: 5 certifications
             game.status = GameStatus.finished
             game.winner_id = player.id
             from datetime import datetime, timezone
