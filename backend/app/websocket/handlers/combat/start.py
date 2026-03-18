@@ -62,6 +62,35 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
         await _error(game.code, user_id, "Boss not found")
         return
 
+    # Addon 60 (Release Notes): if boss drawn from deck, peek stats before deciding to fight
+    _boss_drawn_from_deck60 = source in ("deck_1", "deck_2")
+    if _has_addon_start(player, 60) and _boss_drawn_from_deck60:
+        cs60 = dict(player.combat_state or {})
+        cs60["release_notes_pending_boss_id"] = boss_id
+        cs60["release_notes_pending_source"] = source
+        player.combat_state = cs60
+        # Return boss to top of its deck
+        if source == "deck_1":
+            game.boss_deck_1 = [boss_id] + (game.boss_deck_1 or [])
+        else:
+            game.boss_deck_2 = [boss_id] + (game.boss_deck_2 or [])
+        player.is_in_combat = False
+        player.current_boss_id = None
+        game.current_phase = TurnPhase.action
+        db.commit()
+        db.refresh(game)
+        await manager.broadcast(game.code, {
+            "type": "release_notes_peek",
+            "player_id": player.id,
+            "boss_id": boss.id,
+            "boss_name": boss.name,
+            "boss_hp": boss.hp,
+            "boss_threshold": boss.dice_threshold,
+            "boss_effect": boss.effect,
+        })
+        await _broadcast_state(game, db)
+        return
+
     player.is_in_combat = True
     player.current_boss_id = boss_id
     player.current_boss_source = source
@@ -337,6 +366,17 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
                 cs = dict(player.combat_state or {})
                 cs["oracle_predicted_rounds"] = predicted
                 player.combat_state = cs
+
+    # Addon 52 (Scratch Org): draw 1 extra action card at start of each combat
+    if _has_addon_start(player, 52):
+        from app.models.game import PlayerHandCard as _PHC52
+        _extra52 = None
+        if game.action_deck_1:
+            _extra52 = game.action_deck_1.pop(0)
+        elif game.action_deck_2:
+            _extra52 = game.action_deck_2.pop(0)
+        if _extra52 is not None:
+            db.add(_PHC52(player_id=player.id, action_card_id=_extra52))
 
     db.commit()
     db.refresh(game)

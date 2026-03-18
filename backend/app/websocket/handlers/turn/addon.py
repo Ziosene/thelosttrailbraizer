@@ -147,6 +147,12 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
         _cs12["next_addon_price_fixed"] = 5
         player.combat_state = _cs12
 
+    # Addon 58 (High Availability): initialize 2 miss-absorb charges when acquired
+    if addon.number == 58:
+        _cs58_buy = dict(player.combat_state or {})
+        _cs58_buy["ha_misses_remaining"] = 2
+        player.combat_state = _cs58_buy
+
     # Card 160 (Storefront Reference): mark that this player bought an addon this turn
     _cs_bat = dict(player.combat_state or {})
     _cs_bat["bought_addon_this_turn"] = True
@@ -467,6 +473,215 @@ async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Ses
         await _broadcast_state(game, db)
         return  # wait for chatter_feed_respond
 
+    # Addon 45 (CPQ Advanced): once per game, set next addon price to 0
+    elif addon.number == 45:
+        _cs45 = player.combat_state or {}
+        if _cs45.get("cpq_advanced_used"):
+            await _error(game.code, user_id, "CPQ Advanced already used this game")
+            pa.is_tapped = False
+            return
+        _cs45_new = dict(_cs45)
+        _cs45_new["cpq_advanced_used"] = True
+        _cs45_new["next_addon_price_fixed"] = 0
+        player.combat_state = _cs45_new
+
+    # Addon 49 (Metadata API): look at top 3 cards of action deck and reorder them
+    elif addon.number == 49:
+        _deck49 = game.action_deck_1 or game.action_deck_2
+        _choices49 = (game.action_deck_1 or [])[:3]
+        if not _choices49:
+            await _error(game.code, user_id, "No cards in deck")
+            pa.is_tapped = False
+            return
+        _cs49 = dict(player.combat_state or {})
+        _cs49["metadata_api_pending"] = list(_choices49)
+        player.combat_state = _cs49
+        db.commit()
+        db.refresh(game)
+        await manager.broadcast(game.code, {
+            "type": "metadata_api_peek",
+            "player_id": player.id,
+            "card_ids": list(_choices49),
+        })
+        await _broadcast_state(game, db)
+        return  # wait for metadata_api_reorder
+
+    # Addon 50 (Tooling API): once per game, recover up to 2 cards from discard to hand
+    elif addon.number == 50:
+        _cs50 = player.combat_state or {}
+        if _cs50.get("tooling_api_used"):
+            await _error(game.code, user_id, "Tooling API already used this game")
+            pa.is_tapped = False
+            return
+        _discard50 = list(game.action_discard or [])
+        if not _discard50:
+            await _error(game.code, user_id, "Discard pile is empty")
+            pa.is_tapped = False
+            return
+        _recover50 = _discard50[-2:] if len(_discard50) >= 2 else _discard50[:]
+        game.action_discard = _discard50[:-len(_recover50)]
+        from app.models.game import PlayerHandCard as _PHC50
+        for _cid50 in _recover50:
+            db.add(_PHC50(player_id=player.id, action_card_id=_cid50))
+        _cs50_new = dict(_cs50)
+        _cs50_new["tooling_api_used"] = True
+        player.combat_state = _cs50_new
+
+    # Addon 51 (Change Set): discard up to 3 cards from hand and draw the same number
+    elif addon.number == 51:
+        _discard_ids51 = data.get("hand_card_ids", [])
+        if not _discard_ids51 or len(_discard_ids51) > 3:
+            await _error(game.code, user_id, "Provide 1-3 hand card IDs")
+            pa.is_tapped = False
+            return
+        from app.models.game import PlayerHandCard as _PHC51
+        _to_discard51 = []
+        for _hcid51 in _discard_ids51:
+            _hc51 = db.get(_PHC51, _hcid51)
+            if not _hc51 or _hc51.player_id != player.id:
+                await _error(game.code, user_id, "Card not in your hand")
+                pa.is_tapped = False
+                return
+            _to_discard51.append(_hc51)
+        _count51 = len(_to_discard51)
+        for _hc51 in _to_discard51:
+            game.action_discard = (game.action_discard or []) + [_hc51.action_card_id]
+            db.delete(_hc51)
+        for _ in range(_count51):
+            if game.action_deck_1:
+                _new_card51 = game.action_deck_1.pop(0)
+            elif game.action_deck_2:
+                _new_card51 = game.action_deck_2.pop(0)
+            else:
+                break
+            db.add(_PHC51(player_id=player.id, action_card_id=_new_card51))
+
+    # Addon 53 (Version Control): once per game, recover last played card from discard to hand
+    elif addon.number == 53:
+        _cs53 = player.combat_state or {}
+        if _cs53.get("version_control_used"):
+            await _error(game.code, user_id, "Version Control already used this game")
+            pa.is_tapped = False
+            return
+        _last_id53 = _cs53.get("last_discarded_card_id")
+        if not _last_id53:
+            await _error(game.code, user_id, "No card to recover")
+            pa.is_tapped = False
+            return
+        if _last_id53 in (game.action_discard or []):
+            _discard53 = list(game.action_discard)
+            _discard53.remove(_last_id53)
+            game.action_discard = _discard53
+            from app.models.game import PlayerHandCard as _PHC53
+            db.add(_PHC53(player_id=player.id, action_card_id=_last_id53))
+        _cs53_new = dict(_cs53)
+        _cs53_new["version_control_used"] = True
+        _cs53_new.pop("last_discarded_card_id", None)
+        player.combat_state = _cs53_new
+
+    # Addon 55 (Data Loader Pro): once per game, draw 5 action cards
+    elif addon.number == 55:
+        _cs55 = player.combat_state or {}
+        if _cs55.get("data_loader_used"):
+            await _error(game.code, user_id, "Data Loader Pro already used this game")
+            pa.is_tapped = False
+            return
+        from app.models.game import PlayerHandCard as _PHC55
+        _drawn55 = 0
+        for _ in range(5):
+            if game.action_deck_1:
+                _cid55 = game.action_deck_1.pop(0)
+            elif game.action_deck_2:
+                _cid55 = game.action_deck_2.pop(0)
+            else:
+                break
+            db.add(_PHC55(player_id=player.id, action_card_id=_cid55))
+            _drawn55 += 1
+        _cs55_new = dict(_cs55)
+        _cs55_new["data_loader_used"] = True
+        player.combat_state = _cs55_new
+
+    # Addon 62 (Field Audit Trail): once per turn, look at a target player's full hand
+    elif addon.number == 62:
+        _target_id62 = data.get("target_player_id")
+        _target62 = next((p for p in game.players if p.id == _target_id62), None)
+        if not _target62 or _target62.id == player.id:
+            await _error(game.code, user_id, "Invalid target for Field Audit Trail")
+            pa.is_tapped = False
+            return
+        _hand62 = [{"id": hc.id, "action_card_id": hc.action_card_id} for hc in _target62.hand]
+        db.commit()
+        db.refresh(game)
+        await manager.send_to_player(game.code, player.user_id, {
+            "type": "field_audit_trail_result",
+            "target_player_id": _target62.id,
+            "hand": _hand62,
+        })
+        await _broadcast_state(game, db)
+        return
+
+    # Addon 63 (Sharing Rules): once per turn, peek at opponent's hand and copy one card
+    elif addon.number == 63:
+        _target_id63 = data.get("target_player_id")
+        _target63 = next((p for p in game.players if p.id == _target_id63), None)
+        if not _target63 or _target63.id == player.id:
+            await _error(game.code, user_id, "Invalid target for Sharing Rules")
+            pa.is_tapped = False
+            return
+        _cs63 = dict(player.combat_state or {})
+        _cs63["sharing_rules_pending_target_id"] = _target63.id
+        player.combat_state = _cs63
+        _hand63 = [{"id": hc.id, "action_card_id": hc.action_card_id} for hc in _target63.hand]
+        db.commit()
+        db.refresh(game)
+        await manager.send_to_player(game.code, player.user_id, {
+            "type": "sharing_rules_peek",
+            "target_player_id": _target63.id,
+            "hand": _hand63,
+        })
+        await _broadcast_state(game, db)
+        return  # wait for sharing_rules_pick
+
+    # Addon 64 (Role Hierarchy): SKIP — seniority comparison system not fully implemented for cross-player ranking
+    # TODO: implement when seniority ordering/ranking between players is available
+
+    # Addon 66 (Trust Layer): once per game, protect from opponent cards for 1 turn
+    elif addon.number == 66:
+        _cs66 = player.combat_state or {}
+        if _cs66.get("trust_layer_used"):
+            await _error(game.code, user_id, "Trust Layer already used this game")
+            pa.is_tapped = False
+            return
+        _cs66_new = dict(_cs66)
+        _cs66_new["trust_layer_used"] = True
+        _cs66_new["trust_layer_active"] = True
+        player.combat_state = _cs66_new
+
+    # Addon 67 (Connected App Token): once per game, tap an opponent's addon for 1 turn
+    elif addon.number == 67:
+        _cs67 = player.combat_state or {}
+        if _cs67.get("connected_app_used"):
+            await _error(game.code, user_id, "Connected App Token already used this game")
+            pa.is_tapped = False
+            return
+        _target_id67 = data.get("target_player_id")
+        _target_pa_id67 = data.get("target_addon_id")
+        _target67 = next((p for p in game.players if p.id == _target_id67), None)
+        if not _target67 or _target67.id == player.id:
+            await _error(game.code, user_id, "Invalid target for Connected App Token")
+            pa.is_tapped = False
+            return
+        from app.models.game import PlayerAddon as _PA67
+        _target_pa67 = db.get(_PA67, _target_pa_id67)
+        if not _target_pa67 or _target_pa67.player_id != _target67.id:
+            await _error(game.code, user_id, "Addon not owned by target")
+            pa.is_tapped = False
+            return
+        _target_pa67.is_tapped = True
+        _cs67_new = dict(_cs67)
+        _cs67_new["connected_app_used"] = True
+        player.combat_state = _cs67_new
+
     db.commit()
     db.refresh(game)
 
@@ -542,6 +757,96 @@ async def _handle_chatter_feed_respond(game, user_id: int, data: dict, db):
     cs_req19 = dict(requester19.combat_state or {})
     cs_req19.pop("chatter_feed_pending_from_id", None)
     requester19.combat_state = cs_req19
+    db.commit()
+    db.refresh(game)
+    await _broadcast_state(game, db)
+
+
+async def _handle_metadata_api_reorder(game, user_id: int, data: dict, db):
+    """Handle Addon 49 (Metadata API): client sends reordered card_ids for top of deck."""
+    from app.websocket.game_helpers import _get_player, _error, _broadcast_state
+    player = _get_player(game, user_id)
+    if not player:
+        return
+    cs = player.combat_state or {}
+    pending49 = list(cs.get("metadata_api_pending") or [])
+    if not pending49:
+        await _error(game.code, user_id, "No Metadata API reorder pending")
+        return
+    reordered = data.get("card_ids", [])
+    if sorted(reordered) != sorted(pending49):
+        await _error(game.code, user_id, "card_ids must be a permutation of the peeked cards")
+        return
+    n49 = len(reordered)
+    # Replace first N cards in action_deck_1 with reordered list
+    if game.action_deck_1 and len(game.action_deck_1) >= n49:
+        game.action_deck_1 = list(reordered) + game.action_deck_1[n49:]
+    elif game.action_deck_1:
+        game.action_deck_1 = list(reordered) + game.action_deck_1[len(game.action_deck_1):]
+    cs_new = dict(cs)
+    cs_new.pop("metadata_api_pending", None)
+    player.combat_state = cs_new
+    db.commit()
+    db.refresh(game)
+    await _broadcast_state(game, db)
+
+
+async def _handle_release_notes_confirm(game, user_id: int, data: dict, db):
+    """Handle Addon 60 (Release Notes): player decides to fight or skip the peeked boss."""
+    from app.websocket.game_helpers import _get_player, _error, _broadcast_state
+    from app.websocket.handlers.combat.start import _handle_start_combat
+    player = _get_player(game, user_id)
+    if not player:
+        return
+    cs = player.combat_state or {}
+    _pending_boss60 = cs.get("release_notes_pending_boss_id")
+    _pending_source60 = cs.get("release_notes_pending_source")
+    if not _pending_boss60 or not _pending_source60:
+        await _error(game.code, user_id, "No Release Notes decision pending")
+        return
+    decision = data.get("decision")  # "fight" or "skip"
+    cs_new = dict(cs)
+    cs_new.pop("release_notes_pending_boss_id", None)
+    cs_new.pop("release_notes_pending_source", None)
+    player.combat_state = cs_new
+    if decision == "fight":
+        # Re-delegate to start_combat with the same source; boss is still at top of deck
+        db.commit()
+        db.refresh(game)
+        await _handle_start_combat(game, user_id, {"source": _pending_source60}, db)
+    else:
+        # skip: leave boss at top of deck, do nothing
+        db.commit()
+        db.refresh(game)
+        await _broadcast_state(game, db)
+
+
+async def _handle_sharing_rules_pick(game, user_id: int, data: dict, db):
+    """Handle Addon 63 (Sharing Rules): player picks a card to copy from target's hand."""
+    from app.websocket.game_helpers import _get_player, _error, _broadcast_state
+    player = _get_player(game, user_id)
+    if not player:
+        return
+    cs = player.combat_state or {}
+    _pending_target63 = cs.get("sharing_rules_pending_target_id")
+    if not _pending_target63:
+        await _error(game.code, user_id, "No Sharing Rules pick pending")
+        return
+    action_card_id63 = data.get("action_card_id")
+    # Verify target still has this card
+    target63 = next((p for p in game.players if p.id == _pending_target63), None)
+    if not target63:
+        await _error(game.code, user_id, "Target player not found")
+        return
+    _has_card = any(hc.action_card_id == action_card_id63 for hc in target63.hand)
+    if not _has_card:
+        await _error(game.code, user_id, "Target no longer has that card")
+        return
+    from app.models.game import PlayerHandCard as _PHC63
+    db.add(_PHC63(player_id=player.id, action_card_id=action_card_id63))
+    cs_new = dict(cs)
+    cs_new.pop("sharing_rules_pending_target_id", None)
+    player.combat_state = cs_new
     db.commit()
     db.refresh(game)
     await _broadcast_state(game, db)

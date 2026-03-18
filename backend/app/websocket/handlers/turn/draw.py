@@ -198,6 +198,19 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
             _cs41["quest_cards_drawn"] = 0
         player.combat_state = _cs41
 
+    # Addon 43 (Subscription Billing): +1L automatically at start of each turn
+    if _has_addon_draw(player, 43):
+        player.licenze += 1
+
+    # Addon 48 (Net Zero Tracker): every 5 turns completed without dying, gain 3L
+    if _has_addon_draw(player, 48):
+        _cs48 = dict(player.combat_state or {})
+        _cs48["net_zero_turns"] = _cs48.get("net_zero_turns", 0) + 1
+        if _cs48["net_zero_turns"] >= 5:
+            player.licenze += 3
+            _cs48["net_zero_turns"] = 0
+        player.combat_state = _cs48
+
     game.current_phase = TurnPhase.action
     db.commit()
     db.refresh(game)

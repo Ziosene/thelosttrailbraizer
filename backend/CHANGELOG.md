@@ -44,6 +44,34 @@
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
 ## Sessione corrente — Implementazione effetti addon 1–41
 
+### Addon 42–67
+- **Addon 42** (Revenue Cloud Optimizer): `_boss_defeat_sequence` — +2L extra se licenze ≥ 20
+- **Addon 43** (Subscription Billing): `draw.py` — +1L automatico a inizio turno
+- **Addon 44** (Loyalty Points Engine): `_boss_defeat_sequence` — altri giocatori con addon 44 guadagnano +1L
+- **Addon 45** (CPQ Advanced): `use_addon` — una volta per partita, setta `next_addon_price_fixed=0`
+- **Addon 46** (Order Management System): `roll.py` — immunità a tutte le abilità boss che drenano licenze
+- **Addon 47** (Partner Community): redesign + `play.py` — +1L quando giochi carta che dona L a un avversario
+- **Addon 48** (Net Zero Tracker): `draw.py` — ogni 5 turni senza morire +3L; reset counter in `_player_death_sequence`
+- **Addon 49** (Metadata API): `use_addon` + `metadata_api_reorder` — spia prime 3 carte e riordinale
+- **Addon 50** (Tooling API): `use_addon` — una volta per partita, recupera ultime 2 carte dagli scarti
+- **Addon 51** (Change Set): `use_addon` — scarta 1-3 carte e pesca lo stesso numero
+- **Addon 52** (Scratch Org): redesign + `start.py` — pesca 1 carta extra a inizio combattimento; `_boss_defeat_sequence` e `_player_death_sequence` trimmano la mano al massimo
+- **Addon 53** (Version Control): redesign + `use_addon` — una volta per partita, recupera ultima carta giocata dagli scarti
+- **Addon 54** (Unlocked Package): TODO comment (boss block-card-play non ancora in engine)
+- **Addon 55** (Data Loader Pro): `use_addon` — una volta per partita, pesca 5 carte
+- **Addon 56** (Backup & Restore): `_player_death_sequence` — annulla prima morte, ripristino HP pieno
+- **Addon 57** (Disaster Recovery): `_player_death_sequence` — alla morte non perdi la carta
+- **Addon 58** (High Availability): `buy_addon` inizializza `ha_misses_remaining=2`; `roll.py` — primi 2 miss a HP pieno non tolgono HP
+- **Addon 59** (Incident Management): `_player_death_sequence` — tiro dado ≥ 8 → sopravvivi a 1HP
+- **Addon 60** (Release Notes): redesign + `start.py` — spia stats boss prima di combattere; `release_notes_confirm` per fight/skip
+- **Addon 61** (Org Wide Default): `play.py` — carte offensive contro questo giocatore -1 licenze rubate (min 0)
+- **Addon 62** (Field Audit Trail): redesign + `use_addon` — una volta per turno, guarda mano di un avversario
+- **Addon 63** (Sharing Rules): redesign + `use_addon` + `sharing_rules_pick` — spia mano avversario e copia una carta
+- **Addon 64** (Role Hierarchy): TODO (seniority ranking non implementato)
+- **Addon 65** (Permission Set Group): `play.py` — immunità al flag `locked_out`
+- **Addon 66** (Trust Layer): `use_addon` setta `trust_layer_active`; `play.py` blocca carte che targettano player protetto; `end.py` pulisce il flag
+- **Addon 67** (Connected App Token): redesign + `use_addon` — una volta per partita, tappa un addon avversario
+
 ### Addon 21–41
 - **Addon 21** (Health Cloud): `draw.py` — se HP == 1 a inizio turno, ripristina HP massimi
 - **Addon 22** (Service Level Agreement): `roll.py` — cap danno boss a 1 HP per round

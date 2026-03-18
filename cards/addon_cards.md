@@ -425,7 +425,7 @@
 
 ### 47. Partner Community
 - **Tipo**: Passivo
-- **Effetto**: Ogni volta che aiuti un avversario con una carta azione durante il suo turno, guadagni 1 Licenza
+- **Effetto**: Guadagni +1L ogni volta che giochi una carta che ha come target un altro giocatore con effetto positivo (es. carte che danno L o HP a un avversario).
 - **Rarità**: Comune
 - **Image prompt**: `A 2D hand-drawn handshake badge with person icons in the art style of The Binding of Isaac. Two hands clasped inside a circular badge, tiny silhouette figures arranged around the border. Thick black outlines, flat shading, collaborative mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -469,7 +469,7 @@
 
 ### 52. Scratch Org
 - **Tipo**: Passivo
-- **Effetto**: All'inizio di ogni combattimento, pesca 1 carta azione extra che torna al mazzo al termine se non usata
+- **Effetto**: All'inizio di ogni combattimento, pesca 1 carta azione extra. A fine combattimento, se hai più carte del limite normale, scarta le eccedenti.
 - **Rarità**: Comune
 - **Image prompt**: `A 2D hand-drawn crumpled scratch paper notepad in the art style of The Binding of Isaac. A small notepad with scribbled code notes and a pencil resting on top, temporary and disposable-looking. Thick black outlines, flat shading, experimental mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -477,7 +477,7 @@
 
 ### 53. Version Control
 - **Tipo**: Passivo
-- **Effetto**: Una volta per partita, puoi rigiocare gratis l'ultima carta azione che hai usato
+- **Effetto**: Una volta per partita, recupera l'ultima carta giocata dagli scarti e aggiungila alla tua mano.
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn branching git tree diagram in the art style of The Binding of Isaac. A small tree with version branches labeled v1, v2, v3 sprouting from a main trunk, a looping arrow rewinding one step. Thick black outlines, flat shading, methodical mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -537,7 +537,7 @@
 
 ### 60. Release Notes
 - **Tipo**: Passivo
-- **Effetto**: All'inizio di ogni combattimento vedi HP, soglia e abilità del boss prima di decidere se combattere
+- **Effetto**: Quando peschi un boss dal mazzo, vedi HP, soglia e abilità prima di decidere se combattere o rimandare al turno successivo (senza penalità).
 - **Sinergia**: System Architect
 - **Rarità**: Comune
 - **Image prompt**: `A 2D hand-drawn printed release notes scroll with boss stats in the art style of The Binding of Isaac. A folded document with bullet-pointed boss HP and ability details, a magnifying glass pointing at the key stats. Thick black outlines, flat shading, informative mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
@@ -557,8 +557,8 @@
 ---
 
 ### 62. Field Audit Trail
-- **Tipo**: Passivo
-- **Effetto**: Puoi sempre vedere quante Licenze e Certificazioni hanno tutti gli avversari
+- **Tipo**: Attivo
+- **Effetto**: Una volta per turno, guarda la mano completa di un avversario a tua scelta.
 - **Rarità**: Comune
 - **Image prompt**: `A 2D hand-drawn open audit ledger with a magnifying glass in the art style of The Binding of Isaac. A thick open ledger with all players' license and certification counts listed in rows, a magnifying glass hovering over the totals. Thick black outlines, flat shading, transparent mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -566,7 +566,7 @@
 
 ### 63. Sharing Rules
 - **Tipo**: Attivo
-- **Effetto**: Una volta per turno, copia 1 carta dalla mano di un avversario e aggiungila alla tua — lui la mantiene
+- **Effetto**: Una volta per turno, guarda la mano di un avversario e scegli 1 carta da copiare — lui la mantiene, tu ricevi una copia.
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn tiny photocopier printing a duplicate playing card in the art style of The Binding of Isaac. A miniature copier machine with the original card in the tray and a fresh duplicate sliding out the front. Thick black outlines, flat shading, cunning mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -598,7 +598,7 @@
 
 ### 67. Connected App Token
 - **Tipo**: Attivo
-- **Effetto**: Una volta per turno, usa un AddOn attivo di un avversario come se fosse tuo — lui non può usarlo quel turno
+- **Effetto**: Una volta per partita, tappa un addon di un avversario a tua scelta — non può usarlo per 1 turno.
 - **Rarità**: Leggendario
 - **Image prompt**: `A 2D hand-drawn golden access token on a chain in the art style of The Binding of Isaac. A shimmering hexagonal token glowing with borrowed power, app icons orbiting it like satellites. Thick black outlines, flat shading, opportunistic mood. Rich golden background with ornate gold-leaf border. Indie game item card art. Radiant golden aura, the item glows with legendary power.`
 

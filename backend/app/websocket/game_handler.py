@@ -11,6 +11,7 @@ from app.websocket.handlers.lobby import _handle_join, _handle_select_character,
 from app.websocket.handlers.turn import (
     _handle_draw_card, _handle_play_card, _handle_buy_addon, _handle_use_addon, _handle_end_turn,
     _handle_appexchange_pick, _handle_chatter_feed_respond,
+    _handle_metadata_api_reorder, _handle_release_notes_confirm, _handle_sharing_rules_pick,
 )
 from app.websocket.handlers.combat import (
     _handle_start_combat, _handle_roll_dice, _handle_retreat,
@@ -71,5 +72,11 @@ async def handle_message(
         await _handle_appexchange_pick(game, user_id, data, db)
     elif action == "chatter_feed_respond":
         await _handle_chatter_feed_respond(game, user_id, data, db)
+    elif action == "metadata_api_reorder":
+        await _handle_metadata_api_reorder(game, user_id, data, db)
+    elif action == "release_notes_confirm":
+        await _handle_release_notes_confirm(game, user_id, data, db)
+    elif action == "sharing_rules_pick":
+        await _handle_sharing_rules_pick(game, user_id, data, db)
     else:
         await _error(game_code, user_id, f"Unknown action: {action}")

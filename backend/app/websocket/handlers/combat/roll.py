@@ -252,6 +252,24 @@ async def _boss_defeat_sequence(player, game, db, boss) -> bool:
         if omega_def["bonus_licenze"] > 0:
             player.licenze += omega_def["bonus_licenze"]
 
+    # Addon 42 (Revenue Cloud Optimizer): +2L extra on boss defeat if player has ≥20 licenze
+    if has_addon(player, 42) and player.licenze >= 20:
+        player.licenze += 2
+
+    # Addon 44 (Loyalty Points Engine): other players with this addon gain +1L on any boss defeat
+    for _other44 in game.players:
+        if _other44.id != player.id and has_addon(_other44, 44):
+            _other44.licenze += 1
+
+    # Addon 52 (Scratch Org): trim excess cards at end of combat (boss defeated)
+    if has_addon(player, 52):
+        db.flush()
+        hand52 = list(player.hand)
+        while len(hand52) > engine.MAX_HAND_SIZE:
+            excess52 = hand52.pop()
+            game.action_discard = (game.action_discard or []) + [excess52.action_card_id]
+            db.delete(excess52)
+
     # Track last defeated boss for mimic (55) / shape shifter (74) / omega (100) routing
     game.last_defeated_boss_id = boss.id
     if boss.has_certification:
@@ -299,6 +317,48 @@ async def _boss_defeat_sequence(player, game, db, boss) -> bool:
 
 async def _player_death_sequence(player, game, db, boss) -> None:
     """Handle player death sequence after a combat roll."""
+
+    # Addon 56 (Backup & Restore): cancel death once per game — full HP, reset combat
+    if has_addon(player, 56):
+        _cs56 = player.combat_state or {}
+        if not _cs56.get("backup_restore_used"):
+            _cs56_new = dict(_cs56)
+            _cs56_new["backup_restore_used"] = True
+            player.combat_state = _cs56_new
+            player.hp = player.max_hp
+            player.is_in_combat = False
+            player.current_boss_id = None
+            player.current_boss_hp = None
+            player.current_boss_source = None
+            player.combat_round = None
+            game.current_phase = TurnPhase.action
+            db.commit()
+            db.refresh(game)
+            await manager.broadcast(game.code, {"type": "backup_restore_triggered", "player_id": player.id})
+            await _broadcast_state(game, db)
+            return  # skip all death logic
+
+    # Addon 59 (Incident Management): on death, roll d10 — if ≥8 survive at 1 HP
+    if has_addon(player, 59):
+        _survival_roll59 = engine.roll_d10()
+        if _survival_roll59 >= 8:
+            player.hp = 1
+            player.is_in_combat = False
+            player.current_boss_id = None
+            player.current_boss_hp = None
+            player.current_boss_source = None
+            player.combat_round = None
+            game.current_phase = TurnPhase.action
+            db.commit()
+            db.refresh(game)
+            await manager.broadcast(game.code, {
+                "type": "incident_management_survival",
+                "player_id": player.id,
+                "roll": _survival_roll59,
+            })
+            await _broadcast_state(game, db)
+            return  # survived, skip death
+
     # Apply death penalty
     hand_ids = [hc.action_card_id for hc in player.hand]
     addon_ids = [pa.addon_id for pa in player.addons]
@@ -330,7 +390,8 @@ async def _player_death_sequence(player, game, db, boss) -> None:
             db.delete(pa_extra)
 
     # Remove lost card from hand
-    if "card" in penalty["lost"]:
+    # Addon 57 (Disaster Recovery): on death, don't lose card
+    if "card" in penalty["lost"] and not has_addon(player, 57):
         lost_card_id = penalty["lost"]["card"]
         hc_to_remove = next((hc for hc in player.hand if hc.action_card_id == lost_card_id), None)
         if hc_to_remove:
@@ -392,6 +453,21 @@ async def _player_death_sequence(player, game, db, boss) -> None:
         _cs7_death = dict(player.combat_state)
         _cs7_death.pop("no_damage_this_combat", None)
         player.combat_state = _cs7_death
+
+    # Addon 48 (Net Zero Tracker): reset turn counter on death
+    if has_addon(player, 48):
+        _cs48d = dict(player.combat_state or {})
+        _cs48d["net_zero_turns"] = 0
+        player.combat_state = _cs48d
+
+    # Addon 52 (Scratch Org): trim excess cards at end of combat (player death)
+    if has_addon(player, 52):
+        db.flush()
+        hand52d = list(player.hand)
+        while len(hand52d) > engine.MAX_HAND_SIZE:
+            excess52d = hand52d.pop()
+            game.action_discard = (game.action_discard or []) + [excess52d.action_card_id]
+            db.delete(excess52d)
 
     # Addon 6 (Sandbox Shield): first death no licenze loss
     _cs6 = player.combat_state or {}
@@ -468,7 +544,8 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
     )
 
     # Boss 18 (Tech Debt Lich): drain 1 Licenza every round
-    if round_start["licenza_drain"] > 0:
+    # Addon 46 (Order Management System): immune to boss licenze drain
+    if round_start["licenza_drain"] > 0 and not has_addon(player, 46):
         player.licenze = max(0, player.licenze - round_start["licenza_drain"])
 
     # Boss 13 (Flow Builder Gone Rogue): discard 1 card or take 1 HP
@@ -482,9 +559,12 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             player.hp = max(0, player.hp - round_start["force_discard_or_damage"])
 
     # Boss 42 (Revenue Cloud Devourer): drain 1 licenza; if 0 licenze → drain 1 HP
+    # Addon 46 (Order Management System): immune to boss licenze drain (HP drain still applies)
     if round_start["licenza_or_hp_drain"] > 0:
         n = round_start["licenza_or_hp_drain"]
-        if player.licenze >= n:
+        if has_addon(player, 46):
+            pass  # immune to boss licenze drain
+        elif player.licenze >= n:
             player.licenze -= n
         else:
             player.hp = max(0, player.hp - n)
@@ -526,29 +606,37 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         })
 
     # Boss 93 (Subscription Management Tormentor): lose 1L/round; if at 0L take 1 HP instead
+    # Addon 46 (Order Management System): immune to boss licenze drain
     if round_start["subscription_drain"] > 0:
-        if player.licenze > 0:
+        if has_addon(player, 46):
+            pass  # immune to boss licenze drain
+        elif player.licenze > 0:
             player.licenze -= 1
         else:
             player.hp = max(0, player.hp - 1)
 
     # Boss 100 (Omega): apply last legendary boss's on_round_start effects in parallel
+    # Addon 46 (Order Management System): immune to boss licenze drain
     if engine.boss_is_omega(boss.id) and game.last_defeated_legendary_boss_id:
         omega_rs = engine.apply_boss_ability(
             game.last_defeated_legendary_boss_id, "on_round_start",
             combat_round=current_round,
             cards_played=player.cards_played_this_turn,
         )
-        if omega_rs["licenza_drain"] > 0:
+        if omega_rs["licenza_drain"] > 0 and not has_addon(player, 46):
             player.licenze = max(0, player.licenze - omega_rs["licenza_drain"])
         if omega_rs["licenza_or_hp_drain"] > 0:
             n = omega_rs["licenza_or_hp_drain"]
-            if player.licenze >= n:
+            if has_addon(player, 46):
+                pass  # immune to boss licenze drain
+            elif player.licenze >= n:
                 player.licenze -= n
             else:
                 player.hp = max(0, player.hp - n)
         if omega_rs["subscription_drain"] > 0:
-            if player.licenze > 0:
+            if has_addon(player, 46):
+                pass  # immune to boss licenze drain
+            elif player.licenze > 0:
                 player.licenze -= 1
             else:
                 player.hp = max(0, player.hp - 1)
@@ -560,11 +648,14 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             combat_round=current_round,
             cards_played=player.cards_played_this_turn,
         )
-        if copy_rs["licenza_drain"] > 0:
+        # Addon 46 (Order Management System): immune to boss licenze drain
+        if copy_rs["licenza_drain"] > 0 and not has_addon(player, 46):
             player.licenze = max(0, player.licenze - copy_rs["licenza_drain"])
         if copy_rs["licenza_or_hp_drain"] > 0:
             n = copy_rs["licenza_or_hp_drain"]
-            if player.licenze >= n:
+            if has_addon(player, 46):
+                pass  # immune
+            elif player.licenze >= n:
                 player.licenze -= n
             else:
                 player.hp = max(0, player.hp - n)
@@ -577,14 +668,17 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             else:
                 player.hp = max(0, player.hp - copy_rs["force_discard_or_damage"])
         if copy_rs["subscription_drain"] > 0:
-            if player.licenze > 0:
+            if has_addon(player, 46):
+                pass  # immune
+            elif player.licenze > 0:
                 player.licenze -= 1
             else:
                 player.hp = max(0, player.hp - 1)
 
     # Boss 45 (Agentforce Rebellion): each owned addon costs 1L/round; can't pay → addon tapped
+    # Addon 46 (Order Management System): immune to boss licenze drain
     threshold_bonus = 0
-    if round_start["addon_licenze_drain"]:
+    if round_start["addon_licenze_drain"] and not has_addon(player, 46):
         addons_45 = list(player.addons)
         tapped_by_drain = []
         for pa_45 in addons_45:
@@ -1070,6 +1164,19 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                 target_redir.hp = max(0, target_redir.hp - 1)
         else:
             _player_hp_damage = 1
+            # Addon 58 (High Availability): if HP is at max, first 2 misses don't remove HP
+            _skip_hp58 = False
+            if has_addon(player, 58) and player.hp == player.max_hp:
+                _ha_remaining = (player.combat_state or {}).get("ha_misses_remaining", 0)
+                if _ha_remaining > 0:
+                    _cs58m = dict(player.combat_state)
+                    _cs58m["ha_misses_remaining"] = _ha_remaining - 1
+                    if _cs58m["ha_misses_remaining"] <= 0:
+                        _cs58m.pop("ha_misses_remaining", None)
+                    player.combat_state = _cs58m
+                    _skip_hp58 = True
+            if _skip_hp58:
+                _player_hp_damage = 0
             # Addon 22 (Service Level Agreement): cap boss damage to 1 HP per round
             # (already 1 by default; this guard ensures card bonuses don't exceed 1)
             if has_addon(player, 22):

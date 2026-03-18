@@ -238,6 +238,17 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
         _cs_hrt.pop("hand_revealed_this_turn", None)
         player.combat_state = _cs_hrt
 
+    # Addon 66 (Trust Layer): clear protection flag at end of turn for ALL players
+    for _p_tl in game.players:
+        if (_p_tl.combat_state or {}).get("trust_layer_active"):
+            _cs_tl = dict(_p_tl.combat_state)
+            _cs_tl.pop("trust_layer_active", None)
+            _p_tl.combat_state = _cs_tl
+
+    # Addon 65 (Permission Set Group): clear locked_out for all players at end of turn (already immune,
+    # but clearing is still needed for other players without addon 65)
+    # (locked_out is cleared when the player's turn ends via the Anypoint MQ card effect)
+
     player.cards_played_this_turn = 0
 
     # Advance turn

@@ -169,6 +169,11 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
                     await _send_hand_state(game.code, player, db)
                     return
 
+    # Addon 65 (Permission Set Group): immune to locked_out flag
+    if (player.combat_state or {}).get("locked_out") and not _has_addon_play(player, 65):
+        await _error(game.code, user_id, "You are locked out and cannot play cards this turn")
+        return
+
     hand_card_id = data.get("hand_card_id")
     from app.models.game import PlayerHandCard
     hc = db.get(PlayerHandCard, hand_card_id)
@@ -232,6 +237,10 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
             await _error(game.code, user_id, f"Boss restricts you to {allowed_type} cards only")
             return
 
+    # Addon 54 (Unlocked Package): immune to boss abilities that block card play
+    # TODO: when a boss "blocks_card_play" flag is added to engine, check:
+    # if boss_blocks_card_play and not has_addon(player, 54): block here
+
     game.action_discard.append(hc.action_card_id)
     db.delete(hc)
     # Card 243 (Einstein GPT): next card plays for free (no slot consumed)
@@ -287,6 +296,14 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
     if (player.combat_state or {}).get("not_found_active") and target_player_id:
         if (player.combat_state or {}).get("not_found_until_turn", 0) >= game.turn_number:
             await _error(game.code, user_id, "404 Not Found: you cannot target other players this turn")
+            return
+
+    # Check target-side protections for any card targeting another player
+    if card and card_approved and target_player_id:
+        _tgt_trust = next((p for p in game.players if p.id == target_player_id and p.id != player.id), None)
+        # Addon 66 (Trust Layer): target is protected from all opponent cards for 1 turn
+        if _tgt_trust and (_tgt_trust.combat_state or {}).get("trust_layer_active"):
+            await _error(game.code, user_id, "Target is protected by Trust Layer")
             return
 
     # Check target-side protections for Offensiva cards
@@ -579,6 +596,26 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
         _cs18_play = dict(player.combat_state or {})
         _cs18_play["last_discarded_card_id"] = hc.action_card_id
         player.combat_state = _cs18_play
+
+    # Addon 47 (Partner Community): +1L when you play a card that gives L or HP to another player
+    if card and card_approved and not original_cancelled and target_player_id and target_player_id != player.id:
+        if _has_addon_play(player, 47) and isinstance(card_effect_result, dict):
+            _licenze_to_target47 = card_effect_result.get("target_compensation_licenze", 0)
+            # Also check if the target gained licenze or HP through positive effects
+            # Cards that donate L directly (e.g., "licenze_donated" key)
+            _donated47 = card_effect_result.get("licenze_donated", 0)
+            if _licenze_to_target47 > 0 or _donated47 > 0:
+                player.licenze += 1
+
+    # Addon 61 (Org Wide Default): offensive cards targeting this player have -1 effectiveness
+    if card and card_approved and not original_cancelled and target_player_id and card.card_type == "Offensiva":
+        _tgt61 = next((p for p in game.players if p.id == target_player_id and p.id != player.id), None)
+        if _tgt61 and _has_addon_play(_tgt61, 61) and isinstance(card_effect_result, dict):
+            # Reduce licenze_stolen by 1 (min 0), give back to target
+            _stolen61 = card_effect_result.get("licenze_stolen", 0)
+            if _stolen61 > 0:
+                _reduction61 = min(1, _stolen61)
+                _tgt61.licenze += _reduction61
 
     # Card 120 (Event Monitoring): watchers earn 1L each time this player plays a card (max 2)
     for _watcher in game.players:
