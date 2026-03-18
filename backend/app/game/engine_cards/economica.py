@@ -774,13 +774,18 @@ def _card_280(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_285(player, game, db, *, target_player_id=None) -> dict:
-    """Trailhead Superbadge (Leggendaria) — Inizia a tracciare i boss sconfitti consecutivi; al 3° +1cert+10L."""
-    if player.is_in_combat:
-        return {"applied": False, "reason": "in_combat"}
-    cs = player.combat_state or {}
+    """Trailhead Superbadge (Leggendaria) — Traccia boss sconfitti consecutivi; al 3° +10L +1 certificazione.
+
+    Stores superbadge_tracking=True and superbadge_defeats=0 in combat_state.
+    combat.py boss_defeated hook: if superbadge_tracking, increment superbadge_defeats.
+    At superbadge_defeats >= 3: player.licenze += 10, player.certificazioni += 1, clear flags.
+    Counter resets to 0 if player retreats (handled in retreat logic).
+    """
+    cs = dict(player.combat_state or {})
     cs["superbadge_tracking"] = True
+    cs.setdefault("superbadge_defeats", 0)
     player.combat_state = cs
-    return {"applied": True, "effect": "tracking_consecutive_boss_defeats"}
+    return {"applied": True, "superbadge_tracking": True, "superbadge_defeats": cs["superbadge_defeats"]}
 
 
 def _card_286(player, game, db, *, target_player_id=None) -> dict:

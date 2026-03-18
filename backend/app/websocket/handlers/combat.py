@@ -1297,6 +1297,17 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             _cs_tq.pop("trailhead_quest_active", None)
             _cs_tq.pop("trailhead_quest_cards_played", None)
             player.combat_state = _cs_tq
+        # Card 285 (Trailhead Superbadge): track consecutive boss defeats; at 3 → +10L +1cert
+        if (player.combat_state or {}).get("superbadge_tracking"):
+            _cs_sb = dict(player.combat_state)
+            _cs_sb["superbadge_defeats"] = _cs_sb.get("superbadge_defeats", 0) + 1
+            if _cs_sb["superbadge_defeats"] >= 3:
+                player.licenze += 10
+                player.certificazioni += 1
+                _cs_sb.pop("superbadge_tracking", None)
+                _cs_sb.pop("superbadge_defeats", None)
+            player.combat_state = _cs_sb
+
         # Card 296 (Customer Success): watchers with flag get +1L
         for _watcher_cs in game.players:
             if _watcher_cs.id != player.id and (_watcher_cs.combat_state or {}).get("customer_success_active"):
@@ -1604,6 +1615,11 @@ async def _handle_retreat(game: GameSession, user_id: int, db: Session):
     player.current_boss_id = None
     player.current_boss_hp = None
     player.current_boss_source = None
+    # Card 285 (Trailhead Superbadge): reset consecutive defeat counter on retreat
+    if (player.combat_state or {}).get("superbadge_tracking"):
+        _cs_sb_ret = dict(player.combat_state)
+        _cs_sb_ret["superbadge_defeats"] = 0
+        player.combat_state = _cs_sb_ret
     game.current_phase = TurnPhase.action
     db.commit()
     db.refresh(game)
