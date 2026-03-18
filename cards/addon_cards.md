@@ -808,7 +808,7 @@
 
 ### 91. Free Trial
 - **Tipo**: Attivo
-- **Effetto**: Una volta per partita, usa un AddOn come se lo possedessi per 1 intero turno, poi restituiscilo al mazzo
+- **Effetto**: Una volta per partita, scegli uno degli addon presenti nel mercato e usalo come se lo possedessi per 1 intero turno, poi restituiscilo al mercato.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn AddOn card with a FREE TRIAL sticker slapped on it in the art style of The Binding of Isaac. A borrowed-looking card with a yellow trial sticker, an hourglass beside it counting down one turn. Thick black outlines, flat shading, temporary mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
