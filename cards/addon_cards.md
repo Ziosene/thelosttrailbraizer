@@ -1222,7 +1222,7 @@
 
 ### 140. OmniScript
 - **Tipo**: Attivo
-- **Effetto**: Una volta per partita, combina 2 carte azione dalla tua mano — entrambi gli effetti si applicano simultaneamente come un'unica azione
+- **Effetto**: Una volta per partita, tira 2 dadi — guadagni tante Licenze quanto la somma dei due risultati (max 20).
 - **Rarità**: Leggendario
 - **Image prompt**: `A 2D hand-drawn two playing cards fusing together into one super card in the art style of The Binding of Isaac. Two cards merging in a flash of energy, their combined effects written on the resulting single glowing card. Thick black outlines, flat shading, powerful mood. Rich golden background with ornate gold-leaf border. Indie game item card art. Radiant golden aura, the item glows with legendary power.`
 
