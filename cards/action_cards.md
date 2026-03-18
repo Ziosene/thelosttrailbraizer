@@ -2666,8 +2666,8 @@
 
 ### 274. Engagement Score
 - **Tipo**: Economica
-- **Quando**: Fuori dal combattimento
-- **Effetto**: Guadagna 1 Licenza per ogni turno passato in cui hai giocato almeno 1 carta (max 5, calcolato retroattivamente)
+- **Quando**: In qualsiasi momento
+- **Effetto**: Guadagni 1 Licenza per ogni AddOn che possiedi (max 5).
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn engagement history log in the art style of The Binding of Isaac. A retroactive score counter reviewing past turns and rewarding one coin for each active turn, capped at five. Thick black outlines, flat shading, consistent activity mood. Plain off-white parchment background. Indie game card art.`
 

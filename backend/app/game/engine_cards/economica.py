@@ -727,13 +727,10 @@ def _card_272(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_274(player, game, db, *, target_player_id=None) -> dict:
-    """Engagement Score — +1L per turno consecutivo con carte giocate (max 5)."""
-    if player.is_in_combat:
-        return {"applied": False, "reason": "in_combat"}
-    cs = player.combat_state or {}
-    streak = min(5, cs.get("consecutive_turns_with_cards", 0))
-    player.licenze += streak
-    return {"applied": True, "licenze_gained": streak}
+    """Engagement Score — +1L per addon posseduto (max 5)."""
+    gained = min(5, len(list(player.addons)))
+    player.licenze += gained
+    return {"applied": True, "licenze_gained": gained, "addons_owned": gained}
 
 
 def _card_275(player, game, db, *, target_player_id=None) -> dict:
