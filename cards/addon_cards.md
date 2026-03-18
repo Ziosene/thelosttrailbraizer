@@ -917,7 +917,7 @@
 
 ### 104. User Story
 - **Tipo**: Attivo
-- **Effetto**: Una volta per partita, dichiara un obiettivo segreto (es. "sconfiggo il prossimo boss senza usare carte") — se ci riesci, guadagni 5 Licenze bonus
+- **Effetto**: Una volta per partita, pesca 3 carte azione e guadagna 3 Licenze.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn sealed envelope with a secret challenge written inside in the art style of The Binding of Isaac. A wax-sealed envelope with a glowing challenge scroll peeking out, five license coins waiting beside it. Thick black outlines, flat shading, secretive mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
