@@ -364,12 +364,11 @@ def _card_220(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_273(player, game, db, *, target_player_id=None) -> dict:
-    """Trailhead Quest — Se sconfiggi un boss senza giocare carte quel turno, guadagna +5L."""
-    cs = dict(player.combat_state or {})
-    cs["trailhead_quest_active"] = True
-    cs["trailhead_quest_cards_played"] = 0
-    player.combat_state = cs
-    return {"applied": True, "effect": "bonus_5L_if_no_cards_played_on_boss_defeat"}
+    """Trailhead Quest — Tira 1 dado: il risultato = Licenze guadagnate (1-10)."""
+    import random as _rnd273
+    roll = _rnd273.randint(1, 10)
+    player.licenze += roll
+    return {"applied": True, "roll": roll, "licenze_gained": roll}
 
 
 MANIPOLAZIONE: dict = {

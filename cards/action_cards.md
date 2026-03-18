@@ -2657,8 +2657,8 @@
 
 ### 273. Trailhead Quest (azione)
 - **Tipo**: Manipolazione dado / Economica
-- **Quando**: Fuori dal combattimento
-- **Effetto**: Dichiara un obiettivo (es. "sconfiggo il prossimo boss senza usare carte"). Se ci riesci, guadagna 5 Licenze; altrimenti nessun effetto
+- **Quando**: In qualsiasi momento
+- **Effetto**: Tira 1 dado. Guadagni tante Licenze quanti punti ottieni (1–10).
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn challenge declaration in the art style of The Binding of Isaac. A player planting a quest flag and shouting a bold objective, five coins waiting in a locked chest that only opens if the declared goal is achieved. Thick black outlines, flat shading, high-risk-reward mood. Plain off-white parchment background. Indie game card art.`
 

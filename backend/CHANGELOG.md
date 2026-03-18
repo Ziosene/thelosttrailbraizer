@@ -42,6 +42,7 @@
 - **Carta 199** (Segment Builder): redesign — da "dividi mazzo in 2 pile" (complesso) a `scarta fino a 3 carte e pesca lo stesso numero`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
+- **Carta 273** (Trailhead Quest): redesign — da "obiettivo dichiarato" (non implementabile) a `tira dado, guadagni 1-10L`
 - **Carta 269** (Trailhead GO): redesign — da "istantanea gratis" a `limite carte questo turno = 4`; flag `trailhead_go_max_cards` in turn.py
 - **Carta 268** (ISV Summit): redesign — rimosso "mostrare addon" (info pubblica); ora `senza addon -2L, con addon +1L al caster`
 - **Carta 267** (Buyer Relationship Map): redesign — da "guarda addon di tutti" (info pubblica inutile) a `guarda la mano di un avversario`
