@@ -657,17 +657,12 @@ def _card_233(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_240(player, game, db, *, target_player_id=None) -> dict:
-    """Batch Scope — Boss -1HP/round per i prossimi 3 round (DOT persistente).
-
-    Stores batch_scope_dot_rounds=3 in combat_state.
-    combat.py: after each roll resolution, decrement and apply DOT damage.
-    """
+    """Batch Scope — Boss -2HP, tu +1HP."""
     if not player.is_in_combat:
         return {"applied": False, "reason": "not_in_combat"}
-    cs = dict(player.combat_state or {})
-    cs["batch_scope_dot_rounds"] = cs.get("batch_scope_dot_rounds", 0) + 3
-    player.combat_state = cs
-    return {"applied": True, "batch_scope_dot_rounds": cs["batch_scope_dot_rounds"]}
+    player.current_boss_hp = max(0, player.current_boss_hp - 2)
+    player.hp = min(player.hp + 1, player.max_hp)
+    return {"applied": True, "boss_damage": 2, "player_healed": 1}
 
 
 def _card_261(player, game, db, *, target_player_id=None) -> dict:

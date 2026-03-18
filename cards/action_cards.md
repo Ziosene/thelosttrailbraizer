@@ -2335,7 +2335,7 @@
 ### 240. Batch Scope
 - **Tipo**: Offensiva
 - **Quando**: Durante combattimento
-- **Effetto**: Processo in batch — il boss subisce 1 HP per round per i prossimi 3 round (effetto persistente, non immediato)
+- **Effetto**: Boss -2HP. Tu recuperi 1HP.
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn batch job scheduler in the art style of The Binding of Isaac. A scheduled process icon dripping one damage tick onto a boss every round for three rounds, a persistent poison-like counter marking the ongoing effect. Thick black outlines, flat shading, slow-burn mood. Plain off-white parchment background. Indie game card art.`
 

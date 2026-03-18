@@ -42,6 +42,7 @@
 - **Carta 199** (Segment Builder): redesign — da "dividi mazzo in 2 pile" (complesso) a `scarta fino a 3 carte e pesca lo stesso numero`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
+- **Carta 240** (Batch Scope): redesign da DOT 1HP/3 round a `boss -2HP, player +1HP`
 - **Carta 239** (SFTP Connector): redesign — da "riserva esterna di carte" (non implementabile) a `scarta 2 carte dalla mano, pesca 3`; rimosso hook `sftp_reserve_card_ids` da turn.py
 - **Carta 238** (Recipe): redesign — da "combina 2 carte economiche" (non implementabile) a `+5L`
 - **Carta 236** (API Governance): redesign — da "tutti dichiarano carte prima di giocarle" (non implementabile) a `l'avversario con più licenze perde 3L`; rimosso hook `api_governance_active` da turn.py
