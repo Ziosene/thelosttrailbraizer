@@ -42,6 +42,7 @@
 - **Carta 199** (Segment Builder): redesign — da "dividi mazzo in 2 pile" (complesso) a `scarta fino a 3 carte e pesca lo stesso numero`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
+- **Addon 96** (Backlog Refinement): redesign — da "riordina intero mazzo" a `passivo: spia il prossimo addon a inizio turno`
 - **Addon 92** (Beta Feature): precisazione — se rifiuti l'addon, puoi pescarne un altro; quello rifiutato torna in cima al mazzo
 - **Addon 91** (Free Trial): precisazione — solo addon dal mercato, torna al mercato a fine turno
 - **Addon 89** (Data Migration Tool): redesign — da "presta addon per 2 turni" a `scambia 1 addon con un avversario (permanente)`

@@ -847,8 +847,8 @@
 ---
 
 ### 96. Backlog Refinement
-- **Tipo**: Attivo
-- **Effetto**: Una volta per partita, guarda tutti gli AddOn nel mazzo (senza rivelare agli avversari) e rimetti il mazzo nell'ordine che preferisci
+- **Tipo**: Passivo
+- **Effetto**: All'inizio di ogni tuo turno, puoi spiare il prossimo addon in cima al mazzo (solo tu lo vedi).
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn prioritized stack of AddOn cards being reordered by a careful hand in the art style of The Binding of Isaac. A stack of AddOn cards with numbered priority tags being rearranged one by one. Thick black outlines, flat shading, deliberate mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
