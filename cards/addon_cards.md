@@ -1181,8 +1181,8 @@
 ---
 
 ### 135. Hotfix
-- **Tipo**: Attivo
-- **Effetto**: Una volta per turno, annulla un effetto negativo che ti è stato applicato in questo turno (da boss o da avversario)
+- **Tipo**: Passivo
+- **Effetto**: Ogni volta che perdi HP in combattimento, guadagni 1 Licenza per ogni HP perso.
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn emergency patch being slapped over a negative status effect in the art style of The Binding of Isaac. A glowing hot patch covering a debuff icon mid-application, canceling it with a satisfying click. Thick black outlines, flat shading, urgent mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
