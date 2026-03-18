@@ -1046,7 +1046,7 @@
 
 ### 119. Queueable Job
 - **Tipo**: Attivo
-- **Effetto**: Una volta per partita, accumula fino a 3 azioni (carte o AddOn) e risolvile tutte nello stesso istante — gli avversari non possono interrompere il burst
+- **Effetto**: Una volta per partita, acquista gratuitamente qualsiasi addon presente nel mercato.
 - **Rarità**: Leggendario
 - **Image prompt**: `A 2D hand-drawn job queue with three stacked cards exploding out simultaneously in the art style of The Binding of Isaac. A queue pipe with three cards loaded inside, all three launching at once in an unstoppable burst. Thick black outlines, flat shading, overwhelming mood. Rich golden background with ornate gold-leaf border. Indie game item card art. Radiant golden aura, the item glows with legendary power.`
 
