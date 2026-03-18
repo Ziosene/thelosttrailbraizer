@@ -2613,8 +2613,8 @@
 
 ### 269. Trailhead GO
 - **Tipo**: Utilità
-- **Quando**: In qualsiasi momento (anche fuori turno)
-- **Effetto**: Modalità mobile — gioca questa carta come istantanea senza consumare il limite di 2 carte per turno
+- **Quando**: Durante il tuo turno
+- **Effetto**: Il limite di carte giocabili questo turno diventa 4, inclusa questa.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn mobile instant-play card in the art style of The Binding of Isaac. A phone screen launching a card effect as a free instant action outside the normal hand limit, the counter bypassed with a mobile shortcut arrow. Thick black outlines, flat shading, always-on mood. Plain off-white parchment background. Indie game card art.`
 

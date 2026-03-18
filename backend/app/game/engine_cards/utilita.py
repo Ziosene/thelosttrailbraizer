@@ -1104,14 +1104,16 @@ def _card_267(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_269(player, game, db, *, target_player_id=None) -> dict:
-    """Trailhead GO — Istantanea: gioca questa carta senza consumare slot (refund 1 card play).
+    """Trailhead GO — Il limite di carte giocabili questo turno diventa 4 (inclusa questa).
 
-    Grants einstein_gpt_free_play so the next card played this turn is also free, OR
-    simply refunds the slot consumed playing this card.
+    Stores trailhead_go_max_cards=4 in combat_state.
+    turn.py uses it to override max_cards if higher than current limit.
+    Cleared in end_turn.
     """
-    # Refund the card slot consumed for playing this card
-    player.cards_played_this_turn = max(0, player.cards_played_this_turn - 1)
-    return {"applied": True, "card_slot_refunded": True}
+    cs = dict(player.combat_state or {})
+    cs["trailhead_go_max_cards"] = 4
+    player.combat_state = cs
+    return {"applied": True, "trailhead_go_max_cards": 4}
 
 
 def _card_270(player, game, db, *, target_player_id=None) -> dict:

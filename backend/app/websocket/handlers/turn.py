@@ -190,6 +190,10 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
     # Card 201 (Web Studio): +1 card slot this turn
     if (player.combat_state or {}).get("web_studio_extra_card"):
         max_cards += 1
+    # Card 269 (Trailhead GO): set max to 4 if higher than current limit
+    _tg_max = (player.combat_state or {}).get("trailhead_go_max_cards")
+    if _tg_max is not None:
+        max_cards = max(max_cards, _tg_max)
     if player.cards_played_this_turn >= max_cards:
         await _error(game.code, user_id, "Card limit reached this turn")
         return
@@ -1080,6 +1084,8 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
         cs.pop("web_studio_extra_card", None)
         # Card 241 (Object Storage): clear per-turn theft immunity
         cs.pop("licenze_theft_immune", None)
+        # Card 269 (Trailhead GO): clear per-turn max cards override
+        cs.pop("trailhead_go_max_cards", None)
         # Card 215 (B2B Analytics): decrement target reveal turns
         _ba = cs.get("b2b_analytics_turns", 0)
         if _ba > 0:
