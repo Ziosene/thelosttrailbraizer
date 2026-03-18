@@ -998,7 +998,7 @@
 
 ### 113. Batch Apex Scheduler
 - **Tipo**: Passivo
-- **Effetto**: Puoi "prenotare" 1 carta azione a fine turno — si gioca automaticamente all'inizio del tuo prossimo turno prima di qualsiasi altra azione
+- **Effetto**: Puoi "prenotare" 1 carta azione a fine turno — si gioca automaticamente all'inizio del tuo prossimo turno prima di qualsiasi altra azione, e non conta come slot usato in quel turno.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn alarm clock with a pre-loaded playing card attached in the art style of The Binding of Isaac. A wound-up alarm clock with a card clipped to it, set to fire automatically at the next turn's bell ring. Thick black outlines, flat shading, prepared mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
