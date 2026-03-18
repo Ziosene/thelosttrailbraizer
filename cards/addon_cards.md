@@ -990,7 +990,7 @@
 
 ### 112. Asynchronous Callout
 - **Tipo**: Passivo
-- **Effetto**: Una volta per partita, puoi giocare 1 carta azione nel turno di un avversario come se fosse il tuo turno
+- **Effetto**: Le carte azione che giochi durante il turno di un avversario (reazioni) non consumano slot del tuo prossimo turno.
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn playing card launching out of turn on a separate thread arrow in the art style of The Binding of Isaac. A card breaking out of a turn queue, traveling along a dashed async arrow to land during an opponent's turn. Thick black outlines, flat shading, surprising mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 

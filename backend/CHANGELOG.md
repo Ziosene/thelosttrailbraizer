@@ -42,6 +42,7 @@
 - **Carta 199** (Segment Builder): redesign — da "dividi mazzo in 2 pile" (complesso) a `scarta fino a 3 carte e pesca lo stesso numero`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
+- **Addon 112** (Asynchronous Callout): redesign — da "gioca fuori turno" (già possibile) a `reazioni non consumano slot del turno successivo`
 - **Addon 109** (Proof of Concept): redesign — da "testa carta senza effetto" a `gioca 1 carta gratis per turno (senza consumare slot)`
 - **Addon 104** (User Story): redesign — da "obiettivo segreto dichiarato" (non implementabile) a `una volta per partita: pesca 3 + guadagna 3L`
 - **Addon 100** (Kanban Board): redesign — da "riserva esterna di carte" a `limite mano 12 invece di 10`
