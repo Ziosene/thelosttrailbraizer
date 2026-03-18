@@ -880,7 +880,7 @@
 
 ### 100. Kanban Board
 - **Tipo**: Passivo
-- **Effetto**: Puoi avere fino a 3 carte azione in una "riserva" fuori mano — non contano per il limite di 10, ma non puoi usarle finché non le rimetti in mano
+- **Effetto**: Il tuo limite massimo di carte in mano è 12 invece di 10.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn kanban whiteboard divided into columns in the art style of The Binding of Isaac. A small board with To Do, In Progress and Done columns, tiny playing cards pinned in their respective lanes. Thick black outlines, flat shading, organized mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 

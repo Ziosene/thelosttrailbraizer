@@ -42,6 +42,7 @@
 - **Carta 199** (Segment Builder): redesign — da "dividi mazzo in 2 pile" (complesso) a `scarta fino a 3 carte e pesca lo stesso numero`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
+- **Addon 100** (Kanban Board): redesign — da "riserva esterna di carte" a `limite mano 12 invece di 10`
 - **Addon 98** (Acceptance Criteria): redesign — da "salta 2 turni senza penalità" a `rinuncia alla ricompensa boss per 2 carte azione`
 - **Addon 96** (Backlog Refinement): redesign — da "riordina intero mazzo" a `passivo: spia il prossimo addon a inizio turno`
 - **Addon 92** (Beta Feature): precisazione — se rifiuti l'addon, puoi pescarne un altro; quello rifiutato torna in cima al mazzo
