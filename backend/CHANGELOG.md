@@ -42,6 +42,7 @@
 - **Carta 199** (Segment Builder): redesign — da "dividi mazzo in 2 pile" (complesso) a `scarta fino a 3 carte e pesca lo stesso numero`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
+- **Refactoring `combat.py`**: file da 1705 righe splittato in package `handlers/combat/` con 5 moduli — `start.py` (342r), `roll.py` (1290r, con `_boss_defeat_sequence` e `_player_death_sequence` estratti), `retreat.py` (62r), `declare.py` (88r), `__init__.py` (16r); `game_handler.py` invariato
 - **Carta 297** (Trailblazer Spirit): redesign da "primo boss inedito +3L" a `+1L per certificazione posseduta (max 5)`
 - **Carta 289** (Stack Trace): redesign testo — da "recupera 1 carta per turno passato" a `ultime 3 dagli scarti in mano`; rimosso vincolo fuori-combattimento
 - **Carta 285** (Trailhead Superbadge): implementata correttamente — flag `superbadge_defeats` incrementato in combat.py ad ogni boss sconfitto; al 3° +10L +1cert; reset a 0 in caso di ritirata
