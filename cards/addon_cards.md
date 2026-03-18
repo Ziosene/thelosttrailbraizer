@@ -1150,7 +1150,7 @@
 
 ### 131. Spring Release
 - **Tipo**: Passivo
-- **Effetto**: Ogni 10 turni totali di partita, tutti i tuoi AddOn Comuni diventano Non Comuni per 2 turni
+- **Effetto**: Ogni 5 turni, guadagni automaticamente 2 Licenze.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn spring flower blooming from a common AddOn card upgrading it in the art style of The Binding of Isaac. A plain card with a spring flower blossoming from its corner, its border glow shifting upward in rarity. Thick black outlines, flat shading, renewing mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
