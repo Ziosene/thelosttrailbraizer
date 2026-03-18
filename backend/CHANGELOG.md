@@ -42,6 +42,36 @@
 - **Carta 199** (Segment Builder): redesign — da "dividi mazzo in 2 pile" (complesso) a `scarta fino a 3 carte e pesca lo stesso numero`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
+## Sessione corrente — Implementazione effetti addon 1–20
+
+- **engine_addons.py**: nuovo modulo con `has_addon(player, n)`, `get_addon_pa(player, n)`, `has_untapped_addon(player, n)`
+- **PlayerAddon.card**: aggiunta relationship a `AddonCard` (no migration — solo livello SQLAlchemy)
+- **Addon 1** (Trailhead Badge): `roll += 1` ad ogni tiro in combattimento
+- **Addon 2** (Lightning Component): `roll += 2` al primo tiro di ogni combattimento (`combat_round == 0`)
+- **Addon 3** (Einstein Prediction): `use_addon` setta `einstein_prediction_pre_reroll`; in `roll.py` tira 2 volte prende il meglio
+- **Addon 4** (Apex Governor Override): tiro grezzo 1 → `round_nullified = True`, round neutro
+- **Addon 5** (Hyperforce Boost): tira 2 volte, prende il migliore (coesiste con addon 3)
+- **Addon 6** (Sandbox Shield): in `_player_death_sequence`, prima morte ripristina le licenze perse; flag `sandbox_shield_used`
+- **Addon 7** (Flow Automation): `start.py` setta `no_damage_this_combat`; `roll.py` pulisce il flag se player subisce danno; in `_boss_defeat_sequence` +2L se flag ancora attivo
+- **Addon 8** (MuleSoft Connector): redesign + implementazione — `play.py` dà +1L a tutti gli altri giocatori con addon 8 ogni volta che una carta viene giocata
+- **Addon 9** (Debug Mode): `use_addon` — annulla il combattimento in corso e rimanda il boss in fondo al mazzo (una volta per partita)
+- **Addon 10** (Platform Cache): `draw.py` — limite mano 12 invece di 10
+- **Addon 11** (Revenue Intelligence): `buy_addon` — +1L a tutti gli altri giocatori con addon 11 ad ogni acquisto addon
+- **Addon 12** (CPQ Engine): `buy_addon` — setta `next_addon_price_fixed = 5` al momento dell'acquisto di questo addon
+- **Addon 13** (AppExchange Marketplace): `use_addon` — pesca 3 addon dai mazzi, setta `appexchange_pending`; nuovo client action `appexchange_pick`
+- **Addon 14** (Salesforce Billing): `play.py` — se una carta ruba licenze al player, il player ne recupera 1 (controllo su `licenze_stolen` nel risultato carta)
+- **Addon 15** (Trailhead Superbadge addon): `_boss_defeat_sequence` — +2L se il boss sconfitto ha certificazione
+- **Addon 16** (License Manager): redesign + implementazione — `draw.py` dà +1L a inizio turno se il player ha meno licenze di almeno un avversario
+- **Addon 17** (Knowledge Base): `draw.py` — pesca 1 carta extra a inizio turno
+- **Addon 18** (Field History Tracking): `play.py` + `end.py` tracciano `last_discarded_card_id`; `use_addon` recupera la carta dagli scarti in mano
+- **Addon 19** (Chatter Feed): `use_addon` — rivela la mano al target, setta `chatter_feed_pending_requester_id`; nuovo client action `chatter_feed_respond`
+- **Addon 20** (Custom Metadata): redesign (`+1L extra ogni volta che guadagni licenze`) + implementazione in `play.py` su `licenze_gained > 0`
+- **Addon 8** (MuleSoft Connector): redesign — da "carte altrui per te valgono doppio" (non implementabile) a `+1L ogni volta che un avversario gioca una carta`
+- **Addon 16** (License Manager): redesign — da "max -3L per turno" (complesso) a `+1L a inizio turno se hai meno licenze di almeno un avversario`
+- **Addon 20** (Custom Metadata): redesign — da "+1L su carte economiche" a `+1L extra ogni volta che guadagni licenze da qualsiasi fonte`
+
+---
+
 - **Addon 196** (Ctrl+Z): redesign — da "annulla tutto il turno avversario" (non implementabile) a `un avversario perde 4L e scarta 1 carta a caso dalla mano`
 - **Addon 195** (Copy/Paste): redesign — da "copia ultima carta giocata" (non implementabile) a `una volta per turno: gioca 1 carta senza contarla nel limite`
 - **Addon 193** (Stack Trace): redesign — da "recupera 1 carta per ognuno degli ultimi 3 turni" (no storico) a `pesca 4 carte`

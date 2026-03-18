@@ -11,6 +11,7 @@ from app.websocket.game_helpers import (
 from app.models.game import GameSession, GameStatus, TurnPhase
 from app.models.card import AddonCard, BossCard
 from app.game import engine
+from app.game.engine_addons import has_addon as _has_addon_addon
 
 
 async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Session):
@@ -135,6 +136,17 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
     from app.models.game import PlayerAddon
     db.add(PlayerAddon(player_id=player.id, addon_id=addon_id))
 
+    # Addon 11 (Revenue Intelligence): other players with this addon earn +1L on each addon purchase
+    for _other11 in game.players:
+        if _other11.id != player.id and _has_addon_addon(_other11, 11):
+            _other11.licenze += 1
+
+    # Addon 12 (CPQ Engine): buying this addon sets next purchase to 5L
+    if addon.number == 12:
+        _cs12 = dict(player.combat_state or {})
+        _cs12["next_addon_price_fixed"] = 5
+        player.combat_state = _cs12
+
     # Card 160 (Storefront Reference): mark that this player bought an addon this turn
     _cs_bat = dict(player.combat_state or {})
     _cs_bat["bought_addon_this_turn"] = True
@@ -227,21 +239,201 @@ async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Ses
         if heal > 0 and boss_for_addon:
             player.current_boss_hp = min(boss_for_addon.hp, (player.current_boss_hp or 0) + heal)
 
+    # ── Active addon effects (1-20) ──────────────────────────────────────────
+
+    # Addon 3 (Einstein Prediction): reroll next dice roll (flag consumed in roll.py)
+    if addon.number == 3:
+        if not player.is_in_combat:
+            await _error(game.code, user_id, "Einstein Prediction can only be used during combat")
+            pa.is_tapped = False
+            return
+        _cs3 = dict(player.combat_state or {})
+        _cs3["einstein_prediction_pre_reroll"] = True
+        player.combat_state = _cs3
+
+    # Addon 9 (Debug Mode): once per game, send boss back to bottom of deck
+    elif addon.number == 9:
+        _cs9 = player.combat_state or {}
+        if _cs9.get("debug_mode_used"):
+            await _error(game.code, user_id, "Debug Mode already used this game")
+            pa.is_tapped = False
+            return
+        if not player.is_in_combat or not player.current_boss_id:
+            await _error(game.code, user_id, "Debug Mode can only be used when in combat (right after drawing a boss)")
+            pa.is_tapped = False
+            return
+        boss_id_9 = player.current_boss_id
+        source_9 = player.current_boss_source
+        if source_9 in ("deck_1", "market_1"):
+            game.boss_deck_1 = (game.boss_deck_1 or []) + [boss_id_9]
+        else:
+            game.boss_deck_2 = (game.boss_deck_2 or []) + [boss_id_9]
+        player.is_in_combat = False
+        player.current_boss_id = None
+        player.current_boss_hp = None
+        player.current_boss_source = None
+        player.combat_round = None
+        from app.models.game import TurnPhase as _TP9
+        game.current_phase = _TP9.action
+        cs9_new = dict(_cs9)
+        cs9_new["debug_mode_used"] = True
+        player.combat_state = cs9_new
+
+    # Addon 13 (AppExchange Marketplace): once per game, peek 3 addons from deck and pick 1
+    elif addon.number == 13:
+        _cs13 = player.combat_state or {}
+        if _cs13.get("appexchange_used"):
+            await _error(game.code, user_id, "AppExchange Marketplace already used this game")
+            pa.is_tapped = False
+            return
+        choices_13 = []
+        _deck13_1 = list(game.addon_deck_1 or [])
+        _deck13_2 = list(game.addon_deck_2 or [])
+        for _ in range(3):
+            if _deck13_1:
+                choices_13.append(_deck13_1.pop(0))
+            elif _deck13_2:
+                choices_13.append(_deck13_2.pop(0))
+        if not choices_13:
+            await _error(game.code, user_id, "No addons available in decks")
+            pa.is_tapped = False
+            return
+        game.addon_deck_1 = _deck13_1
+        game.addon_deck_2 = _deck13_2
+        cs13_new = dict(_cs13)
+        cs13_new["appexchange_pending"] = choices_13
+        cs13_new["appexchange_used"] = True
+        player.combat_state = cs13_new
+        db.commit()
+        db.refresh(game)
+        await manager.broadcast(game.code, {
+            "type": "appexchange_choices",
+            "player_id": player.id,
+            "addon_ids": choices_13,
+        })
+        await _broadcast_state(game, db)
+        return  # don't broadcast addon_used yet — wait for pick
+
+    # Addon 18 (Field History Tracking): recover last discarded card to hand
+    elif addon.number == 18:
+        _cs18 = player.combat_state or {}
+        _last_id18 = _cs18.get("last_discarded_card_id")
+        if not _last_id18:
+            await _error(game.code, user_id, "No discarded card to recover")
+            pa.is_tapped = False
+            return
+        _discard18 = list(game.action_discard or [])
+        if _last_id18 in _discard18:
+            _discard18.remove(_last_id18)
+            game.action_discard = _discard18
+            from app.models.game import PlayerHandCard as _PHC18
+            db.add(_PHC18(player_id=player.id, action_card_id=_last_id18))
+        cs18_new = dict(_cs18)
+        cs18_new.pop("last_discarded_card_id", None)
+        player.combat_state = cs18_new
+
+    # Addon 19 (Chatter Feed): show your hand to a target and request a card
+    elif addon.number == 19:
+        _target19_id = data.get("target_player_id")
+        _target19 = next((p for p in game.players if p.id == _target19_id), None)
+        if not _target19 or _target19.id == player.id:
+            await _error(game.code, user_id, "Invalid target for Chatter Feed")
+            pa.is_tapped = False
+            return
+        _cs19_req = dict(player.combat_state or {})
+        _cs19_req["chatter_feed_pending_from_id"] = player.id
+        player.combat_state = _cs19_req
+        _cs19_tgt = dict(_target19.combat_state or {})
+        _cs19_tgt["chatter_feed_pending_requester_id"] = player.id
+        _target19.combat_state = _cs19_tgt
+        db.commit()
+        db.refresh(game)
+        await manager.send_to_player(game.code, _target19.user_id, {
+            "type": "chatter_feed_request",
+            "requester_id": player.id,
+            "requester_hand": [
+                {"id": hc19.id, "action_card_id": hc19.action_card_id}
+                for hc19 in player.hand
+            ],
+        })
+        await _broadcast_state(game, db)
+        return  # wait for chatter_feed_respond
+
     db.commit()
     db.refresh(game)
-
-    # TODO: implementare gli effetti di tutti i 200 addon attivi.
-    # Attualmente l'addon viene tappato ma il suo effetto NON viene applicato.
-    # Ogni addon va gestito per nome (addon.name) o numero (addon.number) in
-    # una funzione dedicata tipo apply_addon_effect(addon, player, game, db).
-    # Gli addon Passivi hanno effetti che si attivano automaticamente in
-    # determinati momenti del gioco (roll_dice, acquisto, inizio turno, ecc.)
-    # e vanno anch'essi implementati nei punti giusti del flusso.
-    # Vedere cards/addon_cards.md per l'effetto completo di ogni addon.
 
     await manager.broadcast(game.code, {
         "type": ServerEvent.ADDON_USED,
         "player_id": player.id,
         "addon": {"id": addon.id, "name": addon.name, "effect": addon.effect},
     })
+    await _broadcast_state(game, db)
+
+
+async def _handle_appexchange_pick(game, user_id: int, data: dict, db):
+    """Handle the player picking one addon from AppExchange Marketplace choices."""
+    from app.websocket.game_helpers import _get_player, _error, _broadcast_state
+    player = _get_player(game, user_id)
+    if not player:
+        return
+    cs = player.combat_state or {}
+    pending = list(cs.get("appexchange_pending") or [])
+    if not pending:
+        await _error(game.code, user_id, "No AppExchange choice pending")
+        return
+    chosen_id = data.get("addon_id")
+    if chosen_id not in pending:
+        await _error(game.code, user_id, "Invalid addon choice")
+        return
+    from app.models.game import PlayerAddon as _PAex
+    db.add(_PAex(player_id=player.id, addon_id=chosen_id))
+    # Return unchosen addons to front of deck_1
+    for aid in pending:
+        if aid != chosen_id:
+            game.addon_deck_1 = [aid] + (game.addon_deck_1 or [])
+    cs_new = dict(cs)
+    cs_new.pop("appexchange_pending", None)
+    player.combat_state = cs_new
+    db.commit()
+    db.refresh(game)
+    await manager.broadcast(game.code, {
+        "type": ServerEvent.ADDON_BOUGHT,
+        "player_id": player.id,
+        "addon": {"id": chosen_id},
+        "source": "appexchange",
+    })
+    await _broadcast_state(game, db)
+
+
+async def _handle_chatter_feed_respond(game, user_id: int, data: dict, db):
+    """Handle the target responding to a Chatter Feed card request."""
+    from app.websocket.game_helpers import _get_player, _error, _broadcast_state
+    responder = _get_player(game, user_id)
+    if not responder:
+        return
+    cs_resp = responder.combat_state or {}
+    requester_id = cs_resp.get("chatter_feed_pending_requester_id")
+    if not requester_id:
+        await _error(game.code, user_id, "No Chatter Feed request pending")
+        return
+    requester19 = next((p for p in game.players if p.id == requester_id), None)
+    if not requester19:
+        return
+    hand_card_id19 = data.get("hand_card_id")
+    from app.models.game import PlayerHandCard as _PHC19r
+    hc19r = db.get(_PHC19r, hand_card_id19)
+    if not hc19r or hc19r.player_id != responder.id:
+        await _error(game.code, user_id, "Card not in your hand")
+        return
+    # Transfer card to requester
+    hc19r.player_id = requester19.id
+    # Clear flags
+    cs_resp_new = dict(cs_resp)
+    cs_resp_new.pop("chatter_feed_pending_requester_id", None)
+    responder.combat_state = cs_resp_new
+    cs_req19 = dict(requester19.combat_state or {})
+    cs_req19.pop("chatter_feed_pending_from_id", None)
+    requester19.combat_state = cs_req19
+    db.commit()
+    db.refresh(game)
     await _broadcast_state(game, db)

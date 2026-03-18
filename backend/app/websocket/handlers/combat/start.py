@@ -12,6 +12,7 @@ from app.websocket.game_helpers import (
 from app.models.game import GameSession, GameStatus, TurnPhase
 from app.models.card import ActionCard, BossCard, AddonCard
 from app.game import engine
+from app.game.engine_addons import has_addon as _has_addon_start
 from app.websocket.reaction_manager import open_reaction_window
 
 
@@ -76,7 +77,11 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
             "runtime_manager_ready",        # Card 158 (Runtime Manager): cross-turn survival flag
         ) if k in _old_cs
     }
-    player.combat_state = {**_persist_cs, "fought_this_turn": True}
+    _new_cs = {**_persist_cs, "fought_this_turn": True}
+    # Addon 7 (Flow Automation): track no-damage combat for bonus on defeat
+    if _has_addon_start(player, 7):
+        _new_cs["no_damage_this_combat"] = True
+    player.combat_state = _new_cs
     game.current_phase = TurnPhase.combat
 
     # Card 182 (Interaction Studio): next boss ability disabled — consume the flag

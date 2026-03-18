@@ -32,12 +32,20 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
     # ── FASE FINALE step 2: discard excess cards (hand > 10) ─────────────────
     hand_cards = list(player.hand)
     excess = len(hand_cards) - engine.MAX_HAND_SIZE
+    discarded_card_ids: list = []
     if excess > 0:
         # Player must choose which to discard — for now auto-discard last drawn
         to_discard = hand_cards[-excess:]
         for hc_ex in to_discard:
+            discarded_card_ids.append(hc_ex.action_card_id)
             game.action_discard = (game.action_discard or []) + [hc_ex.action_card_id]
             db.delete(hc_ex)
+
+    # Addon 18 (Field History Tracking): track last discarded card at end of turn
+    if discarded_card_ids:
+        _cs18_end = dict(player.combat_state or {})
+        _cs18_end["last_discarded_card_id"] = discarded_card_ids[-1]
+        player.combat_state = _cs18_end
 
     # ── FASE FINALE step 3: "until end of turn" effects expire ───────────────
     # TODO: expire timed effects stored in combat_state (e.g. "until_round" flags)

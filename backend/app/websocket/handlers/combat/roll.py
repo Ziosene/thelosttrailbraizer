@@ -13,6 +13,7 @@ from app.websocket.game_helpers import (
 from app.models.game import GameSession, GameStatus, TurnPhase
 from app.models.card import ActionCard, BossCard, AddonCard
 from app.game import engine
+from app.game.engine_addons import has_addon, get_addon_pa
 from app.websocket.reaction_manager import open_reaction_window
 
 
@@ -160,6 +161,17 @@ async def _boss_defeat_sequence(player, game, db, boss) -> bool:
     # Step 3: award Certification (if cert boss)
     if boss.has_certification:
         player.certificazioni += 1
+
+    # Addon 15 (Trailhead Superbadge): +2L when defeating a boss that has a certification
+    if has_addon(player, 15) and boss.has_certification:
+        player.licenze += 2
+
+    # Addon 7 (Flow Automation): +2L if no damage taken this combat
+    if has_addon(player, 7) and (player.combat_state or {}).get("no_damage_this_combat"):
+        player.licenze += 2
+        _cs7d = dict(player.combat_state)
+        _cs7d.pop("no_damage_this_combat", None)
+        player.combat_state = _cs7d
 
     # Step 4: post-reward boss abilities
     # Boss 19 (Dreamforce Hydra): +1 bonus certification on kill
@@ -368,6 +380,21 @@ async def _player_death_sequence(player, game, db, boss) -> None:
         cs_ren = dict(player.combat_state)
         cs_ren.pop("renewal_protected", None)
         player.combat_state = cs_ren
+
+    # Addon 7 (Flow Automation): clean up no_damage_this_combat flag on death
+    if (player.combat_state or {}).get("no_damage_this_combat"):
+        _cs7_death = dict(player.combat_state)
+        _cs7_death.pop("no_damage_this_combat", None)
+        player.combat_state = _cs7_death
+
+    # Addon 6 (Sandbox Shield): first death no licenze loss
+    _cs6 = player.combat_state or {}
+    if has_addon(player, 6) and not _cs6.get("sandbox_shield_used"):
+        # Revert the licenze penalty — set licenze back (penalty was already deducted by engine)
+        player.licenze = penalty["licenze"] + penalty["lost"].get("licenza", 0)
+        cs6_new = dict(_cs6)
+        cs6_new["sandbox_shield_used"] = True
+        player.combat_state = cs6_new
 
     player.is_in_combat = False
     player.current_boss_id = None
@@ -629,11 +656,30 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
     # ── Roll dice ─────────────────────────────────────────────────────────
     # Boss 1 (worst_of_2) / Boss 39 (second_of_2 — keep only the second roll)
     roll_mode = engine.boss_roll_mode(boss.id, current_round)
-    roll = engine.roll_d10()
-    if roll_mode == "worst_of_2":
-        roll = min(roll, engine.roll_d10())
-    elif roll_mode == "second_of_2":
+
+    # Addon 3 (Einstein Prediction): reroll flag set by use_addon
+    _ep_reroll = (player.combat_state or {}).get("einstein_prediction_pre_reroll", False)
+    if _ep_reroll:
+        _cs_ep = dict(player.combat_state)
+        _cs_ep.pop("einstein_prediction_pre_reroll", None)
+        player.combat_state = _cs_ep
+
+    # Addon 5 (Hyperforce Boost): roll twice, take best
+    _addon5_active = has_addon(player, 5)
+
+    if _ep_reroll or _addon5_active:
+        # Roll twice (or more) and take best
+        roll = max(engine.roll_d10(), engine.roll_d10())
+        if roll_mode == "worst_of_2":
+            roll = min(roll, engine.roll_d10())
+        elif roll_mode == "second_of_2":
+            roll = engine.roll_d10()
+    else:
         roll = engine.roll_d10()
+        if roll_mode == "worst_of_2":
+            roll = min(roll, engine.roll_d10())
+        elif roll_mode == "second_of_2":
+            roll = engine.roll_d10()
 
     # Card 72 (Engagement Split): opponent forced a reroll — take second result
     if (player.combat_state or {}).get("forced_reroll_next"):
@@ -692,6 +738,20 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         cs.pop("einstein_sto_next_roll_bonus", None)
         player.combat_state = cs
 
+    # Capture pre-bonus roll for Addon 4 check
+    _raw_roll_for_addon4 = roll
+
+    # Addon 1 (Trailhead Badge): +1 to every roll
+    if has_addon(player, 1):
+        roll = min(10, roll + 1)
+
+    # Addon 2 (Lightning Component): +2 to first roll of each combat (combat_round is still 0 before increment)
+    if has_addon(player, 2) and (player.combat_round or 0) == 0:
+        roll = min(10, roll + 2)
+
+    # Addon 4 (Apex Governor Override): original roll of 1 → round neutral (before addon bonuses)
+    _addon4_override = has_addon(player, 4) and _raw_roll_for_addon4 == 1
+
     # Boss 56 (Change Data Capture Lurker): track rolled numbers; duplicate → auto miss
     _lurker_miss = False
     if engine.boss_tracks_duplicate_rolls(boss.id):
@@ -706,6 +766,10 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
 
     # Boss 67 (Developer Console Glitch): roll 1 or 2 → entire round is nullified
     round_nullified = engine.boss_nullifies_round_on_low_roll(boss.id) and roll <= 2
+
+    # Addon 4 (Apex Governor Override): original roll of 1 (before bonuses) → round neutral
+    if _addon4_override:
+        round_nullified = True
 
     # ── Threshold calculation (needed to show preview to Lucky Roll window) ──
     # Boss 10, 12, 22, 37: dynamic threshold (now also passes combat_round for boss 22)
@@ -998,6 +1062,11 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             else:
                 player.hp = max(0, _new_hp)
             player_took_damage = True
+            # Addon 7 (Flow Automation): clear no_damage_this_combat flag when player takes HP damage
+            if _player_hp_damage > 0 and (player.combat_state or {}).get("no_damage_this_combat"):
+                _cs7_dmg = dict(player.combat_state)
+                _cs7_dmg.pop("no_damage_this_combat", None)
+                player.combat_state = _cs7_dmg
             if _player_hp_damage > 0:
                 # Card 152 (Net Zero Commitment): +1L per HP lost
                 if (player.combat_state or {}).get("net_zero_commitment_active"):

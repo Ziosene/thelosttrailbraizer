@@ -82,7 +82,7 @@
 
 ### 8. MuleSoft Connector
 - **Tipo**: Passivo
-- **Effetto**: Ogni carta azione giocata da altri giocatori per aiutarti vale il doppio
+- **Effetto**: Passivo — guadagni +1L ogni volta che un avversario gioca una carta azione nel suo turno.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn electrical plug connector with a cartoon mule on it in the art style of The Binding of Isaac. A large plug with a mule face stamped on the front, sparks at the prong tips. Thick black outlines, flat shading, industrious mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -150,7 +150,7 @@
 
 ### 16. License Manager
 - **Tipo**: Passivo
-- **Effetto**: Non puoi perdere più di 3 Licenze in un singolo turno (da qualsiasi fonte)
+- **Effetto**: Passivo — se hai meno Licenze di almeno un avversario, guadagni +1L a inizio turno.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn keyring with laminated license cards in the art style of The Binding of Isaac. A metal keyring holding several small barcode-stamped cards, each with a cloud icon. Thick black outlines, flat shading, organized mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -186,7 +186,7 @@
 
 ### 20. Custom Metadata
 - **Tipo**: Passivo
-- **Effetto**: Le tue carte azione "Ottieni X Licenze" valgono +1 Licenza ciascuna
+- **Effetto**: Passivo — ogni volta che guadagni Licenze da qualsiasi fonte, ne guadagni +1 extra.
 - **Rarità**: Comune
 - **Image prompt**: `A 2D hand-drawn price tag label with pencil markings in the art style of The Binding of Isaac. A folded metadata tag hanging from a string with custom field lines filled in by hand. Thick black outlines, flat shading, detail-oriented mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 

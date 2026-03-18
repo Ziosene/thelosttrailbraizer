@@ -4,6 +4,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 import enum
 
 from app.database import Base
+from app.models.card import AddonCard
 
 
 class GameStatus(str, enum.Enum):
@@ -140,6 +141,7 @@ class PlayerAddon(Base):
     is_tapped: Mapped[bool] = mapped_column(Boolean, default=False)  # tap/untap mechanic
 
     player: Mapped["GamePlayer"] = relationship(back_populates="addons")
+    card: Mapped["AddonCard"] = relationship()
 
 
 class PlayerHandCard(Base):

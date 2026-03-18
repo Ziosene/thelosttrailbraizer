@@ -12,6 +12,7 @@ from app.models.game import GameSession, GameStatus, TurnPhase
 from app.models.card import ActionCard, BossCard
 from app.game import engine
 from app.game.engine_cards import apply_action_card_effect
+from app.game.engine_addons import has_addon as _has_addon_play
 from app.websocket.reaction_manager import open_reaction_window
 
 
@@ -542,6 +543,33 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
                 _cs_ab2.pop("app_builder_active", None)
                 _cs_ab2.pop("app_builder_type_counts", None)
             player.combat_state = _cs_ab2
+
+    # Addon 14 (Salesforce Billing): target recovers 1L when licenze are stolen from them
+    if card and card_approved and not original_cancelled and isinstance(card_effect_result, dict):
+        _stolen14 = card_effect_result.get("licenze_stolen", 0)
+        _stolen_from14 = card_effect_result.get("from_player_id")
+        if _stolen14 and _stolen14 > 0 and _stolen_from14:
+            _victim14 = next((p for p in game.players if p.id == _stolen_from14), None)
+            if _victim14 and _has_addon_play(_victim14, 14):
+                _victim14.licenze += 1
+
+    # Addon 8 (MuleSoft Connector): other players with this addon earn +1L when this player plays a card
+    if card and card_approved and not original_cancelled:
+        for _other8 in game.players:
+            if _other8.id != player.id and _has_addon_play(_other8, 8):
+                _other8.licenze += 1
+
+    # Addon 20 (Custom Metadata): +1L extra on any licenze gain from a card action
+    if card and card_approved and not original_cancelled:
+        _gained20 = card_effect_result.get("licenze_gained", 0) if isinstance(card_effect_result, dict) else 0
+        if _gained20 > 0 and _has_addon_play(player, 20):
+            player.licenze += 1
+
+    # Addon 18 (Field History Tracking): track last played card as last discarded
+    if card and card_approved and not original_cancelled:
+        _cs18_play = dict(player.combat_state or {})
+        _cs18_play["last_discarded_card_id"] = hc.action_card_id
+        player.combat_state = _cs18_play
 
     # Card 120 (Event Monitoring): watchers earn 1L each time this player plays a card (max 2)
     for _watcher in game.players:

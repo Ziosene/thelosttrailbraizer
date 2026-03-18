@@ -10,6 +10,7 @@ from app.websocket.game_helpers import (
 )
 from app.models.game import GameSession, GameStatus, TurnPhase
 from app.game import engine
+from app.game.engine_addons import has_addon as _has_addon_draw
 
 
 async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Session):
@@ -72,7 +73,15 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
         await _send_hand_state(game.code, player, db)
         return
 
-    if len(player.hand) >= engine.MAX_HAND_SIZE:
+    # Addon 16 (License Manager): +1L at turn start if player has fewer licenze than any opponent
+    if _has_addon_draw(player, 16):
+        _others_licenze = [p.licenze for p in game.players if p.id != player.id]
+        if _others_licenze and player.licenze < max(_others_licenze):
+            player.licenze += 1
+
+    # Addon 10 (Platform Cache): hand size up to 12 instead of 10
+    _max_hand = 12 if _has_addon_draw(player, 10) else engine.MAX_HAND_SIZE
+    if len(player.hand) >= _max_hand:
         await _error(game.code, user_id, "Hand is full")
         return
 
@@ -150,6 +159,19 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
         hp_cost = engine.boss_draw_costs_hp(player.current_boss_id)
         if hp_cost > 0:
             player.hp = max(0, player.hp - hp_cost)
+
+    # Addon 17 (Knowledge Base): draw 1 extra card at start of turn
+    if _has_addon_draw(player, 17) and not jinxed:
+        _max_hand17 = 12 if _has_addon_draw(player, 10) else engine.MAX_HAND_SIZE
+        if len(list(player.hand)) < _max_hand17:
+            _extra17 = None
+            if deck_num == 1 and game.action_deck_1:
+                _extra17 = game.action_deck_1.pop(0)
+            elif game.action_deck_2:
+                _extra17 = game.action_deck_2.pop(0)
+            if _extra17:
+                from app.models.game import PlayerHandCard as _PHC17
+                db.add(_PHC17(player_id=player.id, action_card_id=_extra17))
 
     # TODO: trigger_passive_addons(event="on_draw", player, game, db)
 

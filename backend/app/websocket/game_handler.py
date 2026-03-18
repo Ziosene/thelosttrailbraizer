@@ -10,6 +10,7 @@ from app.websocket.game_helpers import _error
 from app.websocket.handlers.lobby import _handle_join, _handle_select_character, _handle_start_game
 from app.websocket.handlers.turn import (
     _handle_draw_card, _handle_play_card, _handle_buy_addon, _handle_use_addon, _handle_end_turn,
+    _handle_appexchange_pick, _handle_chatter_feed_respond,
 )
 from app.websocket.handlers.combat import (
     _handle_start_combat, _handle_roll_dice, _handle_retreat,
@@ -66,5 +67,9 @@ async def handle_message(
         await _handle_play_reaction(game, user_id, data, db)
     elif action == ClientAction.PASS_REACTION:
         await _handle_pass_reaction(game, user_id, data, db)
+    elif action == "appexchange_pick":
+        await _handle_appexchange_pick(game, user_id, data, db)
+    elif action == "chatter_feed_respond":
+        await _handle_chatter_feed_respond(game, user_id, data, db)
     else:
         await _error(game_code, user_id, f"Unknown action: {action}")
