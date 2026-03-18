@@ -250,7 +250,7 @@
 
 ### 27. Data Mask
 - **Tipo**: Passivo
-- **Effetto**: Gli avversari non possono vedere quante Licenze e Certificazioni hai (info nascosta)
+- **Effetto**: Gli avversari non possono vedere le carte nella tua mano.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn masquerade mask with binary code in the art style of The Binding of Isaac. An ornate half-mask with 0s and 1s etched into its surface, hiding the data beneath. Thick black outlines, flat shading, secretive mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
