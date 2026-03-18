@@ -788,7 +788,7 @@
 
 ### 89. Data Migration Tool
 - **Tipo**: Attivo
-- **Effetto**: Una volta per turno, trasferisci 1 dei tuoi AddOn passivi a un avversario — lui lo tiene per 2 turni, poi torna da te
+- **Effetto**: Scambia 1 tuo addon con 1 addon di un avversario a tua scelta (entrambi permanenti).
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn tiny moving truck carrying a glowing AddOn card in the art style of The Binding of Isaac. A miniature moving van transporting an AddOn card from one side to another, a return arrow underneath. Thick black outlines, flat shading, transitional mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
