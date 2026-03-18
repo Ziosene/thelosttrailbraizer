@@ -42,6 +42,7 @@
 - **Carta 199** (Segment Builder): redesign — da "dividi mazzo in 2 pile" (complesso) a `scarta fino a 3 carte e pesca lo stesso numero`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
+- **Addon 120** (Scheduled Flow): precisazione — licenze guadagnate = turni dichiarati (2/3/4) invece di fisso 4L
 - **Addon 119** (Queueable Job): redesign — da duplicato carta 283 a `una volta per partita: addon dal mercato gratis`
 - **Addon 118** (Pub/Sub API): redesign — da "blocca reazioni avversarie" (non implementabile) a `passivo: +1L ogni volta che un avversario usa un addon`
 - **Addon 113** (Batch Apex Scheduler): precisazione — la carta prenotata non conta come slot usato nel turno successivo

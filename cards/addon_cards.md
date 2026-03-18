@@ -1054,7 +1054,7 @@
 
 ### 120. Scheduled Flow
 - **Tipo**: Attivo
-- **Effetto**: Dichiara un numero di turni (da 2 a 4) — quando scadono, guadagni automaticamente 4 Licenze senza dover fare nulla in quel turno
+- **Effetto**: Dichiara un numero di turni (da 2 a 4) — quando scadono, guadagni tante Licenze quanti turni hai dichiarato (2, 3 o 4).
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn countdown timer with four coins waiting to drop in the art style of The Binding of Isaac. A digital countdown clock with four gold coins suspended above a collection slot, falling automatically when the timer hits zero. Thick black outlines, flat shading, patient mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
