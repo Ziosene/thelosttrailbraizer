@@ -42,6 +42,7 @@
 - **Carta 199** (Segment Builder): redesign — da "dividi mazzo in 2 pile" (complesso) a `scarta fino a 3 carte e pesca lo stesso numero`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
+- **Addon 134** (Major Release): redesign — da "upgrade rarità addon" (inutile) a `dado: 6-10 → +3L, 1-5 → pesca 2 carte`
 - **Addon 131** (Spring Release): redesign — da "upgrade rarità addon" (inutile) a `+2L ogni 5 turni automaticamente`
 - **Addon 128** (Cross-Object Formula): redesign — da "3 categorie addon" (non esistono) a `+1L extra per ogni boss sconfitto`
 - **Addon 120** (Scheduled Flow): precisazione — licenze guadagnate = turni dichiarati (2/3/4) invece di fisso 4L

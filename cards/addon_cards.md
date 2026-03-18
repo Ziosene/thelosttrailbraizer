@@ -1174,7 +1174,7 @@
 
 ### 134. Major Release
 - **Tipo**: Attivo
-- **Effetto**: Una volta per partita, "aggiorna" 1 tuo AddOn Non Comune — tira dado: 6–10 diventa Raro con +1 al dado; 1–5 diventa Raro con +1 Licenza per uso
+- **Effetto**: Una volta per partita, tira il dado: 6–10 guadagni 3 Licenze; 1–5 peschi 2 carte azione.
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn upgrade banner dropping onto an AddOn card with a dice roll deciding the bonus in the art style of The Binding of Isaac. A grand release banner falling over an AddOn card, a d10 beside it determining which upgrade it receives. Thick black outlines, flat shading, anticipatory mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
