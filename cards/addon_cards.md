@@ -1306,7 +1306,7 @@
 
 ### 150. Wildcards
 - **Tipo**: Attivo
-- **Effetto**: Leggendario. Una volta per partita, dichiara "Wildcard" — per 1 intero turno puoi ignorare tutti i limiti di gioco (carte illimitate, AddOn illimitati, AddOn tappati riutilizzabili) purché le Licenze lo permettano.
+- **Effetto**: Leggendario. Una volta per partita, dichiara "Wildcard" — per 1 intero turno puoi giocare carte senza limite e usare tutti i tuoi AddOn non tappati senza limite.
 - **Rarità**: Leggendario
 - **Image prompt**: `A 2D hand-drawn joker wildcard exploding with unlimited energy and broken rule icons in the art style of The Binding of Isaac. A glowing joker card shattering game rule tablets, cards and AddOns flying freely in all directions. Thick black outlines, flat shading, chaotic mood. Rich golden background with ornate gold-leaf border. Indie game item card art. Radiant golden aura, the item glows with legendary power.`
 
@@ -1378,8 +1378,8 @@
 ---
 
 ### 158. Credential Vault
-- **Tipo**: Passivo
-- **Effetto**: Puoi "nascondere" fino a 2 Certificazioni — non sono visibili agli avversari e non possono essere rubate finché rimangono nascoste (ma non contano verso la vittoria finché nascoste)
+- **Tipo**: Attivo
+- **Effetto**: Una volta per partita, tira il dado — se esci 10, guadagni 1 Certificazione.
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn bank vault hiding two certification badges inside in the art style of The Binding of Isaac. A heavy steel vault door with two cert badges locked inside, invisible to prying eyes outside, a question mark on the exterior. Thick black outlines, flat shading, secretive mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -1446,8 +1446,8 @@
 ---
 
 ### 166. Parallel Career
-- **Tipo**: Passivo
-- **Effetto**: Scegli un secondo Ruolo all'inizio della partita (tra quelli non già scelti dagli altri) — puoi usarne l'abilità una volta ogni 3 turni
+- **Tipo**: Attivo
+- **Effetto**: Una volta per partita, guadagni tante Licenze quante le tue Certificazioni × 3.
 - **Rarità**: Leggendario
 - **Image prompt**: `A 2D hand-drawn double role card with two character badges side by side in the art style of The Binding of Isaac. A split card showing two different role emblems, one primary and one secondary glowing on a cooldown every three turns. Thick black outlines, flat shading, ambitious mood. Rich golden background with ornate gold-leaf border. Indie game item card art. Radiant golden aura, the item glows with legendary power.`
 
@@ -1455,7 +1455,7 @@
 
 ### 167. Evangelist Aura
 - **Tipo**: Passivo
-- **Effetto**: Se giochi come Evangelist, tutti i giocatori nel tuo stesso "quadrante" guadagnano +1 al dado per il loro prossimo combattimento ogni volta che tu sconfiggi un boss
+- **Effetto**: Ogni volta che sconfiggi un boss, il giocatore alla tua sinistra e quello alla tua destra guadagnano +1 al dado per il loro prossimo combattimento.
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn glowing evangelist figure radiating +1 dice auras to surrounding players in the art style of The Binding of Isaac. A preacher-like figure at the center, victory light beaming outward as +1 dice tokens drift to all nearby players. Thick black outlines, flat shading, inspiring mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -1479,7 +1479,7 @@
 
 ### 170. Promotion
 - **Tipo**: Attivo
-- **Effetto**: Una volta per partita, aumenta temporaneamente la tua Seniority di 1 livello per 2 turni (guadagni gli HP extra corrispondenti)
+- **Effetto**: Una volta per partita, aumenta temporaneamente la tua Seniority di 1 livello per 5 turni (guadagni gli HP extra corrispondenti).
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn promotion letter with a seniority rank arrow jumping up one level in the art style of The Binding of Isaac. An official promotion scroll with a seniority ladder, the player's marker jumping up one rung with bonus HP hearts appearing. Thick black outlines, flat shading, uplifting mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 

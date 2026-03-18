@@ -42,6 +42,11 @@
 - **Carta 199** (Segment Builder): redesign — da "dividi mazzo in 2 pile" (complesso) a `scarta fino a 3 carte e pesca lo stesso numero`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
+- **Addon 170** (Promotion): durata aumentata da 2 a 5 turni
+- **Addon 167** (Evangelist Aura): rimosso "quadrante" — ora +1 dado al giocatore a sinistra e a destra ad ogni boss sconfitto
+- **Addon 166** (Parallel Career): redesign — da "secondo ruolo ogni 3 turni" (non implementabile) a `una volta per partita: guadagni Certificazioni × 3 Licenze`; tipo Passivo → Attivo
+- **Addon 158** (Credential Vault): redesign — da "nascondi cert (non contano verso vittoria)" a `una volta per partita: tira dado, se esce 10 guadagni 1 Certificazione`; tipo Passivo → Attivo
+- **Addon 150** (Wildcards): chiarito testo — rimosso "AddOn tappati riutilizzabili" (troppo forte) e rimosso "purché le Licenze lo permettano" (confuso); ora `carte senza limite e AddOn non tappati senza limite`
 - **Addon 140** (OmniScript): redesign — da "tira dado, bonus per combinazione" a `una volta per partita: tira 2 dadi, guadagni la somma in Licenze (max 20)`
 - **Addon 136** (Package Upgrade): redesign — da "upgrade rarità/sinergie" (non usate) a `+1 dado per addon posseduto da 3+ turni (max +3)`
 - **Addon 135** (Hotfix): redesign — da "annulla effetto negativo" (indefinibile) a `passivo: +1L per ogni HP perso in combattimento`
