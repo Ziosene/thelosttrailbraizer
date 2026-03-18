@@ -2743,7 +2743,7 @@
 ### 282. IdeaExchange Winner
 - **Tipo**: Utilità / Leggendaria
 - **Quando**: In qualsiasi momento
-- **Effetto**: La tua idea ha vinto — scegli qualsiasi effetto da qualsiasi carta già giocata in questa partita (da chiunque) e applicalo su di te ora
+- **Effetto**: Guadagni 5 Licenze, peschi 2 carte e (se sei in combattimento) il boss subisce -2HP.
 - **Rarità**: Leggendario
 - **Image prompt**: `A 2D hand-drawn idea trophy in the art style of The Binding of Isaac. A winning lightbulb trophy projecting the best card effect ever played this match into the player's hands, a replay arrow glowing with legendary golden energy. Thick black outlines, flat shading, legendary best-idea mood. Plain off-white parchment background. Indie game card art.`
 

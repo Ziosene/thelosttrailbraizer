@@ -1140,11 +1140,9 @@ def _card_270(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_282(player, game, db, *, target_player_id=None) -> dict:
-    """IdeaExchange Winner (Leggendaria) — +3L e pesca 2 carte."""
+    """IdeaExchange Winner (Leggendaria) — +5L, pesca 2 carte, boss -2HP."""
     from app.models.game import PlayerHandCard as _PHC282
-    if player.is_in_combat:
-        return {"applied": False, "reason": "in_combat"}
-    player.licenze += 3
+    player.licenze += 5
     drew = 0
     for _ in range(2):
         if game.action_deck_1:
@@ -1153,7 +1151,11 @@ def _card_282(player, game, db, *, target_player_id=None) -> dict:
         elif game.action_deck_2:
             db.add(_PHC282(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
             drew += 1
-    return {"applied": True, "licenze_gained": 3, "drew": drew}
+    boss_damage = 0
+    if player.is_in_combat:
+        player.current_boss_hp = max(0, player.current_boss_hp - 2)
+        boss_damage = 2
+    return {"applied": True, "licenze_gained": 5, "drew": drew, "boss_damage": boss_damage}
 
 
 def _card_283(player, game, db, *, target_player_id=None) -> dict:
