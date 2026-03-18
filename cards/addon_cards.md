@@ -957,7 +957,7 @@
 
 ### 109. Proof of Concept
 - **Tipo**: Attivo
-- **Effetto**: Una volta per turno, puoi "testare" una carta azione dalla tua mano senza giocarla — guardi l'effetto, decidi, e la rimetti in mano senza consumarla
+- **Effetto**: Una volta per turno, gioca 1 carta azione senza consumare uno slot del limite carte.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn test beaker with a playing card dipped inside it in the art style of The Binding of Isaac. A glass beaker with a card being lowered in for testing, its effect shown as a small preview bubble above. Thick black outlines, flat shading, curious mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
