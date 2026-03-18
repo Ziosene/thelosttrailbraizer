@@ -518,6 +518,6 @@ Con `docker compose up --build` il server parte già correttamente:
 
 6. **Frontend** — React + Tailwind (separato, quando il backend è stabile e testato).
 
-7. **Bilanciamento carte** — rivedere HP boss, soglie dado, costi addon, copie nel mazzo dopo le prime partite di test.
+7. **Bilanciamento carte** — prima revisione completa effettuata (carte azione 1–300 e addon 1–200). Ulteriore ribilanciamento previsto dopo le prime partite di test.
 
 8. **Rate limiting WS** — protezione contro spam di messaggi WebSocket.

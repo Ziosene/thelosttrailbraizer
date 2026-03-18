@@ -537,7 +537,7 @@ VITTORIA
 
 - [ ] Completare liste carte (piano piano)
 - [ ] Abilità speciale Evangelist (unica per seniority)
-- [ ] Bilanciamento HP boss vs statistiche personaggi
+- [ ] Bilanciamento HP boss vs statistiche personaggi *(prima revisione carte azione e addon completata — ribilanciamento post-playtest)*
 - [ ] Composizione mazzi (quante copie per carta? comune=3, raro=1?)
 - [ ] Punteggi: bilanciamento ELO
 
