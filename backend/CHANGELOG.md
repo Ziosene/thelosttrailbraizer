@@ -42,6 +42,13 @@
 - **Carta 199** (Segment Builder): redesign — da "dividi mazzo in 2 pile" (complesso) a `scarta fino a 3 carte e pesca lo stesso numero`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
+- **Addon 196** (Ctrl+Z): redesign — da "annulla tutto il turno avversario" (non implementabile) a `un avversario perde 4L e scarta 1 carta a caso dalla mano`
+- **Addon 195** (Copy/Paste): redesign — da "copia ultima carta giocata" (non implementabile) a `una volta per turno: gioca 1 carta senza contarla nel limite`
+- **Addon 193** (Stack Trace): redesign — da "recupera 1 carta per ognuno degli ultimi 3 turni" (no storico) a `pesca 4 carte`
+- **Addon 186** (Dreamforce Announcement): redesign — da "dichiara regola per 1 turno" (non implementabile) a `tutti guadagnano 3L e pescano 1 carta`
+- **Addon 178** (Cold Cache): redesign — da "congela prime 3 carte boss per 2 turni" (non implementabile) a `una volta per partita: boss attuale -3HP`
+- **Addon 176** (Mazzo Infetto): redesign — da "metti carta dagli scarti in cima al mazzo avversario" a `un avversario scarta tutta la mano e ne pesca una nuova`
+- **Addon 171** (Mazzo Corrotto): redesign — da "carte maledette nel mazzo condiviso" (tipo carta inesistente) a `ogni avversario perde 1L per carta in mano (max 5L per avversario)`
 - **Addon 170** (Promotion): durata aumentata da 2 a 5 turni
 - **Addon 167** (Evangelist Aura): rimosso "quadrante" — ora +1 dado al giocatore a sinistra e a destra ad ogni boss sconfitto
 - **Addon 166** (Parallel Career): redesign — da "secondo ruolo ogni 3 turni" (non implementabile) a `una volta per partita: guadagni Certificazioni × 3 Licenze`; tipo Passivo → Attivo

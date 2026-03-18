@@ -1491,7 +1491,7 @@
 
 ### 171. Mazzo Corrotto
 - **Tipo**: Attivo
-- **Effetto**: Una volta per partita, mescola 3 carte "maledette" nel mazzo azione condiviso — chiunque le pesca perde 2 Licenze (tu le conosci, gli altri no)
+- **Effetto**: Una volta per partita, ogni avversario perde 1L per ogni carta in mano che ha (max 5L per avversario).
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn corrupted deck with three cursed cards glowing red hidden inside in the art style of The Binding of Isaac. A card deck oozing dark energy with three marked poison cards shuffled in, a sinister grin on the corruptor. Thick black outlines, flat shading, devious mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -1531,7 +1531,7 @@
 
 ### 176. Mazzo Infetto
 - **Tipo**: Attivo
-- **Effetto**: Una volta per partita, metti 1 carta dal tuo mazzo degli scarti in cima al mazzo azione di un avversario — lui la pesca per forza al prossimo turno
+- **Effetto**: Una volta per partita, un avversario a tua scelta scarta tutta la mano e ne pesca una nuova dello stesso numero di carte.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn infected card being slipped to the top of an opponent's deck in the art style of The Binding of Isaac. A sickly glowing card being sneaked onto an opponent's deck, a biohazard symbol on its back face. Thick black outlines, flat shading, malicious mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -1547,7 +1547,7 @@
 
 ### 178. Cold Cache
 - **Tipo**: Attivo
-- **Effetto**: Una volta per partita, "congela" le prime 3 carte del mazzo boss — nessuno può pescarle per 2 turni (poi tornano normalmente)
+- **Effetto**: Una volta per partita, il boss attuale perde 3HP.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn top of the boss deck frozen in a block of ice for two turns in the art style of The Binding of Isaac. The first three boss cards encased in ice at the top of the deck, a two-turn timer melting beside them. Thick black outlines, flat shading, stalling mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -1615,7 +1615,7 @@
 
 ### 186. Marc Benioff Mode
 - **Tipo**: Attivo
-- **Effetto**: Una volta per partita, fai un "annuncio" — dichiara una regola che vale per tutti per 1 turno (es. "nessuno può usare carte offensive"). Gli altri devono rispettarla
+- **Effetto**: Una volta per partita, tutti i giocatori (incluso te) guadagnano 3L e pescano 1 carta.
 - **Rarità**: Leggendario
 - **Image prompt**: `A 2D hand-drawn CEO figure at a podium making a grand proclamation that all players must obey in the art style of The Binding of Isaac. A powerful suited figure at a Dreamforce stage announcing a mandatory rule, all player icons frozen in compliance. Thick black outlines, flat shading, commanding mood. Rich golden background with ornate gold-leaf border. Indie game item card art. Radiant golden aura, the item glows with legendary power.`
 
@@ -1676,7 +1676,7 @@
 
 ### 193. Stack Trace
 - **Tipo**: Attivo
-- **Effetto**: Una volta per partita, ripercorri gli ultimi 3 turni — recupera 1 carta azione usata in ognuno dei 3 turni precedenti (massimo 3 carte recuperate)
+- **Effetto**: Una volta per partita, pesca 4 carte.
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn debugger stack trace scrolling back through three past turns to recover used cards in the art style of The Binding of Isaac. A terminal-style readout tracing back three turns, a card resurrecting from each line of the trace. Thick black outlines, flat shading, analytical mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -1692,7 +1692,7 @@
 
 ### 195. Copy/Paste
 - **Tipo**: Attivo
-- **Effetto**: Una volta per turno, copia l'effetto dell'ultima carta azione giocata da chiunque (incluso te) e applicalo di nuovo — l'effetto originale è già avvenuto
+- **Effetto**: Una volta per turno, gioca una carta dalla tua mano senza contarla nel limite di carte del turno.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn clipboard duplicating the last played card's effect onto itself in the art style of The Binding of Isaac. A clipboard labeled COPY with a perfect duplicate of the last action card's effect being pasted and replicated instantly. Thick black outlines, flat shading, efficient mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -1700,7 +1700,7 @@
 
 ### 196. Ctrl+Z
 - **Tipo**: Attivo
-- **Effetto**: Una volta per partita, annulla completamente l'ultimo turno di un avversario — tutte le sue azioni vengono revocate e i loro effetti annullati
+- **Effetto**: Una volta per partita, un avversario a scelta perde 4L e scarta 1 carta a caso dalla mano.
 - **Rarità**: Leggendario
 - **Image prompt**: `A 2D hand-drawn Ctrl+Z keyboard shortcut key erasing an entire opponent's turn in the art style of The Binding of Isaac. A giant Ctrl+Z key pressing down, an opponent's entire turn rewinding and evaporating as if it never happened. Thick black outlines, flat shading, omnipotent mood. Rich golden background with ornate gold-leaf border. Indie game item card art. Radiant golden aura, the item glows with legendary power.`
 
