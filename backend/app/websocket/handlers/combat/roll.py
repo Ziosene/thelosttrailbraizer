@@ -338,7 +338,13 @@ async def _player_death_sequence(player, game, db, boss) -> None:
             db.delete(hc_to_remove)
 
     # Remove lost addon
-    if "addon" in penalty["lost"]:
+    # Addon 23 (Field Service Mobile): if dying outside own turn, skip addon loss
+    _is_own_turn23 = (
+        bool(game.turn_order) and
+        game.turn_order[game.current_turn_index] == player.id
+    )
+    _skip_addon_loss23 = has_addon(player, 23) and not _is_own_turn23
+    if "addon" in penalty["lost"] and not _skip_addon_loss23:
         lost_addon_id = penalty["lost"]["addon"]
         pa_to_remove = next((pa for pa in player.addons if pa.addon_id == lost_addon_id), None)
         if pa_to_remove:
@@ -425,6 +431,18 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
     boss = db.get(BossCard, player.current_boss_id)
     if not boss:
         await _error(game.code, user_id, "Boss not found")
+        return
+
+    # Addon 24 (Einstein Next Best Action): skip this round — neutral
+    if (player.combat_state or {}).get("skip_next_round_neutral"):
+        cs_nba = dict(player.combat_state)
+        cs_nba.pop("skip_next_round_neutral", None)
+        player.combat_state = cs_nba
+        player.combat_round = (player.combat_round or 0) + 1
+        db.commit()
+        db.refresh(game)
+        await manager.broadcast(game.code, {"type": "round_skipped", "player_id": player.id, "reason": "einstein_nba"})
+        await _broadcast_state(game, db)
         return
 
     # combat_round is still 0-indexed here; current roll = round N+1
@@ -657,6 +675,17 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
     # Boss 1 (worst_of_2) / Boss 39 (second_of_2 — keep only the second roll)
     roll_mode = engine.boss_roll_mode(boss.id, current_round)
 
+    # Addon 32 (Apex Batch Processor): +2 to roll if last round was a hit
+    _bp_bonus = 0
+    if (player.combat_state or {}).get("batch_processor_bonus"):
+        _bp_bonus = 2
+        cs_bp = dict(player.combat_state)
+        cs_bp.pop("batch_processor_bonus", None)
+        player.combat_state = cs_bp
+
+    # Addon 38 (Einstein AutoML): cumulative +1 per miss (resets on hit)
+    _automl_bonus = (player.combat_state or {}).get("automl_miss_bonus", 0)
+
     # Addon 3 (Einstein Prediction): reroll flag set by use_addon
     _ep_reroll = (player.combat_state or {}).get("einstein_prediction_pre_reroll", False)
     if _ep_reroll:
@@ -752,6 +781,13 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
     # Addon 4 (Apex Governor Override): original roll of 1 → round neutral (before addon bonuses)
     _addon4_override = has_addon(player, 4) and _raw_roll_for_addon4 == 1
 
+    # Addon 32 (Apex Batch Processor): apply +2 bonus from previous hit
+    if _bp_bonus:
+        roll = min(10, roll + _bp_bonus)
+    # Addon 38 (Einstein AutoML): apply cumulative miss bonus
+    if _automl_bonus:
+        roll = min(10, roll + _automl_bonus)
+
     # Boss 56 (Change Data Capture Lurker): track rolled numbers; duplicate → auto miss
     _lurker_miss = False
     if engine.boss_tracks_duplicate_rolls(boss.id):
@@ -802,6 +838,9 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         cs = dict(player.combat_state)
         cs.pop("review_app_active", None)
         player.combat_state = cs
+    # Addon 34 (SOQL Optimizer): reduce effective threshold by 1
+    if has_addon(player, 34):
+        threshold = max(1, threshold - 1)
     threshold = max(1, threshold)  # can't go below 1
     # Boss 58 (Prompt Builder Djinn): random threshold set this round overrides everything
     _djinn_t = (player.combat_state or {}).get("djinn_threshold")
@@ -930,6 +969,10 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
 
     player.combat_round += 1
 
+    # Addon 40 (Salesforce Shield): every 3 rounds survived, recover 1 HP
+    if has_addon(player, 40) and (player.combat_round or 0) % 3 == 0 and (player.combat_round or 0) > 0:
+        player.hp = min(player.max_hp, player.hp + 1)
+
     player_took_damage = False
 
     # Card 12 (Governor Limit Exploit): double boss damage per successful hit for N rounds
@@ -951,6 +994,9 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         # No damage in either direction this round
         pass
     elif result == "hit":
+        # Addon 31 (Critical Update Override): exact threshold hit deals 1 extra HP to boss
+        if has_addon(player, 31) and roll == threshold:
+            _hit_damage += 1
         # Boss 78 (Known Issues Ghost) / Boss 89 (Object Manager Juggernaut): immune to dice
         if not engine.boss_immune_to_dice(boss.id, current_round):
             # Boss 94 (Loyalty Cloud Warden): absorb hit with loyalty point instead of HP
@@ -974,6 +1020,19 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         _cs_hit = dict(player.combat_state or {})
         _cs_hit["combat_hits_dealt"] = _cs_hit.get("combat_hits_dealt", 0) + 1
         player.combat_state = _cs_hit
+        # Addon 32 (Apex Batch Processor): set bonus for next round on hit
+        if has_addon(player, 32):
+            cs32 = dict(player.combat_state or {})
+            cs32["batch_processor_bonus"] = True
+            player.combat_state = cs32
+        # Addon 36 (Test Coverage Booster): roll of 10 → gain +1L
+        if has_addon(player, 36) and roll == 10:
+            player.licenze += 1
+        # Addon 38 (Einstein AutoML): clear miss bonus on hit
+        if has_addon(player, 38) and (player.combat_state or {}).get("automl_miss_bonus"):
+            cs38h = dict(player.combat_state)
+            cs38h.pop("automl_miss_bonus", None)
+            player.combat_state = cs38h
         # Card 95 (Heroku CI): if boss HP ≤ 2 before this hit, finish the boss immediately
         if (player.combat_state or {}).get("heroku_ci_active") and (player.current_boss_hp or 0) <= 2:
             player.current_boss_hp = 0
@@ -1011,6 +1070,10 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                 target_redir.hp = max(0, target_redir.hp - 1)
         else:
             _player_hp_damage = 1
+            # Addon 22 (Service Level Agreement): cap boss damage to 1 HP per round
+            # (already 1 by default; this guard ensures card bonuses don't exceed 1)
+            if has_addon(player, 22):
+                _player_hp_damage = min(_player_hp_damage, 1)
             # Card 130 (Queue-Based Routing): double damage on the designated round (2HP)
             if (player.combat_state or {}).get("queue_routing_double_damage_round") == current_round:
                 _player_hp_damage = 2
@@ -1052,6 +1115,12 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                 _cs_tt = dict(player.combat_state)
                 _cs_tt.pop("travel_time_calc_active", None)
                 player.combat_state = _cs_tt
+            # Addon 39 (Streaming API Buffer): first miss of combat absorbed — skip HP damage
+            if _player_hp_damage > 0 and (player.combat_state or {}).get("buffer_active"):
+                _cs39 = dict(player.combat_state)
+                _cs39.pop("buffer_active", None)
+                player.combat_state = _cs39
+                _player_hp_damage = 0
             # Card 258 (Salesforce Tower): if damage would kill, survive at 1HP (once only)
             _new_hp = player.hp - _player_hp_damage
             if _new_hp <= 0 and (player.combat_state or {}).get("salesforce_tower_active"):
@@ -1125,6 +1194,12 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                 if hc_33 and hc_33.player_id == player.id:
                     game.action_discard = (game.action_discard or []) + [hc_33.action_card_id]
                     db.delete(hc_33)
+
+    # Addon 38 (Einstein AutoML): accumulate miss bonus; reset on hit
+    if result == "miss" and has_addon(player, 38):
+        cs38 = dict(player.combat_state or {})
+        cs38["automl_miss_bonus"] = cs38.get("automl_miss_bonus", 0) + 1
+        player.combat_state = cs38
 
     # Card 240 (Batch Scope): apply 1HP DOT per round while counter > 0
     if (player.combat_state or {}).get("batch_scope_dot_rounds", 0) > 0:

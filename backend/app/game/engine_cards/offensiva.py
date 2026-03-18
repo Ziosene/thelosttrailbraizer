@@ -734,6 +734,10 @@ def _card_300(player, game, db, *, target_player_id=None) -> dict:
         from app.game.engine_cards.helpers import get_target
         target = get_target(game, player, target_player_id)
         if target and target.certificazioni > 0:
+            # Addon 28 (Shield Platform Encryption): immunity to certification theft
+            from app.game.engine_addons import has_addon as _ha28_oe
+            if _ha28_oe(target, 28):
+                return {"applied": False, "reason": "shield_platform_encryption", "target_id": target.id}
             target.certificazioni -= 1
             player.certificazioni += 1
             return {"applied": True, "choice": "B", "stolen_cert": 1}

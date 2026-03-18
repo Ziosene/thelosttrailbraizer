@@ -79,6 +79,20 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
         if _others_licenze and player.licenze < max(_others_licenze):
             player.licenze += 1
 
+    # Addon 21 (Health Cloud): if exactly 1 HP at turn start, restore to full HP
+    if _has_addon_draw(player, 21) and player.hp == 1:
+        player.hp = player.max_hp
+
+    # Addon 30 (Agentforce): gain 1L at turn start; 2L if more addons than any opponent
+    if _has_addon_draw(player, 30):
+        _own_addon_count = len(player.addons)
+        _max_opponent_addons = max((len(p.addons) for p in game.players if p.id != player.id), default=0)
+        player.licenze += 2 if _own_addon_count > _max_opponent_addons else 1
+
+    # Addon 35 (Scheduled Job): gain 1L at turn start if not in combat
+    if _has_addon_draw(player, 35) and not player.is_in_combat:
+        player.licenze += 1
+
     # Addon 10 (Platform Cache): hand size up to 12 instead of 10
     _max_hand = 12 if _has_addon_draw(player, 10) else engine.MAX_HAND_SIZE
     if len(player.hand) >= _max_hand:
@@ -174,6 +188,15 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
                 db.add(_PHC17(player_id=player.id, action_card_id=_extra17))
 
     # TODO: trigger_passive_addons(event="on_draw", player, game, db)
+
+    # Addon 41 (Trailhead Quest): every 5 cards drawn, gain 1L
+    if _has_addon_draw(player, 41) and not jinxed:
+        _cs41 = dict(player.combat_state or {})
+        _cs41["quest_cards_drawn"] = _cs41.get("quest_cards_drawn", 0) + 1
+        if _cs41["quest_cards_drawn"] >= 5:
+            player.licenze += 1
+            _cs41["quest_cards_drawn"] = 0
+        player.combat_state = _cs41
 
     game.current_phase = TurnPhase.action
     db.commit()

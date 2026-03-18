@@ -65,6 +65,10 @@ def _card_6(player, game, db, *, target_player_id=None) -> dict:
         return {"applied": False, "reason": "no_target"}
     if not target.trophies:
         return {"applied": False, "reason": "target_has_no_trophies"}
+    # Addon 28 (Shield Platform Encryption): immunity to certification theft
+    from app.game.engine_addons import has_addon as _ha28
+    if _ha28(target, 28):
+        return {"applied": False, "reason": "shield_platform_encryption", "target_id": target.id}
     trophy_id = target.trophies[0]
     # SQLAlchemy JSON: full reassignment required to detect mutation
     target.trophies = target.trophies[1:]

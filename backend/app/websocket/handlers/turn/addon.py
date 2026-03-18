@@ -332,6 +332,114 @@ async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Ses
         cs18_new.pop("last_discarded_card_id", None)
         player.combat_state = cs18_new
 
+    # Addon 24 (Einstein Next Best Action): once per combat, skip a round — neutral
+    elif addon.number == 24:
+        cs24 = player.combat_state or {}
+        if cs24.get("einstein_nba_used"):
+            await _error(game.code, user_id, "Einstein Next Best Action already used this combat")
+            pa.is_tapped = False
+            return
+        if not player.is_in_combat:
+            await _error(game.code, user_id, "Can only use during combat")
+            pa.is_tapped = False
+            return
+        cs24_new = dict(cs24)
+        cs24_new["einstein_nba_used"] = True
+        cs24_new["skip_next_round_neutral"] = True
+        player.combat_state = cs24_new
+
+    # Addon 26 (Slack Connect): once per turn, pass 1 card from hand to any player
+    elif addon.number == 26:
+        target_id26 = data.get("target_player_id")
+        hand_card_id26 = data.get("hand_card_id")
+        target26 = next((p for p in game.players if p.id == target_id26), None)
+        if not target26 or target26.id == player.id:
+            await _error(game.code, user_id, "Invalid target player")
+            pa.is_tapped = False
+            return
+        from app.models.game import PlayerHandCard as _PHC26
+        hc26 = db.get(_PHC26, hand_card_id26)
+        if not hc26 or hc26.player_id != player.id:
+            await _error(game.code, user_id, "Card not in your hand")
+            pa.is_tapped = False
+            return
+        hc26.player_id = target26.id
+
+    # Addon 29 (Einstein Copilot): once per game, roll 3 dice — for each ≥8, gain 1 cert (max 2)
+    elif addon.number == 29:
+        cs29 = player.combat_state or {}
+        if cs29.get("einstein_copilot_used"):
+            await _error(game.code, user_id, "Einstein Copilot already used this game")
+            pa.is_tapped = False
+            return
+        rolls29 = [engine.roll_d10() for _ in range(3)]
+        certs_gained = min(2, sum(1 for r in rolls29 if r >= 8))
+        player.certificazioni += certs_gained
+        cs29_new = dict(cs29)
+        cs29_new["einstein_copilot_used"] = True
+        player.combat_state = cs29_new
+        db.commit()
+        db.refresh(game)
+        await manager.broadcast(game.code, {
+            "type": "einstein_copilot_result",
+            "player_id": player.id,
+            "rolls": rolls29,
+            "certs_gained": certs_gained,
+        })
+        await _broadcast_state(game, db)
+        return
+
+    # Addon 33 (Governor Limit Bypass): once per combat, roll 3 dice — hits deal separate damage
+    elif addon.number == 33:
+        cs33 = player.combat_state or {}
+        if cs33.get("governor_bypass_used"):
+            await _error(game.code, user_id, "Governor Limit Bypass already used this combat")
+            pa.is_tapped = False
+            return
+        if not player.is_in_combat or not player.current_boss_id:
+            await _error(game.code, user_id, "Can only use during combat")
+            pa.is_tapped = False
+            return
+        boss33 = db.get(BossCard, player.current_boss_id)
+        if not boss33:
+            pa.is_tapped = False
+            return
+        threshold33 = boss33.dice_threshold
+        rolls33 = [engine.roll_d10() for _ in range(3)]
+        hits33 = sum(1 for r in rolls33 if r >= threshold33)
+        boss_hp_lost33 = 0
+        if hits33 > 0:
+            player.current_boss_hp = max(0, (player.current_boss_hp or 0) - hits33)
+            boss_hp_lost33 = hits33
+        cs33_new = dict(cs33)
+        cs33_new["governor_bypass_used"] = True
+        player.combat_state = cs33_new
+        db.commit()
+        db.refresh(game)
+        await manager.broadcast(game.code, {
+            "type": "governor_bypass_result",
+            "player_id": player.id,
+            "rolls": rolls33,
+            "hits": hits33,
+            "boss_hp_lost": boss_hp_lost33,
+        })
+        # If boss is defeated, set a flag — roll.py will handle on next roll, or handle here
+        if (player.current_boss_hp or 0) <= 0:
+            from app.websocket.handlers.combat.roll import _boss_defeat_sequence as _bds33
+            boss33_fresh = db.get(BossCard, player.current_boss_id)
+            if boss33_fresh:
+                await _bds33(player, game, db, boss33_fresh)
+        db.commit()
+        db.refresh(game)
+        await _broadcast_state(game, db)
+        return
+
+    # Addon 37 (Deployment Pipeline): once per turn, allow 1 extra action card play
+    elif addon.number == 37:
+        cs37 = dict(player.combat_state or {})
+        cs37["deployment_pipeline_extra_card"] = True
+        player.combat_state = cs37
+
     # Addon 19 (Chatter Feed): show your hand to a target and request a card
     elif addon.number == 19:
         _target19_id = data.get("target_player_id")

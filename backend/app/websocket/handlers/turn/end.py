@@ -196,6 +196,8 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
         cs.pop("integration_pattern_boost", None)
         # Card 272 (ISV Ecosystem): clear per-turn cost-fix flag
         cs.pop("isv_ecosystem_active", None)
+        # Addon 37 (Deployment Pipeline): clear per-turn extra card slot
+        cs.pop("deployment_pipeline_extra_card", None)
         # Card 273 (Trailhead Quest): clear per-turn card count tracking
         cs.pop("trailhead_quest_cards_played", None)
         # Card 287 (404 Not Found): clear if expired

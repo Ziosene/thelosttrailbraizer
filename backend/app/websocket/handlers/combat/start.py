@@ -81,6 +81,9 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
     # Addon 7 (Flow Automation): track no-damage combat for bonus on defeat
     if _has_addon_start(player, 7):
         _new_cs["no_damage_this_combat"] = True
+    # Addon 39 (Streaming API Buffer): first miss of combat absorbed by buffer
+    if _has_addon_start(player, 39):
+        _new_cs["buffer_active"] = True
     player.combat_state = _new_cs
     game.current_phase = TurnPhase.combat
 

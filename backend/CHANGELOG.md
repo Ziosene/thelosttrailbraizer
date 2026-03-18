@@ -42,7 +42,32 @@
 - **Carta 199** (Segment Builder): redesign — da "dividi mazzo in 2 pile" (complesso) a `scarta fino a 3 carte e pesca lo stesso numero`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
-## Sessione corrente — Implementazione effetti addon 1–20
+## Sessione corrente — Implementazione effetti addon 1–41
+
+### Addon 21–41
+- **Addon 21** (Health Cloud): `draw.py` — se HP == 1 a inizio turno, ripristina HP massimi
+- **Addon 22** (Service Level Agreement): `roll.py` — cap danno boss a 1 HP per round
+- **Addon 23** (Field Service Mobile): `_player_death_sequence` — se muori fuori dal tuo turno, non perdi addon
+- **Addon 24** (Einstein Next Best Action): `use_addon` setta `skip_next_round_neutral`; `roll.py` skippa il round (neutro)
+- **Addon 25** (Proactive Monitoring): `play.py` — il giocatore bersaglio di una carta avversaria guadagna 1L
+- **Addon 26** (Slack Connect): `use_addon` — trasferisce una carta dalla mano a un altro giocatore
+- **Addon 27** (Data Mask): già implementato architetturalmente (`_send_hand_state` manda solo al proprietario)
+- **Addon 28** (Shield Platform Encryption): immunità furto cert aggiunta in `economica.py` (card 6) e `offensiva.py` (card 243)
+- **Addon 29** (Einstein Copilot): redesign (`tira 3d10, cert per ogni ≥8 max 2`) + implementazione in `use_addon`
+- **Addon 30** (Agentforce): `draw.py` — +1L a inizio turno, +2L se hai più addon di tutti
+- **Addon 31** (Critical Update Override): `roll.py` — hit esatto sulla soglia → boss -2HP invece di -1HP
+- **Addon 32** (Apex Batch Processor): `roll.py` — hit → setta `batch_processor_bonus`; round successivo +2 al dado
+- **Addon 33** (Governor Limit Bypass): `use_addon` — tira 3d10 in combattimento, ogni ≥ soglia = 1HP boss; chiama `_boss_defeat_sequence` se boss sconfitto
+- **Addon 34** (SOQL Optimizer): `roll.py` — soglia boss -1 dopo tutti gli altri modificatori
+- **Addon 35** (Scheduled Job): `draw.py` — +1L a inizio turno se non in combattimento
+- **Addon 36** (Test Coverage Booster): `roll.py` — roll == 10 su hit → +1L
+- **Addon 37** (Deployment Pipeline): `use_addon` setta `deployment_pipeline_extra_card`; `play.py` aggiunge +1 a max_cards; `end.py` pulisce il flag
+- **Addon 38** (Einstein AutoML): `roll.py` — miss accumula `automl_miss_bonus` (+1 cumulativo); hit azzera il bonus
+- **Addon 39** (Streaming API Buffer): `start.py` setta `buffer_active`; `roll.py` primo miss assorbito senza danno HP
+- **Addon 40** (Salesforce Shield): `roll.py` — ogni 3 round sopravvissuti, +1HP (max max_hp)
+- **Addon 41** (Trailhead Quest): redesign (`ogni 5 carte pescate +1L`) + `draw.py` — contatore `quest_cards_drawn`
+
+### Addon 1–20
 
 - **engine_addons.py**: nuovo modulo con `has_addon(player, n)`, `get_addon_pa(player, n)`, `has_untapped_addon(player, n)`
 - **PlayerAddon.card**: aggiunta relationship a `AddonCard` (no migration — solo livello SQLAlchemy)

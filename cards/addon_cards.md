@@ -266,7 +266,7 @@
 
 ### 29. Einstein Copilot
 - **Tipo**: Attivo
-- **Effetto**: Una volta per partita, copia l'effetto di un AddOn di un avversario per 1 intero turno
+- **Effetto**: Una volta per partita, tira 3 dadi — per ogni risultato ≥ 8 guadagni 1 Certificazione (max 2).
 - **Rarità**: Leggendario
 - **Image prompt**: `A 2D hand-drawn AI robot copilot in the art style of The Binding of Isaac. A small robotic Einstein figure wearing a pilot helmet, glowing neural circuits visible through its chest, seated at a miniature cockpit panel. Thick black outlines, flat shading, brilliant mood. Rich golden background with ornate gold-leaf border. Indie game item card art. Radiant golden aura, the item glows with legendary power.`
 
@@ -376,7 +376,7 @@
 
 ### 41. Trailhead Quest
 - **Tipo**: Passivo
-- **Effetto**: Ogni volta che peschi una carta azione con "Ottieni" nel testo, quella carta vale +1 Licenza aggiuntiva
+- **Effetto**: Passivo — ogni 5 carte pescate durante la partita, guadagni automaticamente 1L. (Contatore `quest_cards_drawn`.)
 - **Rarità**: Comune
 - **Image prompt**: `A 2D hand-drawn parchment quest map with a dotted trail in the art style of The Binding of Isaac. A rolled map with a winding trail path, badge icons as waypoints and an X marking the goal. Thick black outlines, flat shading, adventurous mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 

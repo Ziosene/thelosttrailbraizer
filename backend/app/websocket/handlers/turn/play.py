@@ -48,6 +48,9 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
     _qj_max = (player.combat_state or {}).get("queueable_job_max_cards")
     if _qj_max is not None:
         max_cards = max(max_cards, _qj_max)
+    # Addon 37 (Deployment Pipeline): +1 extra card this turn
+    if (player.combat_state or {}).get("deployment_pipeline_extra_card"):
+        max_cards += 1
     if player.cards_played_this_turn >= max_cards:
         await _error(game.code, user_id, "Card limit reached this turn")
         return
@@ -564,6 +567,12 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
         _gained20 = card_effect_result.get("licenze_gained", 0) if isinstance(card_effect_result, dict) else 0
         if _gained20 > 0 and _has_addon_play(player, 20):
             player.licenze += 1
+
+    # Addon 25 (Proactive Monitoring): if an opponent's card targets you, gain 1L
+    if card and card_approved and not original_cancelled and target_player_id and target_player_id != player.id:
+        _target25 = next((p for p in game.players if p.id == target_player_id), None)
+        if _target25 and _has_addon_play(_target25, 25):
+            _target25.licenze += 1
 
     # Addon 18 (Field History Tracking): track last played card as last discarded
     if card and card_approved and not original_cancelled:
