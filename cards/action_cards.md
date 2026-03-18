@@ -2595,8 +2595,8 @@
 
 ### 267. Buyer Relationship Map
 - **Tipo**: Utilità
-- **Quando**: Fuori dal combattimento
-- **Effetto**: Mappa le relazioni — guarda tutti gli AddOn posseduti da tutti i giocatori
+- **Quando**: In qualsiasi momento
+- **Effetto**: Guarda tutte le carte in mano a un avversario a tua scelta (solo tu vedi il risultato).
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn relationship web map in the art style of The Binding of Isaac. A diagram revealing every player's addon inventory linked by relationship lines, a complete inventory scan of the whole table. Thick black outlines, flat shading, strategic reconnaissance mood. Plain off-white parchment background. Indie game card art.`
 

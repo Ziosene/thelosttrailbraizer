@@ -1094,15 +1094,13 @@ def _card_266(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_267(player, game, db, *, target_player_id=None) -> dict:
-    """Buyer Relationship Map — Guarda tutti gli AddOn di tutti i giocatori (snapshot)."""
-    from app.models.card import AddonCard as _ADC267
-    snapshot = {}
-    for gp in game.players:
-        snapshot[gp.id] = [
-            {"addon_id": pa.addon_id, "is_tapped": pa.is_tapped}
-            for pa in gp.addons
-        ]
-    return {"applied": True, "addon_snapshot": snapshot}
+    """Buyer Relationship Map — Guarda le carte in mano a un avversario (snapshot privato)."""
+    from .helpers import get_target
+    target = get_target(game, player, target_player_id)
+    if not target:
+        return {"applied": False, "reason": "no_target"}
+    hand_ids = [hc.action_card_id for hc in target.hand]
+    return {"applied": True, "target_player_id": target.id, "hand_card_ids": hand_ids}
 
 
 def _card_269(player, game, db, *, target_player_id=None) -> dict:
