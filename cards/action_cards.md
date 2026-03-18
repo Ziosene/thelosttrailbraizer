@@ -2507,7 +2507,7 @@
 ### 258. Salesforce Tower
 - **Tipo**: Difensiva
 - **Quando**: In qualsiasi momento
-- **Effetto**: Bastione — per 1 turno il tuo HP non può scendere sotto 1, indipendentemente dal danno subito
+- **Effetto**: Se questo turno un colpo ti porterebbe a 0HP, rimani invece a 1HP (si attiva una volta sola).
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn towering bastion in the art style of The Binding of Isaac. A gleaming skyscraper-fortress standing over a player, all damage arrows shattering against its walls while a floor-of-one-heart marker holds firm. Thick black outlines, flat shading, indestructible mood. Plain off-white parchment background. Indie game card art.`
 

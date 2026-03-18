@@ -510,10 +510,10 @@ def _card_207(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_258(player, game, db, *, target_player_id=None) -> dict:
-    """Salesforce Tower — Per 1 turno l'HP non può scendere sotto 1 (bastione).
+    """Salesforce Tower — Se questo turno arrivi a 0HP, rimani a 1HP (una volta sola).
 
-    Stores salesforce_tower_active=True. combat.py miss branch: player.hp = max(1, new_hp).
-    Cleared in end_turn.
+    Stores salesforce_tower_active=True. combat.py: if damage would kill, set hp=1 and clear flag.
+    Also cleared in end_turn if never triggered.
     """
     cs = dict(player.combat_state or {})
     cs["salesforce_tower_active"] = True

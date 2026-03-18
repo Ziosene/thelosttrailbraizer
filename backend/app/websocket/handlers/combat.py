@@ -945,11 +945,15 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                 _cs_tt = dict(player.combat_state)
                 _cs_tt.pop("travel_time_calc_active", None)
                 player.combat_state = _cs_tt
-            # Card 258 (Salesforce Tower): HP cannot drop below 1 this turn
-            if (player.combat_state or {}).get("salesforce_tower_active"):
-                player.hp = max(1, player.hp - _player_hp_damage)
+            # Card 258 (Salesforce Tower): if damage would kill, survive at 1HP (once only)
+            _new_hp = player.hp - _player_hp_damage
+            if _new_hp <= 0 and (player.combat_state or {}).get("salesforce_tower_active"):
+                player.hp = 1
+                _cs_st = dict(player.combat_state)
+                _cs_st.pop("salesforce_tower_active", None)
+                player.combat_state = _cs_st
             else:
-                player.hp = max(0, player.hp - _player_hp_damage)
+                player.hp = max(0, _new_hp)
             player_took_damage = True
             if _player_hp_damage > 0:
                 # Card 152 (Net Zero Commitment): +1L per HP lost

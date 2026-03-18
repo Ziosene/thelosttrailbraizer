@@ -42,6 +42,7 @@
 - **Carta 199** (Segment Builder): redesign — da "dividi mazzo in 2 pile" (complesso) a `scarta fino a 3 carte e pesca lo stesso numero`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
+- **Carta 258** (Salesforce Tower): nerfata — da "HP non scende sotto 1 per tutto il turno" a "sopravvivi a 1HP una volta sola"; flag auto-rimosso al trigger in combat.py
 - **Carta 241** (Object Storage): redesign da "archivia 3L esternamente" a `licenze non rubabili questo turno` via flag `licenze_theft_immune`; check aggiunto in carte 4, 5 (economica), interferenza, offensiva; clear a fine turno in turn.py
 - **Carta 240** (Batch Scope): redesign da DOT 1HP/3 round a `boss -2HP, player +1HP`
 - **Carta 239** (SFTP Connector): redesign — da "riserva esterna di carte" (non implementabile) a `scarta 2 carte dalla mano, pesca 3`; rimosso hook `sftp_reserve_card_ids` da turn.py
