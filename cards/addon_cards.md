@@ -816,7 +816,7 @@
 
 ### 92. Beta Feature
 - **Tipo**: Passivo
-- **Effetto**: Ogni volta che peschi un AddOn nuovo, puoi scegliere di non tenerlo — rimane disponibile per il prossimo giocatore che acquista
+- **Effetto**: Ogni volta che acquisti un AddOn, puoi scegliere di non tenerlo e pescarne un altro dal mazzo (una volta sola per acquisto). L'addon rifiutato torna in cima al mazzo.
 - **Rarità**: Comune
 - **Image prompt**: `A 2D hand-drawn half-finished gadget with a yellow BETA warning sticker in the art style of The Binding of Isaac. A quirky item still under construction, loose screws and exposed wires, a bright beta label on its side. Thick black outlines, flat shading, experimental mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
