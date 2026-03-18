@@ -42,6 +42,7 @@
 - **Carta 199** (Segment Builder): redesign — da "dividi mazzo in 2 pile" (complesso) a `scarta fino a 3 carte e pesca lo stesso numero`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
+- **Addon 118** (Pub/Sub API): redesign — da "blocca reazioni avversarie" (non implementabile) a `passivo: +1L ogni volta che un avversario usa un addon`
 - **Addon 113** (Batch Apex Scheduler): precisazione — la carta prenotata non conta come slot usato nel turno successivo
 - **Addon 112** (Asynchronous Callout): redesign — da "gioca fuori turno" (già possibile) a `reazioni non consumano slot del turno successivo`
 - **Addon 109** (Proof of Concept): redesign — da "testa carta senza effetto" a `gioca 1 carta gratis per turno (senza consumare slot)`

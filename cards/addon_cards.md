@@ -1038,7 +1038,7 @@
 
 ### 118. Pub/Sub API
 - **Tipo**: Passivo
-- **Effetto**: Quando usi un AddOn attivo, gli avversari vengono avvisati ma non possono reagire prima che l'effetto si applichi completamente
+- **Effetto**: Ogni volta che un avversario usa un addon attivo, guadagni 1 Licenza.
 - **Rarità**: Comune
 - **Image prompt**: `A 2D hand-drawn publish megaphone sending a broadcast before opponents can react in the art style of The Binding of Isaac. A megaphone broadcasting a signal while opponent hands are frozen mid-reach, unable to interrupt. Thick black outlines, flat shading, preemptive mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
