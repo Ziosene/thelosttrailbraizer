@@ -2751,8 +2751,8 @@
 
 ### 283. Queueable Job
 - **Tipo**: Utilità / Leggendaria
-- **Quando**: In qualsiasi momento
-- **Effetto**: Accumula fino a 3 azioni (carte o AddOn) e risolvile tutte nello stesso istante — gli avversari non possono interrompere il burst
+- **Quando**: Durante il tuo turno
+- **Effetto**: Questo turno puoi giocare fino a 5 carte invece di 2.
 - **Rarità**: Leggendario
 - **Image prompt**: `A 2D hand-drawn unstoppable action burst in the art style of The Binding of Isaac. Three queued actions firing simultaneously in an uninterruptible golden flash, opponents' interrupt icons bouncing off a legendary execution shield. Thick black outlines, flat shading, legendary burst mood. Plain off-white parchment background. Indie game card art.`
 

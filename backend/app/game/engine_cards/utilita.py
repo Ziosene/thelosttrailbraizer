@@ -1159,11 +1159,15 @@ def _card_282(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_283(player, game, db, *, target_player_id=None) -> dict:
-    """Queueable Job (Leggendaria) — Le prossime 3 carte ignora le finestre di reazione."""
+    """Queueable Job (Leggendaria) — Questo turno puoi giocare fino a 5 carte invece di 2.
+
+    Stores queueable_job_max_cards=5. turn.py raises max_cards to 5 if higher.
+    Cleared in end_turn.
+    """
     cs = dict(player.combat_state or {})
-    cs["queueable_job_plays_remaining"] = 3
+    cs["queueable_job_max_cards"] = 5
     player.combat_state = cs
-    return {"applied": True, "effect": "next_3_plays_skip_reaction_windows"}
+    return {"applied": True, "queueable_job_max_cards": 5}
 
 
 def _card_284(player, game, db, *, target_player_id=None) -> dict:
