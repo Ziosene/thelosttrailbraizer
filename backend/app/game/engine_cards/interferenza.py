@@ -701,17 +701,19 @@ def _card_246(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_268(player, game, db, *, target_player_id=None) -> dict:
-    """ISV Summit — Tutti mostrano 1 addon; chi non ne ha -1L; player +1L per addon mostrato."""
-    shown = 0
+    """ISV Summit — Ogni avversario senza addon -2L; ogni avversario con addon ti dà +1L."""
+    gained = 0
+    penalized = 0
     for gp in game.players:
         if gp.id == player.id:
             continue
         if list(gp.addons):
-            shown += 1
+            gained += 1
         else:
-            gp.licenze = max(0, gp.licenze - 1)
-    player.licenze += shown
-    return {"applied": True, "licenze_gained": shown, "penalized_players": len(list(game.players)) - 1 - shown}
+            gp.licenze = max(0, gp.licenze - 2)
+            penalized += 1
+    player.licenze += gained
+    return {"applied": True, "licenze_gained": gained, "penalized_players": penalized}
 
 
 def _card_271(player, game, db, *, target_player_id=None) -> dict:

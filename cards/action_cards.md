@@ -2605,7 +2605,7 @@
 ### 268. ISV Summit
 - **Tipo**: Interferenza
 - **Quando**: In qualsiasi momento
-- **Effetto**: Summit ISV — tutti devono mostrare 1 AddOn; chi non ne ha perde 1 Licenza. Tu guadagni 1 Licenza per ogni AddOn mostrato
+- **Effetto**: Ogni avversario senza AddOn perde 2 Licenze. Per ogni avversario con almeno 1 AddOn, guadagni 1 Licenza.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn partner summit show-and-tell in the art style of The Binding of Isaac. All players holding up an addon each at a podium, the organizer collecting one coin per display while addon-less players pay a penalty coin. Thick black outlines, flat shading, vendor showcase mood. Plain off-white parchment background. Indie game card art.`
 
