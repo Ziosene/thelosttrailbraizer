@@ -1122,7 +1122,7 @@
 
 ### 128. Cross-Object Formula
 - **Tipo**: Passivo
-- **Effetto**: Se possiedi AddOn di 3 categorie diverse, guadagni +1 Licenza extra per ogni boss sconfitto
+- **Effetto**: Guadagni +1 Licenza extra per ogni boss sconfitto.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn formula linking three different category symbols into one result in the art style of The Binding of Isaac. Three distinct icons connected by a formula arrow converging into a single coin bonus output. Thick black outlines, flat shading, synergetic mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
