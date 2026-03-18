@@ -2881,8 +2881,8 @@
 
 ### 297. Trailblazer Spirit
 - **Tipo**: Economica
-- **Quando**: Fuori dal combattimento
-- **Effetto**: Se sei il primo a sconfiggere un tipo di boss (la prima apparizione di quel boss in partita), guadagna 3 Licenze extra
+- **Quando**: In qualsiasi momento
+- **Effetto**: Guadagni 1 Licenza per ogni Certificazione che possiedi (max 5).
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn pioneer bonus in the art style of The Binding of Isaac. A FIRST! banner exploding over a newly defeated boss type, three explorer coins rewarding the pioneer who blazed the trail. Thick black outlines, flat shading, trailblazing mood. Plain off-white parchment background. Indie game card art.`
 

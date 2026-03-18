@@ -848,11 +848,10 @@ def _card_296(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_297(player, game, db, *, target_player_id=None) -> dict:
-    """Trailblazer Spirit — Al prossimo boss inedito sconfitto, +3L."""
-    cs = player.combat_state or {}
-    cs["trailblazer_spirit_active"] = True
-    player.combat_state = cs
-    return {"applied": True, "effect": "bonus_on_new_boss_defeat"}
+    """Trailblazer Spirit — +1L per ogni certificazione posseduta (max 5)."""
+    gained = min(5, player.certificazioni)
+    player.licenze += gained
+    return {"applied": True, "licenze_gained": gained, "certificazioni": player.certificazioni}
 
 
 def _card_298(player, game, db, *, target_player_id=None) -> dict:
