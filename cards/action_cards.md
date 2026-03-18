@@ -2342,9 +2342,9 @@
 ---
 
 ### 241. Object Storage
-- **Tipo**: Economica / Utilità
-- **Quando**: Fuori dal combattimento
-- **Effetto**: Archivia fino a 3 Licenze esternamente — non possono essere rubate. Recuperale in qualsiasi momento
+- **Tipo**: Economica / Difensiva
+- **Quando**: In qualsiasi momento
+- **Effetto**: Le tue Licenze non possono essere rubate da altri giocatori per questo turno.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn secure object vault in the art style of The Binding of Isaac. Three coins locked inside a floating external storage container with a padlock, immune to theft, retrievable at will. Thick black outlines, flat shading, secure savings mood. Plain off-white parchment background. Indie game card art.`
 

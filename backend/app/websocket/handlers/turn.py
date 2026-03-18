@@ -1078,6 +1078,8 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
         cs.pop("shortcut_extra_plays", None)
         # Card 201 (Web Studio): consume extra card slot granted this turn
         cs.pop("web_studio_extra_card", None)
+        # Card 241 (Object Storage): clear per-turn theft immunity
+        cs.pop("licenze_theft_immune", None)
         # Card 215 (B2B Analytics): decrement target reveal turns
         _ba = cs.get("b2b_analytics_turns", 0)
         if _ba > 0:

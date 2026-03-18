@@ -31,6 +31,8 @@ def _card_4(player, game, db, *, target_player_id=None) -> dict:
     target = get_target(game, player, target_player_id)
     if not target:
         return {"applied": False, "reason": "no_target"}
+    if (target.combat_state or {}).get("licenze_theft_immune"):
+        return {"applied": False, "reason": "target_immune"}
     stolen = min(2, target.licenze)
     target.licenze -= stolen
     player.licenze += stolen
@@ -48,6 +50,8 @@ def _card_5(player, game, db, *, target_player_id=None) -> dict:
     target = get_target(game, player, target_player_id)
     if not target:
         return {"applied": False, "reason": "no_target"}
+    if (target.combat_state or {}).get("licenze_theft_immune"):
+        return {"applied": False, "reason": "target_immune"}
     stolen = min(3, target.licenze)
     target.licenze -= stolen
     player.licenze += stolen
@@ -599,20 +603,11 @@ def _card_235(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_241(player, game, db, *, target_player_id=None) -> dict:
-    """Object Storage — Archivia fino a 3L esternamente (non rubabili); restituite al prossimo turno.
-
-    Reuses object_store_licenze key (card 44) so existing turn.py auto-return hook handles retrieval.
-    """
-    if player.is_in_combat:
-        return {"applied": False, "reason": "in_combat"}
-    to_store = min(3, player.licenze)
-    if to_store == 0:
-        return {"applied": False, "reason": "no_licenze_to_store"}
-    player.licenze -= to_store
+    """Object Storage — Le tue licenze non possono essere rubate questo turno."""
     cs = dict(player.combat_state or {})
-    cs["object_store_licenze"] = cs.get("object_store_licenze", 0) + to_store
+    cs["licenze_theft_immune"] = True
     player.combat_state = cs
-    return {"applied": True, "licenze_stored": to_store}
+    return {"applied": True, "licenze_theft_immune": True}
 
 
 def _card_244(player, game, db, *, target_player_id=None) -> dict:

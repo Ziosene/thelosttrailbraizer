@@ -301,6 +301,8 @@ def _card_93(player, game, db, *, target_player_id=None) -> dict:
     target = get_target(game, player, target_player_id)
     if not target:
         return {"applied": False, "reason": "no_target"}
+    if (target.combat_state or {}).get("licenze_theft_immune"):
+        return {"applied": False, "reason": "target_immune"}
     stolen = min(2, target.licenze)
     target.licenze -= stolen
     if target.hand:
