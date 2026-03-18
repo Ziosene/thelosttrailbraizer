@@ -2707,7 +2707,7 @@
 ### 278. Marc Benioff Mode
 - **Tipo**: Interferenza / Leggendaria
 - **Quando**: In qualsiasi momento
-- **Effetto**: Fai un annuncio — dichiara una regola che vale per tutti per 1 turno (es. "nessuno può usare carte offensive" o "tutti guadagnano 1 Licenza extra"). Gli altri devono rispettarla
+- **Effetto**: Azzera le Licenze di tutti gli avversari. Tu guadagni la metà del totale sottratto (arrotondato per difetto).
 - **Rarità**: Leggendario
 - **Image prompt**: `A 2D hand-drawn visionary CEO announcement in the art style of The Binding of Isaac. A charismatic leader figure at a grand podium proclaiming a global rule that all players must obey for one turn, a glowing decree scroll unfurling. Thick black outlines, flat shading, legendary authority mood. Plain off-white parchment background. Indie game card art.`
 

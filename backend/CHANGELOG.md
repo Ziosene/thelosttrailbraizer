@@ -42,6 +42,7 @@
 - **Carta 199** (Segment Builder): redesign — da "dividi mazzo in 2 pile" (complesso) a `scarta fino a 3 carte e pesca lo stesso numero`
 - **Carta 41** (Journey Builder): cap `6` → `5`
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
+- **Carta 278** (Marc Benioff Mode): redesign — da "dichiara regola" (non implementabile) a `azzera licenze avversari, guadagni metà del totale`
 - **Carta 274** (Engagement Score): fix — counter `consecutive_turns_with_cards` mai scritto; redesign a `+1L per addon posseduto (max 5)`
 - **Carta 273** (Trailhead Quest): redesign — da "obiettivo dichiarato" (non implementabile) a `tira dado, guadagni 1-10L`
 - **Carta 269** (Trailhead GO): redesign — da "istantanea gratis" a `limite carte questo turno = 4`; flag `trailhead_go_max_cards` in turn.py

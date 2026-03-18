@@ -753,10 +753,15 @@ def _card_277(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_278(player, game, db, *, target_player_id=None) -> dict:
-    """Marc Benioff Mode (Leggendaria) — Tutti i giocatori guadagnano +1L."""
+    """Marc Benioff Mode (Leggendaria) — Azzera le licenze di tutti gli avversari; tu guadagni la metà."""
+    total_stolen = 0
     for gp in game.players:
-        gp.licenze += 1
-    return {"applied": True, "licenze_each": 1, "players_affected": len(list(game.players))}
+        if gp.id == player.id:
+            continue
+        total_stolen += gp.licenze
+        gp.licenze = 0
+    player.licenze += total_stolen // 2
+    return {"applied": True, "total_stolen": total_stolen, "licenze_gained": total_stolen // 2}
 
 
 def _card_98(player, game, db, *, target_player_id=None) -> dict:
