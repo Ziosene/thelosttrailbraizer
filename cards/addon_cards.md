@@ -864,7 +864,7 @@
 
 ### 98. Acceptance Criteria
 - **Tipo**: Passivo
-- **Effetto**: Puoi rifiutare di pescare un boss per 2 turni consecutivi senza penalità (normalmente 1 solo turno di pausa)
+- **Effetto**: Quando sconfiggi un boss, puoi rinunciare alla ricompensa in Licenze e pescare invece 2 carte azione.
 - **Rarità**: Comune
 - **Image prompt**: `A 2D hand-drawn ACCEPTED rubber stamp on a form with a paused boss card beside it in the art style of The Binding of Isaac. A bold green stamp pressing ACCEPTED on a document, a boss card on pause with a pause symbol. Thick black outlines, flat shading, patient mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
