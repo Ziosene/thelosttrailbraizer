@@ -1190,7 +1190,7 @@
 
 ### 136. Package Upgrade
 - **Tipo**: Passivo
-- **Effetto**: Ogni AddOn che possiedi da 3 o più turni conta come se avesse 1 livello di Rarità superiore ai fini delle sinergie
+- **Effetto**: Ogni addon che possiedi da 3 o più turni ti dà +1 al dado in combattimento (max +3 totale).
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn AddOn card with an upgrade arrow and a higher rarity glow after aging in the art style of The Binding of Isaac. An older card gaining a brighter border as a rarity-up arrow glows above it after three turn marks. Thick black outlines, flat shading, seasoned mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
