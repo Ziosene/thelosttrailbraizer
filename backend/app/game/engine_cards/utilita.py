@@ -1191,10 +1191,8 @@ def _card_287(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_289(player, game, db, *, target_player_id=None) -> dict:
-    """Stack Trace — Recupera fino a 3 carte dallo scarti."""
+    """Stack Trace — Recupera le ultime 3 carte dagli scarti (tornano in mano)."""
     from app.models.game import PlayerHandCard as _PHC289
-    if player.is_in_combat:
-        return {"applied": False, "reason": "in_combat"}
     discard = list(game.action_discard or [])
     recovered = discard[-3:] if len(discard) >= 3 else discard
     for card_id in recovered:

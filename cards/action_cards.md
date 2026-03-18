@@ -2809,8 +2809,8 @@
 
 ### 289. Stack Trace
 - **Tipo**: Utilità
-- **Quando**: Fuori dal combattimento
-- **Effetto**: Ripercorri gli ultimi 3 turni — recupera 1 carta azione usata in ognuno dei 3 turni precedenti (max 3 carte)
+- **Quando**: In qualsiasi momento
+- **Effetto**: Recupera le ultime 3 carte dagli scarti. Tornano nella tua mano.
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn debug stack trace in the art style of The Binding of Isaac. A developer scrolling through three layers of call history, pulling one card back from each of the last three turns. Thick black outlines, flat shading, retrospective debugging mood. Plain off-white parchment background. Indie game card art.`
 
