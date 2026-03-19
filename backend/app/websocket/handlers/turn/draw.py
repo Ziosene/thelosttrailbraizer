@@ -27,6 +27,27 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
         await _error(game.code, user_id, "Not in draw phase")
         return
 
+    # ── FASE INIZIALE step 0: Tech Debt check BEFORE untapping ───────────────
+    # Addon 107 (Tech Debt): each addon idle for 3 consecutive turns generates 1L
+    if _has_addon_draw(player, 107):
+        _cs107 = dict(player.combat_state or {})
+        _td107 = _cs107.get("tech_debt_turns", {})
+        _earned107 = 0
+        for _pa107 in player.addons:
+            _key107 = str(_pa107.id)
+            if _pa107.is_tapped:
+                # was used last turn (still tapped before untap), reset counter
+                _td107[_key107] = 0
+            else:
+                _td107[_key107] = _td107.get(_key107, 0) + 1
+                if _td107[_key107] >= 3:
+                    _earned107 += 1
+                    _td107[_key107] = 0
+        if _earned107:
+            player.licenze += _earned107
+        _cs107["tech_debt_turns"] = _td107
+        player.combat_state = _cs107
+
     # ── FASE INIZIALE step 1: Untap all addons (moved from end_turn) ─────────
     for pa in player.addons:
         pa.is_tapped = False
@@ -40,6 +61,10 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
     _cs_init.pop("first_card_free_used", None)
     # Addon 72 (Process Builder Chain): clear addons_used_this_turn at turn start
     _cs_init.pop("addons_used_this_turn", None)
+    # Addon 109 (Proof of Concept): clear per-turn used flag at turn start
+    _cs_init.pop("proof_of_concept_used_this_turn", None)
+    # Addon 110 (Go-Live Celebration): clear per-turn purchase flag at turn start
+    _cs_init.pop("go_live_bought_this_turn", None)
     # Card 44 (Object Store): auto-return stored licenze at start of new turn
     _stored_lic = _cs_init.pop("object_store_licenze", 0)
     if _stored_lic:
@@ -97,8 +122,43 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
     if _has_addon_draw(player, 35) and not player.is_in_combat:
         player.licenze += 1
 
+    # Addon 94 (Release Train): every 4 turns, gain 1 free addon from the deck
+    if _has_addon_draw(player, 94):
+        _cs94 = dict(player.combat_state or {})
+        _cs94["release_train_turns"] = _cs94.get("release_train_turns", 0) + 1
+        if _cs94["release_train_turns"] >= 4:
+            _cs94["release_train_turns"] = 0
+            _addon_id94 = None
+            if game.addon_deck_1:
+                _addon_deck94 = list(game.addon_deck_1)
+                _addon_id94 = _addon_deck94.pop(0)
+                game.addon_deck_1 = _addon_deck94
+            elif game.addon_deck_2:
+                _addon_deck94b = list(game.addon_deck_2)
+                _addon_id94 = _addon_deck94b.pop(0)
+                game.addon_deck_2 = _addon_deck94b
+            if _addon_id94:
+                from app.models.game import PlayerAddon as _PA94
+                db.add(_PA94(player_id=player.id, addon_id=_addon_id94, is_tapped=False))
+                await manager.broadcast(game.code, {
+                    "type": "release_train_addon",
+                    "player_id": player.id,
+                    "addon_card_id": _addon_id94,
+                })
+        player.combat_state = _cs94
+
+    # Addon 96 (Backlog Refinement): at start of turn, peek at next addon in deck
+    if _has_addon_draw(player, 96):
+        _peek96 = (game.addon_deck_1 or [])[:1] or (game.addon_deck_2 or [])[:1]
+        if _peek96:
+            await manager.send_to_player(game.code, player.user_id, {
+                "type": "backlog_refinement_peek",
+                "addon_card_id": _peek96[0],
+            })
+
     # Addon 10 (Platform Cache): hand size up to 12 instead of 10
-    _max_hand = 12 if _has_addon_draw(player, 10) else engine.MAX_HAND_SIZE
+    # Addon 100 (Kanban Board): hand size up to 12 instead of 10
+    _max_hand = 12 if (_has_addon_draw(player, 10) or _has_addon_draw(player, 100)) else engine.MAX_HAND_SIZE
     if len(player.hand) >= _max_hand:
         await _error(game.code, user_id, "Hand is full")
         return
@@ -180,7 +240,7 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
 
     # Addon 17 (Knowledge Base): draw 1 extra card at start of turn
     if _has_addon_draw(player, 17) and not jinxed:
-        _max_hand17 = 12 if _has_addon_draw(player, 10) else engine.MAX_HAND_SIZE
+        _max_hand17 = 12 if (_has_addon_draw(player, 10) or _has_addon_draw(player, 100)) else engine.MAX_HAND_SIZE
         if len(list(player.hand)) < _max_hand17:
             _extra17 = None
             if deck_num == 1 and game.action_deck_1:

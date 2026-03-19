@@ -252,10 +252,15 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
         _cs_egpt.pop("einstein_gpt_free_play", None)
         player.combat_state = _cs_egpt
     else:
+        # Addon 109 (Proof of Concept): one free card slot per turn
+        _cs109_play = player.combat_state or {}
+        if _cs109_play.get("proof_of_concept_active"):
+            _cs109_new = dict(_cs109_play)
+            _cs109_new.pop("proof_of_concept_active", None)
+            player.combat_state = _cs109_new
         # Addon 71 (Workflow Rule Combo): first card each turn doesn't count toward limit
-        _cs71 = player.combat_state or {}
-        if _has_addon_play(player, 71) and not _cs71.get("first_card_free_used"):
-            _cs71_new = dict(_cs71)
+        elif _has_addon_play(player, 71) and not _cs109_play.get("first_card_free_used"):
+            _cs71_new = dict(_cs109_play)
             _cs71_new["first_card_free_used"] = True
             player.combat_state = _cs71_new
         else:
@@ -572,6 +577,21 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
                 _cs_ab2.pop("app_builder_active", None)
                 _cs_ab2.pop("app_builder_type_counts", None)
             player.combat_state = _cs_ab2
+
+    # Addon 103 (Named Credential): immune to interferenza cards that cause Licenze loss
+    if card and card_approved and not original_cancelled and target_player_id and card.card_type == "Interferenza":
+        _tgt103 = next((p for p in game.players if p.id == target_player_id and p.id != player.id), None)
+        if _tgt103 and _has_addon_play(_tgt103, 103) and isinstance(card_effect_result, dict):
+            _stolen103 = card_effect_result.get("licenze_stolen", 0)
+            if _stolen103 and _stolen103 > 0:
+                # Refund the stolen licenze back to target and reverse from caster
+                _tgt103.licenze += _stolen103
+                player.licenze = max(0, player.licenze - _stolen103)
+                await manager.broadcast(game.code, {
+                    "type": "addon_103_blocked",
+                    "player_id": _tgt103.id,
+                    "licenze_refunded": _stolen103,
+                })
 
     # Addon 14 (Salesforce Billing): target recovers 1L when licenze are stolen from them
     if card and card_approved and not original_cancelled and isinstance(card_effect_result, dict):

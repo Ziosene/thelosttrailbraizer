@@ -8,6 +8,8 @@ from app.websocket.handlers.turn.addon import (
     _handle_buy_addon, _handle_use_addon,
     _handle_appexchange_pick, _handle_chatter_feed_respond,
     _handle_metadata_api_reorder, _handle_release_notes_confirm, _handle_sharing_rules_pick,
+    _handle_beta_feature_reject, _handle_beta_feature_keep,
+    _handle_pilot_program_pick, _handle_acceptance_criteria_choose,
 )
 from app.websocket.handlers.turn.end import _handle_end_turn
 
@@ -22,4 +24,8 @@ __all__ = [
     "_handle_metadata_api_reorder",
     "_handle_release_notes_confirm",
     "_handle_sharing_rules_pick",
+    "_handle_beta_feature_reject",
+    "_handle_beta_feature_keep",
+    "_handle_pilot_program_pick",
+    "_handle_acceptance_criteria_choose",
 ]

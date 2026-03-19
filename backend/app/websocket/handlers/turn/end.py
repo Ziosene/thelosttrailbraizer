@@ -10,6 +10,7 @@ from app.websocket.game_helpers import (
 )
 from app.models.game import GameSession, GameStatus, TurnPhase
 from app.game import engine
+from app.game.engine_addons import has_addon as _has_addon_end
 
 
 async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
@@ -29,9 +30,11 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
     # ── FASE FINALE step 1: on-end abilities ─────────────────────────────────
     # TODO: trigger_passive_addons(event="on_turn_end", player, game, db)
 
-    # ── FASE FINALE step 2: discard excess cards (hand > 10) ─────────────────
+    # ── FASE FINALE step 2: discard excess cards (hand > 10 or 12 with Kanban/Platform Cache) ───
+    # Addon 100 (Kanban Board): max hand size 12 instead of 10
+    _hand_limit_end = 12 if (_has_addon_end(player, 100) or _has_addon_end(player, 10)) else engine.MAX_HAND_SIZE
     hand_cards = list(player.hand)
-    excess = len(hand_cards) - engine.MAX_HAND_SIZE
+    excess = len(hand_cards) - _hand_limit_end
     discarded_card_ids: list = []
     if excess > 0:
         # Player must choose which to discard — for now auto-discard last drawn
@@ -81,6 +84,17 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
         if cs["visitor_activity_turns"] <= 0:
             cs.pop("visitor_activity_turns", None)
         player.combat_state = cs
+
+    # Addon 91 (Free Trial): remove borrowed addon at end of turn; it stays in market (never removed)
+    if player.combat_state and player.combat_state.get("free_trial_borrowed_pa_id"):
+        from app.models.game import PlayerAddon as _PA91et
+        _borrowed91 = db.get(_PA91et, player.combat_state["free_trial_borrowed_pa_id"])
+        if _borrowed91:
+            db.delete(_borrowed91)
+        _cs91_new_et = dict(player.combat_state)
+        _cs91_new_et.pop("free_trial_borrowed_pa_id", None)
+        _cs91_new_et.pop("free_trial_borrowed_addon_id", None)
+        player.combat_state = _cs91_new_et
 
     # Card 37 (Free Trial): remove free trial addons at end of turn
     if player.combat_state and player.combat_state.get("free_trial_addon_player_addon_ids"):
@@ -190,7 +204,8 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
                 wi_card_id = discard_wi.pop(-1)
                 game.action_discard = discard_wi
                 from app.models.game import PlayerHandCard as _PHCWI
-                if len(list(player.hand)) < engine.MAX_HAND_SIZE:
+                _hand_limit_wi = 12 if (_has_addon_end(player, 100) or _has_addon_end(player, 10)) else engine.MAX_HAND_SIZE
+                if len(list(player.hand)) < _hand_limit_wi:
                     db.add(_PHCWI(player_id=player.id, action_card_id=wi_card_id))
         # Card 234 (Integration Pattern): clear boost if unused
         cs.pop("integration_pattern_boost", None)

@@ -12,6 +12,8 @@ from app.websocket.handlers.turn import (
     _handle_draw_card, _handle_play_card, _handle_buy_addon, _handle_use_addon, _handle_end_turn,
     _handle_appexchange_pick, _handle_chatter_feed_respond,
     _handle_metadata_api_reorder, _handle_release_notes_confirm, _handle_sharing_rules_pick,
+    _handle_beta_feature_reject, _handle_beta_feature_keep,
+    _handle_pilot_program_pick, _handle_acceptance_criteria_choose,
 )
 from app.websocket.handlers.combat import (
     _handle_start_combat, _handle_roll_dice, _handle_retreat,
@@ -78,5 +80,13 @@ async def handle_message(
         await _handle_release_notes_confirm(game, user_id, data, db)
     elif action == "sharing_rules_pick":
         await _handle_sharing_rules_pick(game, user_id, data, db)
+    elif action == "beta_feature_reject":
+        await _handle_beta_feature_reject(game, user_id, data, db)
+    elif action == "beta_feature_keep":
+        await _handle_beta_feature_keep(game, user_id, data, db)
+    elif action == "pilot_program_pick":
+        await _handle_pilot_program_pick(game, user_id, data, db)
+    elif action == "acceptance_criteria_choose":
+        await _handle_acceptance_criteria_choose(game, user_id, data, db)
     else:
         await _error(game_code, user_id, f"Unknown action: {action}")

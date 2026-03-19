@@ -499,10 +499,13 @@ MORTE DEL GIOCATORE
 - Effetti addon 21–41: implementati (batch 2)
 - Effetti addon 42–67: implementati (batch 3)
 - Effetti addon 68–90: implementati (batch 4) — addon 68/69 (theft protection) in engine_cards/economica.py; addon 70 (einstein insights), 71 (first card free), 72 (process chain), 73 (trigger handler), 74 (save hook), 75 (cascade untap), 76 (rollup defeats), 77 (formula field +roll/+dmg), 78 (validation rule draw2), 79 (auto-response retaliation), 80 (field dependency discount), 81 (vuln scan +4 roll), 82/85 (boss freeze/refresh), 83 (sandbox preview), 84 (governor cap boss hp4), 86 (critical patch +1L on miss), 87 (throttle bypass), 88 (mass update 2dmg), 89 (data migration swap), 90 (org split hp)
+- Effetti addon 91–110: implementati (batch 5) — 91 (free trial borrow/return), 92 (beta feature reject/keep), 93 (pilot program pick from graveyard), 94 (release train every 4 turns), 95 (sprint review swap), 96 (backlog refinement peek), 97 (definition of done +2L at full HP), 98 (acceptance criteria simplified: always 2 cards), 99 (retrospective discard 2 from target), 100 (kanban board hand12), 101 (org-wide sharing +1L), 102 (custom permission TODO pending role system), 103 (named credential interferenza immunity), 104 (user story draw3+gain3L), 105 (epic feature streak cert), 106 (story points boss.hp L), 107 (tech debt idle addon L), 108 (architecture review return+8L), 109 (proof of concept free card slot), 110 (go-live celebration all+1L)
+- Nuove client action: `beta_feature_reject`, `beta_feature_keep`, `pilot_program_pick`, `acceptance_criteria_choose`
 
 ### ⬜ Da fare
 
-- [ ] **Effetti addon 91–200** — da implementare.
+- [ ] **Effetti addon 111–200** — da implementare.
+- [ ] **Addon 98 (Acceptance Criteria)** — implementato in versione semplificata (sempre 2 carte, niente scelta asincrona). Se serve la scelta interattiva, richiede refactor del boss defeat flow.
 - [ ] **Addon 76 (Rollup Summary)** — contatore `rollup_boss_defeats` in combat_state pronto; mancante integrazione ELO finale.
 - [ ] **Validazione timing carte** — campo `Quando` da verificare in `_handle_play_card`.
 - [ ] **Validazione timing carte** — campo `Quando` da verificare in `_handle_play_card`.

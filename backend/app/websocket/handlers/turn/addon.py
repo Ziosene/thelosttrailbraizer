@@ -165,6 +165,45 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
     # TODO: triggherare gli addon passivi con trigger "quando acquisti un addon" (sia il nuovo che quelli già posseduti).
     # Alcuni addon esistenti danno bonus al momento dell'acquisto di un nuovo addon.
     # Va chiamata trigger_passive_addons(event="on_addon_bought", player, game, new_addon=addon, db).
+
+    # Flush so we can reference the new PlayerAddon id for addon 92
+    db.flush()
+    from app.models.game import PlayerAddon as _PA_bought
+    new_pa = db.query(_PA_bought).filter(
+        _PA_bought.player_id == player.id,
+        _PA_bought.addon_id == addon_id,
+    ).order_by(_PA_bought.id.desc()).first()
+
+    # Addon 92 (Beta Feature): offer to reject just-bought addon and draw another
+    if _has_addon_addon(player, 92) and new_pa:
+        cs92 = dict(player.combat_state or {})
+        cs92["beta_feature_pending_pa_id"] = new_pa.id
+        cs92["beta_feature_pending_addon_id"] = addon_id
+        player.combat_state = cs92
+        db.commit()
+        db.refresh(game)
+        await manager.send_to_player(game.code, player.user_id, {
+            "type": "beta_feature_option",
+            "addon_card_id": addon_id,
+            "message": "You can reject this addon and draw another",
+        })
+        await _broadcast_state(game, db)
+        return
+
+    # Addon 110 (Go-Live Celebration): all players gain 1L on any addon purchase
+    for _p110 in game.players:
+        if _has_addon_addon(_p110, 110):
+            _cs110 = _p110.combat_state or {}
+            _first110 = not _cs110.get("go_live_bought_this_turn")
+            for _all110 in game.players:
+                _all110.licenze += 1
+            if player.id == _p110.id and _first110:
+                player.licenze += 2  # extra 2 (already got 1 from loop above, total 3)
+            _cs110_new = dict(_cs110)
+            _cs110_new["go_live_bought_this_turn"] = True
+            _p110.combat_state = _cs110_new
+            break
+
     db.commit()
     db.refresh(game)
 
@@ -864,6 +903,194 @@ async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Ses
         cs90_new["org_split_used"] = True
         player.combat_state = cs90_new
 
+    # Addon 91 (Free Trial): borrow a market addon for 1 full turn, then return it
+    elif addon.number == 91:
+        cs91 = player.combat_state or {}
+        if cs91.get("free_trial_used"):
+            await _error(game.code, user_id, "Free Trial already used")
+            pa.is_tapped = False
+            return
+        target_addon_id91 = data.get("target_addon_id")
+        market91 = []
+        if game.addon_market_1:
+            market91.append(game.addon_market_1)
+        if game.addon_market_2:
+            market91.append(game.addon_market_2)
+        if target_addon_id91 not in market91:
+            await _error(game.code, user_id, "Addon not in market")
+            pa.is_tapped = False
+            return
+        from app.models.game import PlayerAddon as _PA91
+        temp_pa91 = _PA91(player_id=player.id, addon_id=target_addon_id91, is_tapped=False)
+        db.add(temp_pa91)
+        db.flush()
+        cs91_new = dict(cs91)
+        cs91_new["free_trial_used"] = True
+        cs91_new["free_trial_borrowed_pa_id"] = temp_pa91.id
+        cs91_new["free_trial_borrowed_addon_id"] = target_addon_id91
+        player.combat_state = cs91_new
+
+    # Addon 93 (Pilot Program): once per game, choose an addon from graveyard
+    elif addon.number == 93:
+        cs93 = player.combat_state or {}
+        if cs93.get("pilot_program_used"):
+            await _error(game.code, user_id, "Pilot Program already used")
+            pa.is_tapped = False
+            return
+        discard93 = list(game.addon_graveyard or [])
+        if not discard93:
+            await _error(game.code, user_id, "Addon graveyard is empty")
+            pa.is_tapped = False
+            return
+        cs93_new = dict(cs93)
+        cs93_new["pilot_program_used"] = True
+        cs93_new["pilot_program_pending"] = True
+        player.combat_state = cs93_new
+        db.commit()
+        db.refresh(game)
+        await manager.send_to_player(game.code, player.user_id, {
+            "type": "pilot_program_options",
+            "addon_card_ids": discard93,
+        })
+        await _broadcast_state(game, db)
+        return
+
+    # Addon 95 (Sprint Review): once per game, swap one of your addons with an opponent's
+    elif addon.number == 95:
+        cs95 = player.combat_state or {}
+        if cs95.get("sprint_review_used"):
+            await _error(game.code, user_id, "Sprint Review already used")
+            pa.is_tapped = False
+            return
+        my_pa_id95 = data.get("my_addon_id")
+        their_pa_id95 = data.get("target_addon_id")
+        from app.models.game import PlayerAddon as _PA95
+        my_pa95 = db.get(_PA95, my_pa_id95)
+        their_pa95 = db.get(_PA95, their_pa_id95)
+        if not my_pa95 or my_pa95.player_id != player.id:
+            await _error(game.code, user_id, "Invalid your addon")
+            pa.is_tapped = False
+            return
+        if not their_pa95 or their_pa95.player_id == player.id:
+            await _error(game.code, user_id, "Invalid opponent addon")
+            pa.is_tapped = False
+            return
+        their_old_player_id = their_pa95.player_id
+        my_pa95.player_id = their_old_player_id
+        their_pa95.player_id = player.id
+        cs95_new = dict(cs95)
+        cs95_new["sprint_review_used"] = True
+        player.combat_state = cs95_new
+
+    # Addon 99 (Retrospective): once per game, discard 2 cards from target opponent's hand
+    elif addon.number == 99:
+        cs99 = player.combat_state or {}
+        if cs99.get("retrospective_used"):
+            await _error(game.code, user_id, "Retrospective already used")
+            pa.is_tapped = False
+            return
+        target_id99 = data.get("target_player_id")
+        target99 = next((p for p in game.players if p.id == target_id99), None)
+        if not target99 or target99.id == player.id:
+            await _error(game.code, user_id, "Invalid target")
+            pa.is_tapped = False
+            return
+        from app.models.game import PlayerHandCard as _PHC99
+        hand99 = list(target99.hand)
+        discard_count99 = min(2, len(hand99))
+        if discard_count99 == 0:
+            await _error(game.code, user_id, "Target has no cards")
+            pa.is_tapped = False
+            return
+        import random as _random99
+        to_discard99 = _random99.sample(hand99, discard_count99)
+        for hc99 in to_discard99:
+            game.action_discard = (game.action_discard or []) + [hc99.action_card_id]
+            db.delete(hc99)
+        cs99_new = dict(cs99)
+        cs99_new["retrospective_used"] = True
+        player.combat_state = cs99_new
+
+    # Addon 101 (Org-Wide Sharing): once per turn, a player gains +1L
+    elif addon.number == 101:
+        target_id101 = data.get("target_player_id", player.id)
+        target101 = next((p for p in game.players if p.id == target_id101), None)
+        if not target101:
+            await _error(game.code, user_id, "Invalid target")
+            pa.is_tapped = False
+            return
+        target101.licenze += 1
+
+    # Addon 102 (Custom Permission): TODO pending role/seniority system
+    elif addon.number == 102:
+        # TODO: implement when role and seniority system is complete
+        # Effect: use the passive ability of a character with lower seniority than yours
+        await _error(game.code, user_id, "Custom Permission not yet implemented (pending role system)")
+        pa.is_tapped = False
+        return
+
+    # Addon 104 (User Story): once per game, draw 3 cards and gain 3L
+    elif addon.number == 104:
+        cs104 = player.combat_state or {}
+        if cs104.get("user_story_used"):
+            await _error(game.code, user_id, "User Story already used")
+            pa.is_tapped = False
+            return
+        from app.models.game import PlayerHandCard as _PHC104
+        for _ in range(3):
+            if game.action_deck_1:
+                cid104 = game.action_deck_1.pop(0)
+            elif game.action_deck_2:
+                cid104 = game.action_deck_2.pop(0)
+            else:
+                break
+            db.add(_PHC104(player_id=player.id, action_card_id=cid104))
+        player.licenze += 3
+        cs104_new = dict(cs104)
+        cs104_new["user_story_used"] = True
+        player.combat_state = cs104_new
+
+    # Addon 108 (Architecture Review): once per game, return up to 2 addons to deck, gain 8L each
+    elif addon.number == 108:
+        cs108 = player.combat_state or {}
+        if cs108.get("architecture_review_used"):
+            await _error(game.code, user_id, "Architecture Review already used")
+            pa.is_tapped = False
+            return
+        pa_ids108 = data.get("addon_ids", [])
+        if not pa_ids108 or len(pa_ids108) > 2:
+            await _error(game.code, user_id, "Provide 1-2 addon IDs to return")
+            pa.is_tapped = False
+            return
+        from app.models.game import PlayerAddon as _PA108
+        returned108 = 0
+        for pa_id108 in pa_ids108:
+            pa108 = db.get(_PA108, pa_id108)
+            if not pa108 or pa108.player_id != player.id or pa108.id == pa.id:
+                continue
+            game.addon_deck_1 = (game.addon_deck_1 or []) + [pa108.addon_id]
+            db.delete(pa108)
+            player.licenze += 8
+            returned108 += 1
+        if returned108 == 0:
+            await _error(game.code, user_id, "No valid addons to return")
+            pa.is_tapped = False
+            return
+        cs108_new = dict(cs108)
+        cs108_new["architecture_review_used"] = True
+        player.combat_state = cs108_new
+
+    # Addon 109 (Proof of Concept): once per turn, play 1 card without using a slot
+    elif addon.number == 109:
+        cs109 = dict(player.combat_state or {})
+        if cs109.get("proof_of_concept_used_this_turn"):
+            await _error(game.code, user_id, "Proof of Concept already used this turn")
+            pa.is_tapped = False
+            return
+        cs109["proof_of_concept_active"] = True
+        cs109["proof_of_concept_used_this_turn"] = True
+        player.combat_state = cs109
+
     db.commit()
     db.refresh(game)
 
@@ -1028,6 +1255,125 @@ async def _handle_sharing_rules_pick(game, user_id: int, data: dict, db):
     db.add(_PHC63(player_id=player.id, action_card_id=action_card_id63))
     cs_new = dict(cs)
     cs_new.pop("sharing_rules_pending_target_id", None)
+    player.combat_state = cs_new
+    db.commit()
+    db.refresh(game)
+    await _broadcast_state(game, db)
+
+
+async def _handle_beta_feature_reject(game, user_id: int, data: dict, db):
+    """Handle Addon 92 (Beta Feature): reject just-bought addon and draw another from deck."""
+    from app.websocket.game_helpers import _get_player, _error, _broadcast_state
+    player = _get_player(game, user_id)
+    if not player:
+        return
+    cs = player.combat_state or {}
+    pending_pa_id = cs.get("beta_feature_pending_pa_id")
+    pending_addon_id = cs.get("beta_feature_pending_addon_id")
+    if not pending_pa_id:
+        await _error(game.code, user_id, "No Beta Feature rejection pending")
+        return
+    from app.models.game import PlayerAddon as _PA92r
+    pa92 = db.get(_PA92r, pending_pa_id)
+    if pa92 and pa92.player_id == player.id:
+        # Return rejected addon to top of deck_1
+        game.addon_deck_1 = [pending_addon_id] + (game.addon_deck_1 or [])
+        db.delete(pa92)
+    # Draw next addon from deck as replacement
+    next_addon_id = None
+    if game.addon_deck_1:
+        addon_deck92 = list(game.addon_deck_1)
+        next_addon_id = addon_deck92.pop(0)
+        game.addon_deck_1 = addon_deck92
+    elif game.addon_deck_2:
+        addon_deck92b = list(game.addon_deck_2)
+        next_addon_id = addon_deck92b.pop(0)
+        game.addon_deck_2 = addon_deck92b
+    if next_addon_id:
+        from app.models.game import PlayerAddon as _PA92n
+        db.add(_PA92n(player_id=player.id, addon_id=next_addon_id, is_tapped=False))
+    cs_new = dict(cs)
+    cs_new.pop("beta_feature_pending_pa_id", None)
+    cs_new.pop("beta_feature_pending_addon_id", None)
+    player.combat_state = cs_new
+    db.commit()
+    db.refresh(game)
+    await _broadcast_state(game, db)
+
+
+async def _handle_beta_feature_keep(game, user_id: int, data: dict, db):
+    """Handle Addon 92 (Beta Feature): keep the just-bought addon."""
+    from app.websocket.game_helpers import _get_player, _error, _broadcast_state
+    player = _get_player(game, user_id)
+    if not player:
+        return
+    cs = player.combat_state or {}
+    if not cs.get("beta_feature_pending_pa_id"):
+        await _error(game.code, user_id, "No Beta Feature choice pending")
+        return
+    cs_new = dict(cs)
+    cs_new.pop("beta_feature_pending_pa_id", None)
+    cs_new.pop("beta_feature_pending_addon_id", None)
+    player.combat_state = cs_new
+    db.commit()
+    db.refresh(game)
+    await _broadcast_state(game, db)
+
+
+async def _handle_pilot_program_pick(game, user_id: int, data: dict, db):
+    """Handle Addon 93 (Pilot Program): player picks an addon from the graveyard."""
+    from app.websocket.game_helpers import _get_player, _error, _broadcast_state
+    player = _get_player(game, user_id)
+    if not player:
+        return
+    cs = player.combat_state or {}
+    if not cs.get("pilot_program_pending"):
+        await _error(game.code, user_id, "No Pilot Program pick pending")
+        return
+    addon_card_id93 = data.get("addon_card_id")
+    graveyard93 = list(game.addon_graveyard or [])
+    if addon_card_id93 not in graveyard93:
+        await _error(game.code, user_id, "Addon not in graveyard")
+        return
+    graveyard93.remove(addon_card_id93)
+    game.addon_graveyard = graveyard93
+    from app.models.game import PlayerAddon as _PA93p
+    db.add(_PA93p(player_id=player.id, addon_id=addon_card_id93, is_tapped=False))
+    cs_new = dict(cs)
+    cs_new.pop("pilot_program_pending", None)
+    player.combat_state = cs_new
+    db.commit()
+    db.refresh(game)
+    await _broadcast_state(game, db)
+
+
+async def _handle_acceptance_criteria_choose(game, user_id: int, data: dict, db):
+    """Handle Addon 98 (Acceptance Criteria): choose licenze or 2 cards after boss defeat.
+    NOTE: This is only called if the non-simplified flow is used.
+    The simplified flow (see roll.py) always gives 2 cards and skips licenze.
+    """
+    from app.websocket.game_helpers import _get_player, _error, _broadcast_state
+    player = _get_player(game, user_id)
+    if not player:
+        return
+    cs = player.combat_state or {}
+    pending_reward = cs.get("acceptance_criteria_pending_reward")
+    if pending_reward is None:
+        await _error(game.code, user_id, "No Acceptance Criteria choice pending")
+        return
+    choice = data.get("choice")
+    cs_new = dict(cs)
+    cs_new.pop("acceptance_criteria_pending_reward", None)
+    if choice == "licenze":
+        player.licenze += pending_reward
+    else:
+        # Draw 2 action cards
+        from app.models.game import PlayerHandCard as _PHC98
+        for _ in range(2):
+            if game.action_deck_1:
+                db.add(_PHC98(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+            elif game.action_deck_2:
+                db.add(_PHC98(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
     player.combat_state = cs_new
     db.commit()
     db.refresh(game)

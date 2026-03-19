@@ -257,6 +257,36 @@ async def _boss_defeat_sequence(player, game, db, boss) -> bool:
         if omega_def["bonus_licenze"] > 0:
             player.licenze += omega_def["bonus_licenze"]
 
+    # Addon 97 (Definition of Done): defeat boss at max HP → +2L
+    if has_addon(player, 97) and player.hp >= player.max_hp:
+        player.licenze += 2
+
+    # Addon 98 (Acceptance Criteria): simplified — always give 2 cards and skip licenze reward.
+    # NOTE: A full async-choice flow would require deferring the entire defeat sequence, which
+    # is not cleanly possible here. Simplified implementation per spec note.
+    if has_addon(player, 98):
+        # Revoke the licenze reward just granted and give 2 action cards instead
+        player.licenze = max(0, player.licenze - boss.reward_licenze)
+        from app.models.game import PlayerHandCard as _PHC98r
+        for _ in range(2):
+            if game.action_deck_1:
+                db.add(_PHC98r(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+            elif game.action_deck_2:
+                db.add(_PHC98r(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+
+    # Addon 105 (Epic Feature): every 3 consecutive boss defeats without dying → +1 cert
+    if has_addon(player, 105):
+        _cs105 = dict(player.combat_state or {})
+        _cs105["epic_feature_streak"] = _cs105.get("epic_feature_streak", 0) + 1
+        if _cs105["epic_feature_streak"] >= 3:
+            player.certificazioni += 1
+            _cs105["epic_feature_streak"] = 0
+        player.combat_state = _cs105
+
+    # Addon 106 (Story Points): each boss defeated gives +1L per boss original HP
+    if has_addon(player, 106):
+        player.licenze += boss.hp  # boss.hp is the original/base HP of the BossCard
+
     # Addon 42 (Revenue Cloud Optimizer): +2L extra on boss defeat if player has ≥20 licenze
     if has_addon(player, 42) and player.licenze >= 20:
         player.licenze += 2
@@ -482,6 +512,12 @@ async def _player_death_sequence(player, game, db, boss) -> None:
         _cs48d = dict(player.combat_state or {})
         _cs48d["net_zero_turns"] = 0
         player.combat_state = _cs48d
+
+    # Addon 105 (Epic Feature): reset boss-defeat streak on death
+    if has_addon(player, 105):
+        _cs105d = dict(player.combat_state or {})
+        _cs105d["epic_feature_streak"] = 0
+        player.combat_state = _cs105d
 
     # Addon 52 (Scratch Org): trim excess cards at end of combat (player death)
     if has_addon(player, 52):
