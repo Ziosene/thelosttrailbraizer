@@ -350,6 +350,7 @@ Tutti i messaggi sono JSON. Il server autentica via JWT al momento della conness
 | `declare_card_type` | `{card_type: "Offensiva"\|"Difensiva"}` | Fase `combat`, dopo `start_combat` contro boss 86 — dichiara il tipo di carte che si potrà giocare |
 | `play_reaction` | `{hand_card_id}` | Fuori dal proprio turno — risposta a `reaction_window_open`; gioca una carta interferenza |
 | `pass_reaction` | — | Fuori dal proprio turno — rinuncia alla finestra di reazione |
+| `card_choice` | `{choice_type, ...}` | Risposta a `card_choice_required` — il giocatore invia la propria scelta per completare l'effetto di una carta |
 
 ### Server → Client (eventi)
 
@@ -375,6 +376,7 @@ Tutti i messaggi sono JSON. Il server autentica via JWT al momento della conness
 | `reaction_window_open` | `{trigger_card, attacker_player_id, timeout_ms}` | privato al target — si è aperta una finestra di reazione (8 s) |
 | `reaction_window_closed` | — | privato al target — finestra chiusa (timeout o risposta ricevuta) |
 | `reaction_resolved` | `{reactor_player_id, original_cancelled, reaction_effect}` | broadcast — come è stata risolta la reazione |
+| `card_choice_required` | `{choice_type, card_number, options, ...}` | privato al giocatore — la carta richiede una scelta prima di completare il suo effetto |
 
 ---
 
@@ -505,6 +507,8 @@ MORTE DEL GIOCATORE
 - Nuove client action: `external_object_pick`, `batch_schedule_card`, `territory_set`
 - Effetti addon 141–160: implementati (batch 7) — 141 (calculated risk bet on roll), 142 (all or nothing skip+4 bonus), 143 (double or nothing after boss defeat), 144 (high stakes 0cert 0addons +3), 145 (risk matrix pre-combat roll), 146 (bet the farm dice duel steal 3L), 147 (FOMO trigger out-of-turn buy), 148 (last stand +1HP +2dice solo 0cert), 149 (comeback mechanic opp reach 4cert +3L), 150 (wildcards unlimited cards+addons), 151 (certification path first cert score bonus), 152 (superbadge grind 3 streak extra cert), 153 (cert theft ring steal cert roll≤3 fail), 154 (recertification +5L on cert theft), 155 (fast track cert boss threshold-1), 156 (trailhead ranger +1/cert beyond first), 157 (portfolio defense cert theft immunity on own turn), 158 (credential vault roll10 +1cert), 159 (final exam dice duel steal cert), 160 (graduation day 4cert +10L +2dice)
 - Nuova client action: `fomo_buy_addon` (addon 147 FOMO Trigger)
+- Effetti addon 161–180: implementati (batch 8)
+- **Flusso pending_choice**: client-choice flow asincrono per carte azione — cards 32, 34, 67, 68, 69, 106, 107, 108, 110, 137 riformulate per restituire `{status: "pending_choice", ...}` invece di auto-pick. `play.py` intercetta il pending e salva stato in `combat_state["pending_card_choice"]`. Nuova azione WS `card_choice` → `_handle_card_choice` in `play.py` (dispatcha su resolver per tipo). Evento server `card_choice_required` inviato privatamente al giocatore.
 
 ### ⬜ Da fare
 

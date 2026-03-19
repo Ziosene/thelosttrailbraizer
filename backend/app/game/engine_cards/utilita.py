@@ -35,20 +35,16 @@ def _card_31(player, game, db, *, target_player_id=None) -> dict:
 def _card_32(player, game, db, *, target_player_id=None) -> dict:
     """Knowledge Article — Guarda le prime 3 carte del mazzo azione e rimettile nell'ordine preferito.
 
-    Returns top 3 card info as revealed_top_cards. Reordering requires a second client
-    message with the preferred order — not yet implemented (TODO).
+    Returns pending_choice so the client can pick the preferred order.
     """
-    from app.models.card import ActionCard
-
-    preview = []
-    for cid in (game.action_deck_1 or [])[:3]:
-        card = db.get(ActionCard, cid)
-        if card:
-            preview.append({"id": card.id, "number": card.number, "name": card.name})
+    _top3 = (game.action_deck_1 or [])[:3]
+    if not _top3:
+        return {"applied": False, "reason": "action_deck_empty"}
     return {
-        "applied": True,
-        "revealed_top_cards": preview,
-        "note": "reorder_requires_client_followup",
+        "status": "pending_choice",
+        "choice_type": "reorder_action_deck",
+        "card_number": 32,
+        "action_card_ids": _top3,
     }
 
 
@@ -71,24 +67,23 @@ def _card_33(player, game, db, *, target_player_id=None) -> dict:
 def _card_34(player, game, db, *, target_player_id=None) -> dict:
     """Recycle Bin — Recupera fino a 2 carte dal mazzo degli scarti (fuori da combattimento).
 
-    Takes the 2 most recently discarded cards and adds them to the player's hand.
-    TODO: accept specific card IDs from client via extra_data for player choice.
+    Returns pending_choice so the client can pick which 2 cards to recover from discard.
     """
     if player.is_in_combat:
         return {"applied": False, "reason": "cannot_use_in_combat"}
 
-    from app.models.game import PlayerHandCard
     discard = list(game.action_discard or [])
-    recovered = []
-    for _ in range(min(2, len(discard))):
-        if len(list(player.hand)) + len(recovered) >= engine.MAX_HAND_SIZE:
-            break
-        card_id = discard.pop(-1)
-        db.add(PlayerHandCard(player_id=player.id, action_card_id=card_id))
-        recovered.append(card_id)
+    if not discard:
+        return {"applied": False, "reason": "discard_empty"}
 
-    game.action_discard = discard
-    return {"applied": True, "cards_recovered": recovered}
+    count = min(2, len(discard))
+    return {
+        "status": "pending_choice",
+        "choice_type": "recover_from_discard",
+        "card_number": 34,
+        "count": count,
+        "options": discard,
+    }
 
 
 def _card_35(player, game, db, *, target_player_id=None) -> dict:
@@ -253,79 +248,80 @@ def _card_66(player, game, db, *, target_player_id=None) -> dict:
 def _card_67(player, game, db, *, target_player_id=None) -> dict:
     """Pipeline Inspection — Guarda e riordina le prime 3 carte del mazzo boss come vuoi.
 
-    Returns top 3 boss card data. Actual reordering requires a follow-up client message.
-    TODO: accept preferred_order list from client to reorder boss_deck_1[:3].
+    Returns pending_choice so the client can pick the preferred order.
     """
     if player.is_in_combat:
         return {"applied": False, "reason": "in_combat"}
-    preview = []
-    for bid in (game.boss_deck_1 or [])[:3]:
-        bc = db.get(BossCard, bid)
-        if bc:
-            preview.append({
-                "id": bc.id, "name": bc.name,
-                "hp": bc.hp, "threshold": bc.dice_threshold,
-                "has_certification": bc.has_certification,
-            })
+    _top3 = (game.boss_deck_1 or [])[:3]
+    if not _top3:
+        return {"applied": False, "reason": "boss_deck_empty"}
     return {
-        "applied": True,
-        "revealed_boss_cards": preview,
-        "note": "reorder_requires_client_followup",
+        "status": "pending_choice",
+        "choice_type": "reorder_boss_deck",
+        "card_number": 67,
+        "boss_card_ids": _top3,
     }
 
 
 def _card_68(player, game, db, *, target_player_id=None) -> dict:
     """Dataset — Pesca 4 carte e scartane 2 a scelta.
 
-    Simplified: auto-discards 2 oldest hand cards, then draws 4 fresh ones.
-    TODO: accept discard_ids from client for real player choice.
+    First draws 4 cards, then returns pending_choice so the client picks 2 to discard.
     """
     if player.is_in_combat:
         return {"applied": False, "reason": "in_combat"}
     from app.models.game import PlayerHandCard as _PHC68
-    current_hand = list(player.hand)
-    discarded = 0
-    for hc in current_hand[:2]:
-        game.action_discard = (game.action_discard or []) + [hc.action_card_id]
-        db.delete(hc)
-        discarded += 1
-    db.flush()
-    drawn = 0
+    drawn_ids = []
     for _ in range(4):
-        if len(list(player.hand)) + drawn >= engine.MAX_HAND_SIZE:
-            break
         if game.action_deck_1:
-            db.add(_PHC68(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
-            drawn += 1
+            cid = game.action_deck_1.pop(0)
         elif game.action_deck_2:
-            db.add(_PHC68(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
-            drawn += 1
+            cid = game.action_deck_2.pop(0)
         elif game.action_discard:
             new_deck = engine.shuffle_deck(game.action_discard)
             game.action_deck_1, game.action_deck_2 = engine.split_deck(new_deck)
             game.action_discard = []
             if game.action_deck_1:
-                db.add(_PHC68(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
-                drawn += 1
-    return {"applied": True, "discarded": discarded, "cards_drawn": drawn}
+                cid = game.action_deck_1.pop(0)
+            else:
+                break
+        else:
+            break
+        db.add(_PHC68(player_id=player.id, action_card_id=cid))
+        drawn_ids.append(cid)
+    db.flush()
+    if len(drawn_ids) < 2:
+        # Not enough cards drawn to even need a choice
+        return {"applied": True, "cards_drawn": len(drawn_ids), "discarded": 0}
+    hand_options = [
+        {"hand_card_id": hc.id, "action_card_id": hc.action_card_id}
+        for hc in player.hand
+    ]
+    return {
+        "status": "pending_choice",
+        "choice_type": "discard_specific_cards",
+        "card_number": 68,
+        "count": 2,
+        "options": hand_options,
+    }
 
 
 def _card_69(player, game, db, *, target_player_id=None) -> dict:
     """Lookup Query — Cerca tra gli ultimi 10 scarti e recupera 1 carta specifica a scelta.
 
-    Simplified: recovers the most recently discarded card (last in action_discard[-10:]).
-    TODO: accept target card_id from client for real player choice.
+    Returns pending_choice so the client can pick which card to recover from the last 10 discards.
     """
-    from app.models.game import PlayerHandCard as _PHC69
     discard = list(game.action_discard or [])
     last_10 = discard[-10:]
     if not last_10:
         return {"applied": False, "reason": "discard_empty"}
-    recovered_id = last_10[-1]
-    discard.remove(recovered_id)
-    game.action_discard = discard
-    db.add(_PHC69(player_id=player.id, action_card_id=recovered_id))
-    return {"applied": True, "card_recovered": recovered_id}
+    return {
+        "status": "pending_choice",
+        "choice_type": "recover_from_discard",
+        "card_number": 69,
+        "count": 1,
+        "options": last_10,
+    }
 
 
 def _card_80(player, game, db, *, target_player_id=None) -> dict:
@@ -356,8 +352,7 @@ def _card_80(player, game, db, *, target_player_id=None) -> dict:
 def _card_106(player, game, db, *, target_player_id=None) -> dict:
     """Anypoint Studio — Pesca 3 carte, tieni 2, la 3ª torna in cima al mazzo (fuori da combattimento).
 
-    Draws 3: keeps first 2, puts 3rd back on top of action_deck_1.
-    TODO: accept discard_id from client to choose which card to return.
+    Draws 3 cards to hand, then returns pending_choice so the client picks 1 card to return to top of deck.
     """
     if player.is_in_combat:
         return {"applied": False, "reason": "in_combat"}
@@ -374,35 +369,50 @@ def _card_106(player, game, db, *, target_player_id=None) -> dict:
             game.action_discard = []
             if game.action_deck_1:
                 drawn_ids.append(game.action_deck_1.pop(0))
-    for cid in drawn_ids[:2]:
+    if len(drawn_ids) <= 2:
+        # Not enough cards — just keep them all, no choice needed
+        for cid in drawn_ids:
+            db.add(_PHC106(player_id=player.id, action_card_id=cid))
+        return {"applied": True, "cards_kept": len(drawn_ids), "cards_returned": 0}
+    # Add all 3 to hand, then ask player to return 1
+    for cid in drawn_ids:
         db.add(_PHC106(player_id=player.id, action_card_id=cid))
-    if len(drawn_ids) == 3:
-        game.action_deck_1 = [drawn_ids[2]] + (game.action_deck_1 or [])
-    return {"applied": True, "cards_kept": min(2, len(drawn_ids)), "cards_returned": 1 if len(drawn_ids) == 3 else 0}
+    db.flush()
+    hand_options = [
+        {"hand_card_id": hc.id, "action_card_id": hc.action_card_id}
+        for hc in player.hand
+    ]
+    return {
+        "status": "pending_choice",
+        "choice_type": "return_card_to_deck_top",
+        "card_number": 106,
+        "count": 1,
+        "options": hand_options,
+    }
 
 
 def _card_107(player, game, db, *, target_player_id=None) -> dict:
     """Flow Designer — Guarda e riordina le prime 3 carte del mazzo azione (fuori da combattimento).
 
-    Returns top 3 action deck card info. Reordering requires follow-up client message.
-    TODO: accept preferred_order from client to reorder action_deck_1[:3].
+    Returns pending_choice so the client can pick the preferred order.
     """
     if player.is_in_combat:
         return {"applied": False, "reason": "in_combat"}
-    from app.models.card import ActionCard as _AC107
-    preview = []
-    for cid in (game.action_deck_1 or [])[:3]:
-        c = db.get(_AC107, cid)
-        if c:
-            preview.append({"id": c.id, "number": c.number, "name": c.name})
-    return {"applied": True, "revealed_top_cards": preview, "note": "reorder_requires_client_followup"}
+    _top3 = (game.action_deck_1 or [])[:3]
+    if not _top3:
+        return {"applied": False, "reason": "action_deck_empty"}
+    return {
+        "status": "pending_choice",
+        "choice_type": "reorder_action_deck",
+        "card_number": 107,
+        "action_card_ids": _top3,
+    }
 
 
 def _card_108(player, game, db, *, target_player_id=None) -> dict:
     """Design Center — Guarda le prime 4 carte del mazzo azione e tienine 2; le altre tornano mescolate.
 
-    Draws 4: keeps first 2, shuffles other 2 back into deck.
-    TODO: accept chosen IDs from client for real player choice.
+    Draws 4 cards to hand, then returns pending_choice so the client picks 2 to keep (rest returned shuffled).
     """
     if player.is_in_combat:
         return {"applied": False, "reason": "in_combat"}
@@ -419,16 +429,27 @@ def _card_108(player, game, db, *, target_player_id=None) -> dict:
             game.action_discard = []
             if game.action_deck_1:
                 drawn_ids.append(game.action_deck_1.pop(0))
-    for cid in drawn_ids[:2]:
-        if len(list(player.hand)) < engine.MAX_HAND_SIZE:
+    if len(drawn_ids) <= 2:
+        # Not enough cards for a real choice — just keep them all
+        for cid in drawn_ids:
             db.add(_PHC108(player_id=player.id, action_card_id=cid))
-        else:
-            drawn_ids.append(cid)  # can't keep, return it
-    returned = drawn_ids[2:]
-    if returned:
-        shuffled = engine.shuffle_deck(returned)
-        game.action_deck_1 = (game.action_deck_1 or []) + shuffled
-    return {"applied": True, "cards_kept": min(2, len(drawn_ids)), "cards_returned": len(returned)}
+        return {"applied": True, "cards_kept": len(drawn_ids), "cards_returned": 0}
+    # Add all drawn cards to hand temporarily, then ask player to choose 2 to keep
+    for cid in drawn_ids:
+        db.add(_PHC108(player_id=player.id, action_card_id=cid))
+    db.flush()
+    hand_options = [
+        {"hand_card_id": hc.id, "action_card_id": hc.action_card_id}
+        for hc in player.hand
+    ]
+    return {
+        "status": "pending_choice",
+        "choice_type": "choose_cards_to_keep",
+        "card_number": 108,
+        "drawn_card_ids": drawn_ids,
+        "max_keep": 2,
+        "options": hand_options,
+    }
 
 
 def _card_109(player, game, db, *, target_player_id=None) -> dict:
@@ -452,23 +473,19 @@ def _card_109(player, game, db, *, target_player_id=None) -> dict:
 def _card_110(player, game, db, *, target_player_id=None) -> dict:
     """Return Order — Restituisci 1 tuo AddOn al mazzo e recupera 8 Licenze (fuori da combattimento).
 
-    Removes the most recently acquired addon and returns it to addon_deck_1, +8 Licenze.
-    TODO: accept addon_id from client for real player choice.
+    Returns pending_choice so the client can pick which addon to return.
     """
     if player.is_in_combat:
         return {"applied": False, "reason": "in_combat"}
     addons = list(player.addons)
     if not addons:
         return {"applied": False, "reason": "no_addons_to_return"}
-    from app.models.card import AddonCard as _ADC110
-    pa = addons[-1]  # most recently acquired (last in relationship list)
-    addon = db.get(_ADC110, pa.addon_id)
-    game.addon_deck_1 = [pa.addon_id] + (game.addon_deck_1 or [])
-    db.delete(pa)
-    player.licenze += 8
+    addon_options = [{"player_addon_id": pa.id, "addon_id": pa.addon_id} for pa in addons]
     return {
-        "applied": True,
-        "returned_addon": {"id": pa.addon_id, "name": addon.name if addon else None},
+        "status": "pending_choice",
+        "choice_type": "choose_addon_to_return",
+        "card_number": 110,
+        "options": addon_options,
         "licenze_gained": 8,
     }
 
@@ -476,8 +493,8 @@ def _card_110(player, game, db, *, target_player_id=None) -> dict:
 def _card_137(player, game, db, *, target_player_id=None) -> dict:
     """CPQ Rules Engine — Cerca le prime 5 carte del mazzo azione e aggiungine 1 alla mano; rimetti le altre nell'ordine originale.
 
-    Draws top 5, keeps first (auto-selected; TODO: accept chosen_id from client).
-    Returns the remaining 4 to top of deck in their original order.
+    Draws top 5 to hand temporarily, then returns pending_choice so the client picks 1 to keep.
+    The resolver will discard the remaining 4 back to the top of the deck in their original order.
     """
     if player.is_in_combat:
         return {"applied": False, "reason": "in_combat"}
@@ -490,16 +507,16 @@ def _card_137(player, game, db, *, target_player_id=None) -> dict:
             drawn_ids.append(game.action_deck_2.pop(0))
     if not drawn_ids:
         return {"applied": False, "reason": "action_deck_empty"}
-    # Keep first, return the rest in original order to top of deck
-    if len(list(player.hand)) < engine.MAX_HAND_SIZE:
-        db.add(_PHC137(player_id=player.id, action_card_id=drawn_ids[0]))
-        kept = 1
-        returned = drawn_ids[1:]
-    else:
-        kept = 0
-        returned = drawn_ids
-    game.action_deck_1 = returned + (game.action_deck_1 or [])
-    return {"applied": True, "cards_kept": kept, "cards_returned": len(returned)}
+    # Add all drawn cards to hand temporarily
+    for cid in drawn_ids:
+        db.add(_PHC137(player_id=player.id, action_card_id=cid))
+    db.flush()
+    return {
+        "status": "pending_choice",
+        "choice_type": "keep_one_from_drawn",
+        "card_number": 137,
+        "drawn_card_ids": drawn_ids,
+    }
 
 
 def _card_138(player, game, db, *, target_player_id=None) -> dict:
