@@ -597,6 +597,26 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
                 # Refund the stolen licenze back to target and reverse from caster
                 _tgt103.licenze += _stolen103
                 player.licenze = max(0, player.licenze - _stolen103)
+
+    # Addon 168 (Role Conflict): when an opponent with the same role plays a card against you, effect halved
+    if card and card_approved and not original_cancelled and target_player_id and isinstance(card_effect_result, dict):
+        _tgt168 = next((p for p in game.players if p.id == target_player_id and p.id != player.id), None)
+        if _tgt168 and _has_addon_play(_tgt168, 168):
+            _attacker_role168 = getattr(player, "role", None)
+            _target_role168 = getattr(_tgt168, "role", None)
+            if _attacker_role168 and _target_role168 and _attacker_role168 == _target_role168:
+                # Halve licenze_stolen and hp_damage
+                _stolen168 = card_effect_result.get("licenze_stolen", 0)
+                _hp_dmg168 = card_effect_result.get("hp_damage", 0)
+                if _stolen168 > 0:
+                    _refund168 = _stolen168 - _stolen168 // 2
+                    _tgt168.licenze += _refund168
+                    player.licenze = max(0, player.licenze - _refund168)
+                    card_effect_result = dict(card_effect_result)
+                    card_effect_result["licenze_stolen"] = _stolen168 // 2
+                if _hp_dmg168 > 0:
+                    card_effect_result = dict(card_effect_result)
+                    card_effect_result["hp_damage"] = _hp_dmg168 // 2
                 await manager.broadcast(game.code, {
                     "type": "addon_103_blocked",
                     "player_id": _tgt103.id,

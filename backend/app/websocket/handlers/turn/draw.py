@@ -228,6 +228,9 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
         await _error(game.code, user_id, "Invalid deck number (must be 1 or 2)")
         return
 
+    # Track whether the deck was exhausted before this draw (for Addon 177 Stack Overflow)
+    _deck_was_exhausted_177 = not game.action_deck_1 and not game.action_deck_2
+
     # Try to draw from the requested deck; if empty, reshuffle shared discard into both decks
     if deck_num == 1:
         if not game.action_deck_1 and game.action_discard:
@@ -309,6 +312,17 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
         if hp_cost > 0:
             player.hp = max(0, player.hp - hp_cost)
 
+    # Addon 177 (Stack Overflow): when action deck runs out and reshuffles, draw 1 extra card
+    if _has_addon_draw(player, 177) and _deck_was_exhausted_177 and not jinxed:
+        _extra177 = None
+        if game.action_deck_1:
+            _extra177 = game.action_deck_1.pop(0)
+        elif game.action_deck_2:
+            _extra177 = game.action_deck_2.pop(0)
+        if _extra177:
+            from app.models.game import PlayerHandCard as _PHC177
+            db.add(_PHC177(player_id=player.id, action_card_id=_extra177))
+
     # Addon 17 (Knowledge Base): draw 1 extra card at start of turn
     if _has_addon_draw(player, 17) and not jinxed:
         _max_hand17 = 12 if (_has_addon_draw(player, 10) or _has_addon_draw(player, 100)) else engine.MAX_HAND_SIZE
@@ -388,6 +402,48 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
             player.licenze += 3
             _cs48["net_zero_turns"] = 0
         player.combat_state = _cs48
+
+    # Addon 170 (Promotion): decrement temporary seniority promotion counter at turn start
+    if _has_addon_draw(player, 170):
+        _cs170d = dict(player.combat_state or {})
+        if _cs170d.get("promotion_turns_remaining"):
+            _cs170d["promotion_turns_remaining"] -= 1
+            if _cs170d["promotion_turns_remaining"] <= 0:
+                # Revert seniority
+                _orig170 = _cs170d.pop("promotion_original_seniority", None)
+                _cs170d.pop("promotion_turns_remaining", None)
+                if _orig170 is not None:
+                    from app.models.game import Seniority as _Sen170d, SENIORITY_HP as _HP170d
+                    try:
+                        _orig_sen170 = _Sen170d(_orig170)
+                        player.seniority = _orig_sen170
+                        player.max_hp = _HP170d[_orig_sen170]
+                        player.hp = min(player.hp, player.max_hp)
+                    except (ValueError, TypeError):
+                        pass
+            player.combat_state = _cs170d
+
+    # Addon 180 (Memory Leak): when this player draws more than 1 card, 1 goes to a Memory Leak holder
+    # Count total cards drawn this turn (base 1, +1 if Stack Overflow triggered, +1 if addon 17, etc.)
+    # We detect by flushing and counting the player's hand relative to start
+    if not jinxed:
+        db.flush()
+        _hand_after180 = list(player.hand)
+        # Estimate cards drawn: any opponent with addon 180 can steal the last one if >1 drawn
+        # We track via the difference; simplest: check if addon 177 or 17 or 78 added extras
+        _drew_extra180 = (
+            _has_addon_draw(player, 177) and _deck_was_exhausted_177 or
+            _has_addon_draw(player, 17) or
+            (_has_addon_draw(player, 78) and len(_hand_after180) > 0)
+        )
+        if _drew_extra180 and len(_hand_after180) >= 1:
+            for _p180 in game.players:
+                if _p180.id != player.id and _has_addon_draw(_p180, 180):
+                    # Steal 1 card from the just-drawn cards (last in hand)
+                    if _hand_after180:
+                        _stolen180 = _hand_after180[-1]
+                        _stolen180.player_id = _p180.id
+                    break  # only one player can steal per draw
 
     game.current_phase = TurnPhase.action
     db.commit()

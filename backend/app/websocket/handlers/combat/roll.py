@@ -348,6 +348,61 @@ async def _boss_defeat_sequence(player, game, db, boss) -> bool:
         if _active137 >= 2 or _passive137 >= 2:
             player.licenze += 1
 
+    # Addon 161 (Junior Hustle): Junior players gain +2L on each boss defeat
+    if has_addon(player, 161):
+        from app.models.game import Seniority as _Sen161
+        _is_junior161 = player.seniority == _Sen161.junior
+        if _is_junior161:
+            player.licenze += 2
+
+    # Addon 163 (Mentorship Program): if player to the left has lower seniority, gain +1L on their boss defeat
+    # Check all players with addon 163 whose left neighbor (by turn_order) is the winning player
+    _turn_order163 = list(game.turn_order or [])
+    for _p163 in game.players:
+        if has_addon(_p163, 163) and _p163.id != player.id:
+            if _turn_order163:
+                try:
+                    _p163_idx = _turn_order163.index(_p163.id)
+                    _left163_idx = (_p163_idx - 1) % len(_turn_order163)
+                    _left163_pid = _turn_order163[_left163_idx]
+                    if _left163_pid == player.id:
+                        # Check seniority: left neighbor should have lower seniority
+                        from app.models.game import Seniority as _Sen163
+                        _SENIORITY_ORDER163 = [
+                            _Sen163.junior, _Sen163.experienced,
+                            _Sen163.senior, _Sen163.evangelist,
+                        ]
+                        try:
+                            _p163_seniority_rank = _SENIORITY_ORDER163.index(_p163.seniority)
+                            _left_seniority_rank = _SENIORITY_ORDER163.index(player.seniority)
+                            if _left_seniority_rank < _p163_seniority_rank:
+                                _p163.licenze += 1
+                        except (ValueError, TypeError):
+                            pass
+                except (ValueError, TypeError):
+                    pass
+
+    # Addon 167 (Evangelist Aura): on boss defeat, left and right neighbors get +1 dice bonus next combat
+    if has_addon(player, 167):
+        _n_players167 = len(game.turn_order or [])
+        if _n_players167 > 1 and game.turn_order:
+            try:
+                _p167_idx = game.turn_order.index(player.id)
+                _left167_pid = game.turn_order[(_p167_idx - 1) % _n_players167]
+                _right167_pid = game.turn_order[(_p167_idx + 1) % _n_players167]
+                for _p167 in game.players:
+                    if _p167.id in (_left167_pid, _right167_pid):
+                        cs167 = dict(_p167.combat_state or {})
+                        cs167["evangelist_aura_dice_bonus"] = cs167.get("evangelist_aura_dice_bonus", 0) + 1
+                        _p167.combat_state = cs167
+            except (ValueError, TypeError):
+                pass
+
+    # Addon 169 (Performance Review): track boss defeats count in combat_state
+    _cs_bdc169 = dict(player.combat_state or {})
+    _cs_bdc169["boss_defeats_count"] = _cs_bdc169.get("boss_defeats_count", 0) + 1
+    player.combat_state = _cs_bdc169
+
     # Addon 126 (Territory Management): other players watching this player defeat a boss gain 1L
     for _p126 in game.players:
         if _p126.id != player.id:
@@ -744,8 +799,20 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
 
     # Boss 18 (Tech Debt Lich): drain 1 Licenza every round
     # Addon 46 (Order Management System): immune to boss licenze drain
+    # Addon 162 (Senior Privilege): Senior/Evangelist can ignore 1 negative boss effect per game
     if round_start["licenza_drain"] > 0 and not has_addon(player, 46):
-        player.licenze = max(0, player.licenze - round_start["licenza_drain"])
+        _cs162_drain = player.combat_state or {}
+        _skip162_drain = False
+        if has_addon(player, 162):
+            from app.models.game import Seniority as _Sen162d
+            if player.seniority in (_Sen162d.senior, _Sen162d.evangelist):
+                if not _cs162_drain.get("senior_privilege_used"):
+                    _cs162_new_drain = dict(_cs162_drain)
+                    _cs162_new_drain["senior_privilege_used"] = True
+                    player.combat_state = _cs162_new_drain
+                    _skip162_drain = True
+        if not _skip162_drain:
+            player.licenze = max(0, player.licenze - round_start["licenza_drain"])
 
     # Boss 13 (Flow Builder Gone Rogue): discard 1 card or take 1 HP
     if round_start["force_discard_or_damage"] > 0:
@@ -1133,6 +1200,14 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         cs_grad = dict(player.combat_state)
         del cs_grad["graduation_day_dice_bonus"]
         player.combat_state = cs_grad
+
+    # Addon 167 (Evangelist Aura): dice bonus granted by a neighbor's boss defeat
+    _eva_bonus167 = (player.combat_state or {}).get("evangelist_aura_dice_bonus", 0)
+    if _eva_bonus167:
+        roll = min(roll + _eva_bonus167, 10)
+        cs_eva167 = dict(player.combat_state)
+        del cs_eva167["evangelist_aura_dice_bonus"]
+        player.combat_state = cs_eva167
 
     # Addon 4 (Apex Governor Override): original roll of 1 → round neutral (before addon bonuses)
     _addon4_override = has_addon(player, 4) and _raw_roll_for_addon4 == 1

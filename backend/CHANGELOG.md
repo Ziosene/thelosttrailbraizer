@@ -44,6 +44,28 @@
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
 ## Sessione corrente — Implementazione effetti addon 1–41
 
+### Addon 161–180
+- **Addon 161** (Junior Hustle): `_boss_defeat_sequence` — +2L se `seniority == junior`
+- **Addon 162** (Senior Privilege): `roll.py` — salta `licenza_drain` boss una volta per partita per senior/evangelist
+- **Addon 163** (Mentorship Program): `_boss_defeat_sequence` — +1L al mentore se il giocatore a sinistra (seniority inferiore) sconfigge un boss
+- **Addon 164** (Cross-Training): TODO stub — sistema ruoli non ancora implementato
+- **Addon 165** (Skill Transfer): TODO stub — sistema ruoli non ancora implementato
+- **Addon 166** (Parallel Career): `addon.py` — guadagni cert × 3L; una volta per partita
+- **Addon 167** (Evangelist Aura): `_boss_defeat_sequence` + `roll.py` — vicini di destra e sinistra +1 dado al prossimo combat
+- **Addon 168** (Role Conflict): `play.py` — se attaccante ha stesso ruolo, effetto dimezzato (licenze rubate e HP danno)
+- **Addon 169** (Performance Review): `addon.py` + `_boss_defeat_sequence` (counter `boss_defeats_count`) — confronta boss defeats, +3L o cert bonus
+- **Addon 170** (Promotion): `addon.py` + `draw.py` — seniority +1 temporaneo per 5 turni, aggiusta max_hp; una volta per partita
+- **Addon 171** (Mazzo Corrotto): `addon.py` — ogni avversario -1L per carta in mano (max 5); una volta per partita
+- **Addon 172** (Deck Shuffle): `addon.py` — rimescola mazzo azione condiviso; una volta per turno
+- **Addon 173** (Card Graveyard): `addon.py` — peek passivo mazzo scarti (no tap); invia `card_graveyard_view`
+- **Addon 174** (Recycle Bin): `addon.py` — rimetti 1-2 carte dagli scarti in fondo al mazzo; una volta per turno
+- **Addon 175** (Boss Reshuffle): `addon.py` — rimescola mazzo boss; una volta per partita
+- **Addon 176** (Mazzo Infetto): `addon.py` — avversario scarta tutta la mano e pesca lo stesso numero; una volta per partita
+- **Addon 177** (Stack Overflow): `draw.py` — quando mazzo si esaurisce e rimescola, pesca 1 carta extra
+- **Addon 178** (Cold Cache): `addon.py` — boss attuale -3HP; se muore trigger `_boss_defeat_sequence`; una volta per partita
+- **Addon 179** (Hot Reload): `addon.py` — scarta mano e pesca lo stesso numero; una volta per turno
+- **Addon 180** (Memory Leak): `draw.py` — se avversario pesca >1 carta nel suo turno, 1 va al primo giocatore con addon 180
+
 ### Addon 141–160
 - **Addon 141** (Calculated Risk): `addon.py` setta flag pre-dado; `roll.py` applica ≥8 +5L / ≤3 -2L; cleanup in defeat/death
 - **Addon 142** (All or Nothing): `addon.py` setta flag; `roll.py` salta round e applica +4 al round successivo
