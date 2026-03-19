@@ -62,6 +62,19 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
         await _error(game.code, user_id, "Boss not found")
         return
 
+    # Addon 83 (Sandbox Preview): peek dice threshold of next boss before drawing
+    if _has_addon_start(player, 83) and source in ("deck_1", "deck_2"):
+        _peek_deck83 = (game.boss_deck_1 if source == "deck_1" else game.boss_deck_2) or []
+        # Note: boss_id already popped above for deck sources; peek at current boss_id
+        from app.models.card import BossCard as _Boss83
+        _peek_boss83 = db.get(_Boss83, boss_id)
+        if _peek_boss83:
+            await manager.broadcast(game.code, {
+                "type": "sandbox_preview",
+                "player_id": player.id,
+                "boss_threshold": _peek_boss83.dice_threshold,
+            })
+
     # Addon 60 (Release Notes): if boss drawn from deck, peek stats before deciding to fight
     _boss_drawn_from_deck60 = source in ("deck_1", "deck_2")
     if _has_addon_start(player, 60) and _boss_drawn_from_deck60:
@@ -96,6 +109,10 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
     player.current_boss_source = source
     player.current_boss_hp = boss.hp
     player.combat_round = 0
+
+    # Addon 84 (Governor Limit Enforcer): boss HP is capped at 4
+    if _has_addon_start(player, 84):
+        player.current_boss_hp = min(player.current_boss_hp, 4)
     # Reset per-combat state; preserve cross-turn flags set by action cards
     _old_cs = player.combat_state or {}
     _persist_cs = {

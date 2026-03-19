@@ -495,9 +495,16 @@ MORTE DEL GIOCATORE
 - Sistema reazione out-of-turn (reaction_manager.py)
 - Docker + Alembic migrations (0001–0005) + seed idempotente
 - Bilanciamento boss: redesign batch 1 (boss 27, 31, 33, 38, 40, 41, 44, 45, 50, 52, 53, 54, 56, 58, 64, 65) + aggiustamenti puntuali (67, 68, 70, 81, 87, 91, 92, 93, 97, 100)
+- Effetti addon 1–20: implementati (batch 1)
+- Effetti addon 21–41: implementati (batch 2)
+- Effetti addon 42–67: implementati (batch 3)
+- Effetti addon 68–90: implementati (batch 4) — addon 68/69 (theft protection) in engine_cards/economica.py; addon 70 (einstein insights), 71 (first card free), 72 (process chain), 73 (trigger handler), 74 (save hook), 75 (cascade untap), 76 (rollup defeats), 77 (formula field +roll/+dmg), 78 (validation rule draw2), 79 (auto-response retaliation), 80 (field dependency discount), 81 (vuln scan +4 roll), 82/85 (boss freeze/refresh), 83 (sandbox preview), 84 (governor cap boss hp4), 86 (critical patch +1L on miss), 87 (throttle bypass), 88 (mass update 2dmg), 89 (data migration swap), 90 (org split hp)
+
 ### ⬜ Da fare
 
-- [ ] **Effetti addon** — `_handle_use_addon` tappa l'addon ma non applica effetti. Da implementare `apply_addon_effect()` per attivi e `trigger_passive_addons()` per passivi.
+- [ ] **Effetti addon 91–200** — da implementare.
+- [ ] **Addon 76 (Rollup Summary)** — contatore `rollup_boss_defeats` in combat_state pronto; mancante integrazione ELO finale.
+- [ ] **Validazione timing carte** — campo `Quando` da verificare in `_handle_play_card`.
 - [ ] **Validazione timing carte** — campo `Quando` da verificare in `_handle_play_card`.
 - [ ] **Rate limiting WS** — protezione contro spam di messaggi WebSocket.
 

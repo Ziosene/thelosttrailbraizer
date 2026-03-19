@@ -221,6 +221,11 @@ async def _boss_defeat_sequence(player, game, db, boss) -> bool:
         cs = dict(player.combat_state)
         cs.pop("petrified_card_ids", None)
         player.combat_state = cs
+    # Addon 81 (Boss Vulnerability Scan): clear per-combat used flag on boss defeat
+    if player.combat_state and player.combat_state.get("vulnerability_scan_used"):
+        cs = dict(player.combat_state)
+        cs.pop("vulnerability_scan_used", None)
+        player.combat_state = cs
     # Card 139 (Prospect Lifecycle): boss defeat lifts the addon purchase block
     if player.combat_state and player.combat_state.get("addons_blocked_until_boss_defeat"):
         cs = dict(player.combat_state)
@@ -255,6 +260,18 @@ async def _boss_defeat_sequence(player, game, db, boss) -> bool:
     # Addon 42 (Revenue Cloud Optimizer): +2L extra on boss defeat if player has ≥20 licenze
     if has_addon(player, 42) and player.licenze >= 20:
         player.licenze += 2
+
+    # Addon 75 (Cascade Update): untap all tapped active addons on boss defeat
+    if has_addon(player, 75):
+        for _pa75 in player.addons:
+            if _pa75.is_tapped:
+                _pa75.is_tapped = False
+
+    # Addon 76 (Rollup Summary): track boss defeats for future ELO bonus
+    if has_addon(player, 76):
+        _cs76 = dict(player.combat_state or {})
+        _cs76["rollup_boss_defeats"] = _cs76.get("rollup_boss_defeats", 0) + 1
+        player.combat_state = _cs76
 
     # Addon 44 (Loyalty Points Engine): other players with this addon gain +1L on any boss defeat
     for _other44 in game.players:
@@ -420,6 +437,12 @@ async def _player_death_sequence(player, game, db, boss) -> None:
         _cs91d = dict(player.combat_state)
         _cs91d.pop("hand_hidden_in_combat", None)
         player.combat_state = _cs91d
+
+    # Addon 81 (Boss Vulnerability Scan): clear per-combat used flag on player death
+    if player.combat_state and player.combat_state.get("vulnerability_scan_used"):
+        _cs81d = dict(player.combat_state)
+        _cs81d.pop("vulnerability_scan_used", None)
+        player.combat_state = _cs81d
 
     # Boss 31 (AppExchange Parasite): on player death the locked addon is ALSO discarded
     # (in addition to the normal death-penalty addon). GDD option B.
@@ -872,6 +895,18 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
     if has_addon(player, 2) and (player.combat_round or 0) == 0:
         roll = min(10, roll + 2)
 
+    # Addon 77 (Formula Field): +1 to all dice rolls
+    if has_addon(player, 77):
+        roll = min(10, roll + 1)
+
+    # Addon 81 (Boss Vulnerability Scan): +4 bonus to next roll (one-shot per combat)
+    _cs81 = player.combat_state or {}
+    if _cs81.get("vulnerability_scan_bonus"):
+        roll = min(10, roll + _cs81["vulnerability_scan_bonus"])
+        _cs81_new = dict(_cs81)
+        del _cs81_new["vulnerability_scan_bonus"]
+        player.combat_state = _cs81_new
+
     # Addon 4 (Apex Governor Override): original roll of 1 → round neutral (before addon bonuses)
     _addon4_override = has_addon(player, 4) and _raw_roll_for_addon4 == 1
 
@@ -1110,6 +1145,9 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                 # Double boss damage if prediction was "hit" and correct (boss 53)
                 if prediction == "hit":
                     player.current_boss_hp -= 1  # prediction bonus: always 1
+        # Addon 77 (Formula Field): +1 HP damage on hit
+        if has_addon(player, 77):
+            player.current_boss_hp -= 1
         # Card 148 (Loop Element): track hits dealt for damage scaling
         _cs_hit = dict(player.combat_state or {})
         _cs_hit["combat_hits_dealt"] = _cs_hit.get("combat_hits_dealt", 0) + 1
@@ -1301,6 +1339,10 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                 if hc_33 and hc_33.player_id == player.id:
                     game.action_discard = (game.action_discard or []) + [hc_33.action_card_id]
                     db.delete(hc_33)
+
+    # Addon 86 (Critical Patch): +1L on miss
+    if result == "miss" and has_addon(player, 86):
+        player.licenze += 1
 
     # Addon 38 (Einstein AutoML): accumulate miss bonus; reset on hit
     if result == "miss" and has_addon(player, 38):

@@ -502,7 +502,8 @@ VITTORIA
 | [cards/boss_cards.md](cards/boss_cards.md) | 100 boss da creare | 100/100 ✅ |
 | [cards/addon_cards.md](cards/addon_cards.md) | 200 AddOn da creare | 200/200 ✅ |
 | [cards/action_cards.md](cards/action_cards.md) | 300 carte azione da creare | 300/300 ✅ |
-| [backend/app/game/engine_cards/](backend/app/game/engine_cards/) | Effetti carte azione implementati | 40/300 🔄 |
+| [backend/app/game/engine_cards/](backend/app/game/engine_cards/) | Effetti carte azione implementati | 300/300 ✅ |
+| [backend/app/websocket/handlers/](backend/app/websocket/handlers/) | Effetti addon implementati | 90/200 🔄 (addon 1–90) |
 
 ## 12. Termini Chiave
 

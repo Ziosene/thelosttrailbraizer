@@ -26,14 +26,16 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
         await _error(game.code, user_id, "Not your turn")
         return
 
-    max_cards = (
+    # Addon 87 (API Throttle Bypass): immune to boss card-play limits
+    _boss_card_limit_raw = (
         engine.boss_max_cards_per_turn(player.current_boss_id, engine.MAX_CARDS_PER_TURN)
         if player.is_in_combat and player.current_boss_id
         else engine.MAX_CARDS_PER_TURN
     )
+    max_cards = engine.MAX_CARDS_PER_TURN if _has_addon_play(player, 87) else _boss_card_limit_raw
     # Card 116 (API Rate Limiting): opponent imposed a lower card-play limit for this turn
     _api_limit = (player.combat_state or {}).get("api_rate_limit_max_cards")
-    if _api_limit is not None:
+    if _api_limit is not None and not _has_addon_play(player, 87):
         max_cards = min(max_cards, _api_limit)
     # Card 226 (Shortcut): bonus card plays this turn (skip draw = extra slots)
     max_cards += (player.combat_state or {}).get("shortcut_extra_plays", 0)
@@ -250,7 +252,14 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
         _cs_egpt.pop("einstein_gpt_free_play", None)
         player.combat_state = _cs_egpt
     else:
-        player.cards_played_this_turn += 1
+        # Addon 71 (Workflow Rule Combo): first card each turn doesn't count toward limit
+        _cs71 = player.combat_state or {}
+        if _has_addon_play(player, 71) and not _cs71.get("first_card_free_used"):
+            _cs71_new = dict(_cs71)
+            _cs71_new["first_card_free_used"] = True
+            player.combat_state = _cs71_new
+        else:
+            player.cards_played_this_turn += 1
     card_approved = True  # may be set to False by boss 69 below
 
     if player.is_in_combat and player.current_boss_id and card:
@@ -616,6 +625,13 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
             if _stolen61 > 0:
                 _reduction61 = min(1, _stolen61)
                 _tgt61.licenze += _reduction61
+
+    # Addon 79 (Auto-Response Rules): when hit by offensive card, steal 1L from attacker
+    if card and card_approved and not original_cancelled and target_player_id and card.card_type == "Offensiva":
+        _tgt79 = next((p for p in game.players if p.id == target_player_id and p.id != player.id), None)
+        if _tgt79 and _has_addon_play(_tgt79, 79) and player.licenze > 0:
+            player.licenze -= 1
+            _tgt79.licenze += 1
 
     # Card 120 (Event Monitoring): watchers earn 1L each time this player plays a card (max 2)
     for _watcher in game.players:

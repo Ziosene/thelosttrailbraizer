@@ -33,6 +33,13 @@ def _card_4(player, game, db, *, target_player_id=None) -> dict:
         return {"applied": False, "reason": "no_target"}
     if (target.combat_state or {}).get("licenze_theft_immune"):
         return {"applied": False, "reason": "target_immune"}
+    # Addon 68 (Salesforce Authenticator): roll d10 — if ≤4 steal fails
+    from app.game.engine_addons import has_addon as _ha68
+    from app.game import engine as _engine68
+    if _ha68(target, 68):
+        _roll68 = _engine68.roll_d10()
+        if _roll68 <= 4:
+            return {"applied": False, "reason": "addon_68_blocked", "from_player_id": target.id, "roll": _roll68}
     stolen = min(2, target.licenze)
     target.licenze -= stolen
     player.licenze += stolen
@@ -52,6 +59,13 @@ def _card_5(player, game, db, *, target_player_id=None) -> dict:
         return {"applied": False, "reason": "no_target"}
     if (target.combat_state or {}).get("licenze_theft_immune"):
         return {"applied": False, "reason": "target_immune"}
+    # Addon 68 (Salesforce Authenticator): roll d10 — if ≤4 steal fails
+    from app.game.engine_addons import has_addon as _ha68b
+    from app.game import engine as _engine68b
+    if _ha68b(target, 68):
+        _roll68b = _engine68b.roll_d10()
+        if _roll68b <= 4:
+            return {"applied": False, "reason": "addon_68_blocked", "from_player_id": target.id, "roll": _roll68b}
     stolen = min(3, target.licenze)
     target.licenze -= stolen
     player.licenze += stolen
@@ -69,6 +83,16 @@ def _card_6(player, game, db, *, target_player_id=None) -> dict:
     from app.game.engine_addons import has_addon as _ha28
     if _ha28(target, 28):
         return {"applied": False, "reason": "shield_platform_encryption", "target_id": target.id}
+    # Addon 69 (Two Factor Authentication): cert theft costs 1 card from attacker's hand; fail if no cards
+    from app.game.engine_addons import has_addon as _ha69
+    if _ha69(target, 69):
+        attacker_hand69 = list(player.hand)
+        if not attacker_hand69:
+            return {"applied": False, "reason": "addon_69_blocked", "target_id": target.id}
+        from app.models.game import PlayerHandCard as _PHC69
+        _discard69 = attacker_hand69[0]
+        game.action_discard = (game.action_discard or []) + [_discard69.action_card_id]
+        db.delete(_discard69)
     trophy_id = target.trophies[0]
     # SQLAlchemy JSON: full reassignment required to detect mutation
     target.trophies = target.trophies[1:]

@@ -107,6 +107,10 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
             _cs_sus_buy.pop("sustainability_discount_pending", None)
             _cs_sus_buy.pop("sustainability_hp_lost", None)
             player.combat_state = _cs_sus_buy
+    # Addon 80 (Field Dependency): if ≥3 addons owned, -2L on addon cost
+    if _has_addon_addon(player, 80) and len(player.addons) >= 3:
+        cost = max(0, cost - 2)
+
     if player.licenze < cost:
         await _error(game.code, user_id, f"Need {cost} Licenze (have {player.licenze})")
         return
@@ -224,6 +228,19 @@ async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Ses
             return
 
     pa.is_tapped = True
+
+    # Addon 72 (Process Builder Chain): track active addon usage; gain +2L on second use
+    if _has_addon_addon(player, 72) and addon.addon_type.value == "Attivo":
+        _cs72 = dict(player.combat_state or {})
+        _cs72["addons_used_this_turn"] = _cs72.get("addons_used_this_turn", 0) + 1
+        if _cs72["addons_used_this_turn"] == 2:
+            player.licenze += 2
+        player.combat_state = _cs72
+
+    # Addon 73 (Trigger Handler): other players with this addon gain +1L when any active addon is used
+    for _other73 in game.players:
+        if _other73.id != player.id and _has_addon_addon(_other73, 73):
+            _other73.licenze += 1
 
     # Card 185 (Record Triggered Flow): other players watching earn 1L when this player uses an addon
     for _watcher in game.players:
@@ -681,6 +698,171 @@ async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Ses
         _cs67_new = dict(_cs67)
         _cs67_new["connected_app_used"] = True
         player.combat_state = _cs67_new
+
+    # Addon 74 (Before/After Save Hook): discard 1 card and draw 1 new one (treat as Attivo)
+    elif addon.number == 74:
+        target_hc_id74 = data.get("hand_card_id")
+        if not target_hc_id74:
+            await _error(game.code, user_id, "Provide hand_card_id to discard")
+            pa.is_tapped = False
+            return
+        from app.models.game import PlayerHandCard as _PHC74
+        hc74 = db.get(_PHC74, target_hc_id74)
+        if not hc74 or hc74.player_id != player.id:
+            await _error(game.code, user_id, "Card not in your hand")
+            pa.is_tapped = False
+            return
+        game.action_discard = (game.action_discard or []) + [hc74.action_card_id]
+        db.delete(hc74)
+        _new74 = None
+        if game.action_deck_1:
+            _new74 = game.action_deck_1.pop(0)
+        elif game.action_deck_2:
+            _new74 = game.action_deck_2.pop(0)
+        if _new74 is not None:
+            db.add(_PHC74(player_id=player.id, action_card_id=_new74))
+
+    # Addon 81 (Boss Vulnerability Scan): once per combat, next dice roll has +4 bonus
+    elif addon.number == 81:
+        cs81 = player.combat_state or {}
+        if cs81.get("vulnerability_scan_used"):
+            await _error(game.code, user_id, "Boss Vulnerability Scan already used this combat")
+            pa.is_tapped = False
+            return
+        if not player.is_in_combat:
+            await _error(game.code, user_id, "Must be in combat to use Boss Vulnerability Scan")
+            pa.is_tapped = False
+            return
+        cs81_new = dict(cs81)
+        cs81_new["vulnerability_scan_used"] = True
+        cs81_new["vulnerability_scan_bonus"] = 4
+        player.combat_state = cs81_new
+
+    # Addon 82 (Deployment Freeze): once per game, send current boss back to bottom of deck
+    elif addon.number == 82:
+        cs82 = player.combat_state or {}
+        if cs82.get("deployment_freeze_used"):
+            await _error(game.code, user_id, "Deployment Freeze already used this game")
+            pa.is_tapped = False
+            return
+        if not player.is_in_combat or not player.current_boss_id:
+            await _error(game.code, user_id, "Must be in active combat to use Deployment Freeze")
+            pa.is_tapped = False
+            return
+        boss_id82 = player.current_boss_id
+        source82 = player.current_boss_source
+        if source82 and "2" in str(source82):
+            game.boss_deck_2 = (game.boss_deck_2 or []) + [boss_id82]
+        else:
+            game.boss_deck_1 = (game.boss_deck_1 or []) + [boss_id82]
+        player.is_in_combat = False
+        player.current_boss_id = None
+        player.current_boss_hp = None
+        player.current_boss_source = None
+        player.combat_round = None
+        cs82_new = dict(cs82)
+        cs82_new["deployment_freeze_used"] = True
+        player.combat_state = cs82_new
+        from app.models.game import TurnPhase as _TP82
+        game.current_phase = _TP82.action
+
+    # Addon 85 (Instance Refresh): once per game, send just-drawn boss back to bottom of deck
+    elif addon.number == 85:
+        cs85 = player.combat_state or {}
+        if cs85.get("instance_refresh_used"):
+            await _error(game.code, user_id, "Instance Refresh already used this game")
+            pa.is_tapped = False
+            return
+        if not player.is_in_combat or not player.current_boss_id:
+            await _error(game.code, user_id, "Must be in active combat to use Instance Refresh")
+            pa.is_tapped = False
+            return
+        boss_id85 = player.current_boss_id
+        source85 = player.current_boss_source
+        if source85 and "2" in str(source85):
+            game.boss_deck_2 = (game.boss_deck_2 or []) + [boss_id85]
+        else:
+            game.boss_deck_1 = (game.boss_deck_1 or []) + [boss_id85]
+        player.is_in_combat = False
+        player.current_boss_id = None
+        player.current_boss_hp = None
+        player.current_boss_source = None
+        player.combat_round = None
+        cs85_new = dict(cs85)
+        cs85_new["instance_refresh_used"] = True
+        player.combat_state = cs85_new
+        from app.models.game import TurnPhase as _TP85
+        game.current_phase = _TP85.action
+
+    # Addon 88 (Mass Update Override): once per game, deal 2 HP damage to any boss in active combat
+    elif addon.number == 88:
+        cs88 = player.combat_state or {}
+        if cs88.get("mass_update_used"):
+            await _error(game.code, user_id, "Mass Update Override already used this game")
+            pa.is_tapped = False
+            return
+        target_id88 = data.get("target_player_id", player.id)
+        target88 = next((p for p in game.players if p.id == target_id88), None)
+        if not target88 or not target88.is_in_combat:
+            await _error(game.code, user_id, "Target not in combat")
+            pa.is_tapped = False
+            return
+        target88.current_boss_hp = max(0, (target88.current_boss_hp or 0) - 2)
+        cs88_new = dict(cs88)
+        cs88_new["mass_update_used"] = True
+        player.combat_state = cs88_new
+        # If boss is defeated, let next roll resolve it (hp is 0)
+
+    # Addon 89 (Data Migration Tool): once per game, swap one of your addons with an opponent's
+    elif addon.number == 89:
+        cs89 = player.combat_state or {}
+        if cs89.get("data_migration_used"):
+            await _error(game.code, user_id, "Data Migration Tool already used")
+            pa.is_tapped = False
+            return
+        my_pa_id89 = data.get("my_addon_id")
+        their_pa_id89 = data.get("target_addon_id")
+        from app.models.game import PlayerAddon as _PA89
+        my_pa89 = db.get(_PA89, my_pa_id89)
+        their_pa89 = db.get(_PA89, their_pa_id89)
+        if not my_pa89 or my_pa89.player_id != player.id:
+            await _error(game.code, user_id, "Invalid your addon")
+            pa.is_tapped = False
+            return
+        if not their_pa89 or their_pa89.player_id == player.id:
+            await _error(game.code, user_id, "Invalid opponent addon")
+            pa.is_tapped = False
+            return
+        their_old_player_id = their_pa89.player_id
+        my_pa89.player_id = their_old_player_id
+        their_pa89.player_id = player.id
+        cs89_new = dict(cs89)
+        cs89_new["data_migration_used"] = True
+        player.combat_state = cs89_new
+
+    # Addon 90 (Org Split): once per game, give half HP (floor) to opponent to weaken them
+    elif addon.number == 90:
+        cs90 = player.combat_state or {}
+        if cs90.get("org_split_used"):
+            await _error(game.code, user_id, "Org Split already used")
+            pa.is_tapped = False
+            return
+        target_id90 = data.get("target_player_id")
+        target90 = next((p for p in game.players if p.id == target_id90), None)
+        if not target90 or target90.id == player.id:
+            await _error(game.code, user_id, "Invalid target for Org Split")
+            pa.is_tapped = False
+            return
+        hp_transfer90 = player.hp // 2
+        if hp_transfer90 <= 0:
+            await _error(game.code, user_id, "Not enough HP to split")
+            pa.is_tapped = False
+            return
+        player.hp -= hp_transfer90
+        target90.hp = max(0, target90.hp - hp_transfer90)
+        cs90_new = dict(cs90)
+        cs90_new["org_split_used"] = True
+        player.combat_state = cs90_new
 
     db.commit()
     db.refresh(game)

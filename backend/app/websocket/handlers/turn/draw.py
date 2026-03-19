@@ -36,6 +36,10 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
 
     # ── FASE INIZIALE step 3: process cross-turn combat_state flags ───────────
     _cs_init = dict(player.combat_state or {})
+    # Addon 71 (Workflow Rule Combo): clear first_card_free_used at turn start
+    _cs_init.pop("first_card_free_used", None)
+    # Addon 72 (Process Builder Chain): clear addons_used_this_turn at turn start
+    _cs_init.pop("addons_used_this_turn", None)
     # Card 44 (Object Store): auto-return stored licenze at start of new turn
     _stored_lic = _cs_init.pop("object_store_licenze", 0)
     if _stored_lic:
@@ -201,6 +205,32 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
     # Addon 43 (Subscription Billing): +1L automatically at start of each turn
     if _has_addon_draw(player, 43):
         player.licenze += 1
+
+    # Addon 70 (Einstein Relationship Insights): see all opponents' hands
+    if _has_addon_draw(player, 70):
+        db.flush()
+        _all_hands70 = {
+            str(p.id): [{"id": hc.id, "action_card_id": hc.action_card_id} for hc in p.hand]
+            for p in game.players if p.id != player.id
+        }
+        await manager.send_to_player(game.code, player.user_id, {
+            "type": "einstein_insights",
+            "hands": _all_hands70,
+        })
+
+    # Addon 78 (Validation Rule): draw 2 cards instead of 1 if hand < 5 at turn start
+    if _has_addon_draw(player, 78) and not jinxed:
+        db.flush()
+        _hand_count78 = len(list(player.hand))
+        if _hand_count78 < 5:
+            _extra78 = None
+            if game.action_deck_1:
+                _extra78 = game.action_deck_1.pop(0)
+            elif game.action_deck_2:
+                _extra78 = game.action_deck_2.pop(0)
+            if _extra78 is not None:
+                from app.models.game import PlayerHandCard as _PHC78
+                db.add(_PHC78(player_id=player.id, action_card_id=_extra78))
 
     # Addon 48 (Net Zero Tracker): every 5 turns completed without dying, gain 3L
     if _has_addon_draw(player, 48):
