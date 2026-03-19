@@ -989,7 +989,7 @@
 
 ### 112. Asynchronous Callout
 - **Tipo**: Passivo
-- **Effetto**: Le carte azione che giochi durante il turno di un avversario (reazioni) non consumano slot del tuo prossimo turno.
+- **Effetto**: Puoi avere 1 carta extra in mano oltre il limite massimo.
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn playing card launching out of turn on a separate thread arrow in the art style of The Binding of Isaac. A card breaking out of a turn queue, traveling along a dashed async arrow to land during an opponent's turn. Thick black outlines, flat shading, surprising mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -1013,7 +1013,7 @@
 
 ### 115. Future Method
 - **Tipo**: Attivo
-- **Effetto**: Una volta per turno, posponi l'effetto di una carta azione avversaria di 1 turno (l'effetto si applica al loro prossimo turno invece che ora)
+- **Effetto**: Una volta per turno, il tuo prossimo tiro dado vale il doppio (es. 5 → 10, max 10).
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn enemy card being kicked forward in time along a timeline in the art style of The Binding of Isaac. A card with a clock arrow pushing it one step forward along a turn track, delaying its impact. Thick black outlines, flat shading, tactical mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -1037,7 +1037,7 @@
 
 ### 118. Pub/Sub API
 - **Tipo**: Passivo
-- **Effetto**: Ogni volta che un avversario usa un addon attivo, guadagni 1 Licenza.
+- **Effetto**: Ogni volta che un avversario pesca una carta azione nel suo turno, guadagni 1L (max 1 per avversario per turno).
 - **Rarità**: Comune
 - **Image prompt**: `A 2D hand-drawn publish megaphone sending a broadcast before opponents can react in the art style of The Binding of Isaac. A megaphone broadcasting a signal while opponent hands are frozen mid-reach, unable to interrupt. Thick black outlines, flat shading, preemptive mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -1065,7 +1065,7 @@
 
 ### 121. Mass Email
 - **Tipo**: Attivo
-- **Effetto**: Una volta per turno, gioca 1 carta azione economica — l'effetto si applica a te e a 1 giocatore alleato a scelta
+- **Effetto**: Una volta per turno, gioca 1 carta azione economica — l'effetto si applica a te e a 1 giocatore a tua scelta.
 - **Image prompt**: `A 2D hand-drawn envelope multiplying mid-send toward two player icons in the art style of The Binding of Isaac. A single envelope splitting into two copies mid-flight, each landing on a different player with a coin attached. Thick black outlines, flat shading, efficient mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 - **Rarità**: Non comune
 
@@ -1081,7 +1081,7 @@
 
 ### 123. Global Action
 - **Tipo**: Attivo
-- **Effetto**: Una volta per turno, la tua prossima carta azione offensiva colpisce tutti gli avversari invece di uno solo (effetto diviso equamente se applicabile)
+- **Effetto**: Una volta per partita, tutti gli avversari perdono 2L.
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn area-of-effect explosion card hitting multiple player silhouettes in the art style of The Binding of Isaac. A single playing card detonating into a radial shockwave, reaching all opponents at once. Thick black outlines, flat shading, decisive mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -1129,7 +1129,7 @@
 
 ### 129. Junction Object
 - **Tipo**: Passivo
-- **Effetto**: Puoi collegare 2 tuoi AddOn attivi — quando usi uno, l'altro si attiva automaticamente anche se è tappato
+- **Effetto**: Una volta per turno, stapps un tuo addon tappato a scelta.
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn junction box wiring two AddOn cards together in the art style of The Binding of Isaac. An electrical junction box with cables running from one AddOn card to another, both lighting up when one is triggered. Thick black outlines, flat shading, interconnected mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -1165,7 +1165,7 @@
 
 ### 133. Winter Release
 - **Tipo**: Passivo
-- **Effetto**: Se possiedi un AddOn senza averlo usato per 3 turni consecutivi, il suo effetto si potenzia permanentemente (+1 dado o +1 Licenza a seconda del tipo)
+- **Effetto**: Ogni addon che possiedi da 5 o più turni ti dà +1L a inizio turno (max 3L totali).
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn AddOn card encrusted in frost growing stronger over time in the art style of The Binding of Isaac. A card covered in ice crystals with a glowing upgrade arrow, its bonus stats visibly increasing with each snowflake. Thick black outlines, flat shading, patient mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -1213,7 +1213,7 @@
 
 ### 139. Unmanaged Package
 - **Tipo**: Passivo
-- **Effetto**: Le abilità passive degli avversari sono ridotte di 1 punto (dado o Licenza) finché possiedi questo AddOn
+- **Effetto**: Il costo di tutti gli addon nel mercato aumenta di 2L per tutti gli avversari (non per te).
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn open unsealed package leaking a suppression aura at opponents in the art style of The Binding of Isaac. A rough open crate radiating a dampening wave that reduces glowing bonus icons on all opponent cards nearby. Thick black outlines, flat shading, disruptive mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 

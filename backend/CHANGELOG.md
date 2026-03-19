@@ -44,6 +44,38 @@
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
 ## Sessione corrente — Implementazione effetti addon 1–41
 
+### Addon 111–140
+- **Addon 111** (Quick Deploy): `addon.py` — acquisto addon permesso durante il combattimento
+- **Addon 112** (Asynchronous Callout): redesign + `draw.py` + `end.py` — limite mano +1
+- **Addon 113** (Batch Apex Scheduler): `addon.py` + `draw.py` + `play.py` — prenota carta a fine turno, auto-giocata a inizio del prossimo senza consumare slot; nuova azione `batch_schedule_card`
+- **Addon 114** (Event Bus): `start.py` — quando qualsiasi giocatore pesca un boss, pesca 1 carta azione
+- **Addon 115** (Future Method): redesign + `addon.py` + `roll.py` — prossimo tiro dado ×2 (max 10); una volta per turno
+- **Addon 116** (Platform Event): `_player_death_sequence` — quando un giocatore muore, tutti con addon 116 guadagnano +2L
+- **Addon 117** (Change Data Capture): `draw.py` + `end.py` — se perdi ≥5L in un turno, recuperi 2L al turno successivo
+- **Addon 118** (Pub/Sub API): redesign + `draw.py` — quando un avversario pesca nel suo turno, guadagni 1L (max 1 per avversario per turno)
+- **Addon 119** (Queueable Job): `addon.py` — acquista gratis qualsiasi addon dal mercato; una volta per partita
+- **Addon 120** (Scheduled Flow): `addon.py` + `draw.py` — dichiara 2-4 turni, guadagni quelle L allo scadere
+- **Addon 121** (Mass Email): redesign + `addon.py` — carta economica applicata a te e 1 giocatore a scelta; una volta per turno
+- **Addon 122** (Broadcast Message): `addon.py` — tutti gli avversari scartano 1 carta casuale; una volta per partita
+- **Addon 123** (Global Action): redesign + `addon.py` — tutti gli avversari -2L; una volta per partita
+- **Addon 124** (Bulk API): `addon.py` — acquista fino a 3 addon in un turno ignorando il limite; una volta per partita
+- **Addon 125** (Aggregate Query): `end.py` — se giocate ≥2 carte nel turno, +1L a fine turno
+- **Addon 126** (Territory Management): `addon.py` + `_boss_defeat_sequence` — scegli un giocatore territorio, guadagni 1L quando guadagna L da boss; nuova azione `territory_set`
+- **Addon 127** (Sharing Set): `addon.py` — ridistribuisce L di tutti equamente; una volta per partita
+- **Addon 128** (Cross-Object Formula): `_boss_defeat_sequence` — +1L extra per ogni boss sconfitto
+- **Addon 129** (Junction Object): redesign + `addon.py` — stapps un addon tappato; una volta per turno
+- **Addon 130** (External Object): `addon.py` — scegli addon dal cimitero pagando il costo normale; nuova azione `external_object_pick`; una volta per partita
+- **Addon 131** (Spring Release): `draw.py` — ogni 5 turni +2L automatiche
+- **Addon 132** (Summer Release): `_player_death_sequence` — pesca 1 carta per ogni addon perso alla morte (max 3)
+- **Addon 133** (Winter Release): redesign + `draw.py` — ogni addon posseduto da ≥5 turni dà +1L a inizio turno (max 3L); tracking in `addon_acquired_turns`
+- **Addon 134** (Major Release): `addon.py` — tiro dado: ≥6 → +3L; ≤5 → pesca 2 carte; una volta per partita
+- **Addon 135** (Hotfix): `roll.py` — +1L per ogni HP perso su miss
+- **Addon 136** (Package Upgrade): `roll.py` — ogni addon posseduto da ≥3 turni dà +1 al dado (max +3)
+- **Addon 137** (ISV Partner): `_boss_defeat_sequence` — se possiedi ≥2 addon dello stesso tipo (Attivo/Passivo) → +1L per boss sconfitto
+- **Addon 138** (Managed Package): `addon.py` — addon protetti da addon 67/89/95 avversari
+- **Addon 139** (Unmanaged Package): redesign + `addon.py` — costo addon nel mercato +2L per tutti gli avversari
+- **Addon 140** (OmniScript): `addon.py` — tira 2 dadi, guadagni la somma (max 20); una volta per partita
+
 ### Addon 91–110
 - **Addon 91** (Free Trial): `addon.py` — addon temporaneo dal mercato per 1 turno; rimosso in `end.py`
 - **Addon 92** (Beta Feature): `addon.py` — dopo acquisto addon, offerta di rifiuto; nuove azioni `beta_feature_reject/keep`
