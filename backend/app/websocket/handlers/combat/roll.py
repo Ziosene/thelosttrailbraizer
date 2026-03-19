@@ -863,9 +863,25 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
     if round_start["force_discard_or_damage"] > 0:
         hand_cards = list(player.hand)
         if hand_cards:
-            hc = random.choice(hand_cards)
-            game.action_discard = (game.action_discard or []) + [hc.action_card_id]
-            db.delete(hc)
+            await manager.send_to_player(game.code, player.user_id, {
+                "type": "boss13_discard_required",
+                "player_id": player.id,
+                "options": [{"hand_card_id": hc.id, "action_card_id": hc.action_card_id} for hc in hand_cards],
+                "or_take_hp": round_start["force_discard_or_damage"],
+            })
+            _b13_resp = await open_reaction_window(game.code, player.id, timeout=20.0)
+            if _b13_resp and _b13_resp.get("action") == "discard":
+                _b13_hcid = _b13_resp.get("hand_card_id")
+                from app.models.game import PlayerHandCard as _PHC13
+                _b13_hc = db.get(_PHC13, _b13_hcid)
+                if _b13_hc and _b13_hc.player_id == player.id:
+                    game.action_discard = (game.action_discard or []) + [_b13_hc.action_card_id]
+                    db.delete(_b13_hc)
+                else:
+                    player.hp = max(0, player.hp - round_start["force_discard_or_damage"])
+            else:
+                # timeout or "take_hp" response
+                player.hp = max(0, player.hp - round_start["force_discard_or_damage"])
         else:
             player.hp = max(0, player.hp - round_start["force_discard_or_damage"])
 
@@ -1033,23 +1049,40 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             "roll": _d4,
         })
 
-    # Boss 63 (Loyalty Management Trickster): auto-accept deal — +1 Licenza, threshold +1 this roll
+    # Boss 63 (Loyalty Management Trickster): player chooses to accept (+1L, threshold +1) or reject
     if round_start["deal_offer"]:
-        player.licenze += 1
-        threshold_bonus += 1
-        await manager.broadcast(game.code, {
-            "type": "boss_deal_auto_accepted",
+        await manager.send_to_player(game.code, player.user_id, {
+            "type": "boss63_deal_offer",
             "player_id": player.id,
-            "gained_licenze": 1,
+            "licenze_gain": 1,
             "threshold_penalty": 1,
         })
+        _b63_resp = await open_reaction_window(game.code, player.id, timeout=15.0)
+        if _b63_resp and _b63_resp.get("action") == "accept":
+            player.licenze += 1
+            threshold_bonus += 1
+            await manager.broadcast(game.code, {"type": "boss63_deal_accepted", "player_id": player.id})
+        else:
+            await manager.broadcast(game.code, {"type": "boss63_deal_rejected", "player_id": player.id})
 
-    # Boss 83 (Account Engagement Siren): auto-reject siren deal — no HP trade this round
+    # Boss 83 (Account Engagement Siren): player chooses to accept (skip roll, +2L, boss +1HP) or fight
     if round_start["siren_deal"]:
-        await manager.broadcast(game.code, {
-            "type": "boss_siren_deal_rejected",
+        await manager.send_to_player(game.code, player.user_id, {
+            "type": "boss83_siren_deal",
             "player_id": player.id,
+            "licenze_gain": 2,
+            "boss_hp_cost": 1,
         })
+        _b83_resp = await open_reaction_window(game.code, player.id, timeout=15.0)
+        if _b83_resp and _b83_resp.get("action") == "accept":
+            player.licenze += 2
+            player.current_boss_hp = (player.current_boss_hp or 0) + 1
+            await manager.broadcast(game.code, {"type": "boss83_siren_accepted", "player_id": player.id})
+            db.commit(); db.refresh(game)
+            await _broadcast_state(game, db)
+            return  # skip roll this round
+        else:
+            await manager.broadcast(game.code, {"type": "boss83_siren_rejected", "player_id": player.id})
 
     # Boss 33 (Experience Cloud Illusion): player must have declared a card before rolling
     if engine.boss_card_declared_before_roll(boss.id):

@@ -374,12 +374,26 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
         cs["loyalty_points"] = engine.boss_loyalty_shield(boss_id)
         player.combat_state = cs
 
-    # Boss 86 (Record Type Ravager): prompt combatant to declare card type before fighting
+    # Boss 86 (Record Type Ravager): player declares Offensiva or Difensiva — only that type allowed
     if start_effect["force_card_type_declaration"]:
         await manager.send_to_player(game.code, player.user_id, {
-            "type": "card_type_declaration_required",
+            "type": "boss86_declaration_required",
             "player_id": player.id,
             "options": ["Offensiva", "Difensiva"],
+        })
+        _b86_resp = await open_reaction_window(game.code, player.id, timeout=20.0)
+        _b86_declared = None
+        if _b86_resp and _b86_resp.get("action") == "declare":
+            _b86_declared = _b86_resp.get("card_type")
+            if _b86_declared not in ("Offensiva", "Difensiva"):
+                _b86_declared = None
+        cs_b86 = dict(player.combat_state or {})
+        cs_b86["allowed_card_type"] = _b86_declared  # None = no restriction (timed out)
+        player.combat_state = cs_b86
+        await manager.broadcast(game.code, {
+            "type": "boss86_declaration_made",
+            "player_id": player.id,
+            "declared_type": _b86_declared,
         })
 
     # Boss 53 (Einstein Discovery Oracle): ask combatant to predict fight duration in rounds
