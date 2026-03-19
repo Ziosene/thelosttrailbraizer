@@ -44,6 +44,28 @@
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
 ## Sessione corrente — Implementazione effetti addon 1–41
 
+### Addon 141–160
+- **Addon 141** (Calculated Risk): `addon.py` setta flag pre-dado; `roll.py` applica ≥8 +5L / ≤3 -2L; cleanup in defeat/death
+- **Addon 142** (All or Nothing): `addon.py` setta flag; `roll.py` salta round e applica +4 al round successivo
+- **Addon 143** (Double or Nothing): `_boss_defeat_sequence` — tiro: ≥6 raddoppia L guadagnate / ≤3 le perde tutte; una volta per partita
+- **Addon 144** (High Stakes): `roll.py` — dado +3 se 0 cert e nessun altro addon
+- **Addon 145** (Risk Matrix): `start.py` dado rischio pre-combattimento; `_boss_defeat_sequence` applica reward L per HP boss
+- **Addon 146** (Bet the Farm): `addon.py` — duello dado con avversario, vince ruba 3L; una volta per partita
+- **Addon 147** (FOMO Trigger): `_handle_buy_addon` setta `fomo_trigger_pending` agli altri; nuova azione `fomo_buy_addon` per acquisto fuori turno
+- **Addon 148** (Last Stand): `draw.py` +1HP e setta `last_stand_active`; `roll.py` dado +2 se flag attivo
+- **Addon 149** (Comeback Mechanic): `_boss_defeat_sequence` — quando avversario raggiunge ≥4 cert, tutti con addon 149 +3L
+- **Addon 150** (Wildcards): `addon.py` bypass tap; `play.py` bypass limite carte; `end.py` cleanup; una volta per partita
+- **Addon 151** (Certification Path): `buy_addon` setta flag; `_boss_defeat_sequence` prima cert → `cert_path_score_bonus` per score finale
+- **Addon 152** (Superbadge Grind): `_boss_defeat_sequence` conta streak boss cert; a 3 → cert extra; reset in morte
+- **Addon 153** (Certification Theft Ring): `addon.py` — tiro: ≤3 fallisce -3L; altrimenti ruba 1 cert; una volta per partita
+- **Addon 154** (Recertification): `addon.py` — +5L quando cert rubata via addon 153 o 159
+- **Addon 155** (Fast Track Program): `roll.py` — soglia dado boss cert -1
+- **Addon 156** (Trailhead Ranger): `roll.py` — dado +1 per ogni cert oltre la prima (min 2 cert)
+- **Addon 157** (Portfolio Defense): `addon.py` addon 153 — blocca furto cert durante il proprio turno
+- **Addon 158** (Credential Vault): `addon.py` — tiro: se 10 → +1 cert; una volta per partita
+- **Addon 159** (Final Exam): `addon.py` — duello dado; vincitore ruba 1 cert; trigger addon 154; una volta per partita
+- **Addon 160** (Graduation Day): `_boss_defeat_sequence` — esattamente 4 cert → +10L e dado +2 turno successivo
+
 ### Addon 111–140
 - **Addon 111** (Quick Deploy): `addon.py` — acquisto addon permesso durante il combattimento
 - **Addon 112** (Asynchronous Callout): redesign + `draw.py` + `end.py` — limite mano +1
