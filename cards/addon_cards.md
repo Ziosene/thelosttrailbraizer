@@ -839,7 +839,7 @@
 
 ### 95. Sprint Review
 - **Tipo**: Attivo
-- **Effetto**: Una volta per turno, puoi scambiare 1 AddOn con qualsiasi altro giocatore (consenso richiesto)
+- **Effetto**: Una volta per partita, scambia 1 tuo AddOn con 1 AddOn di un avversario a tua scelta (senza consenso).
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn two AddOn cards trading hands across a table in the art style of The Binding of Isaac. Two hands reaching toward each other from opposite sides, swapping glowing AddOn cards mid-air. Thick black outlines, flat shading, collaborative mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -871,7 +871,7 @@
 
 ### 99. Retrospective
 - **Tipo**: Attivo
-- **Effetto**: Una volta per partita, annulla l'ultima azione avversaria giocata contro di te e restituisci la carta al suo proprietario
+- **Effetto**: Una volta per partita, scarta 2 carte dalla mano di un avversario a tua scelta.
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn rewind button hovering over a played enemy card in the art style of The Binding of Isaac. A large rewind symbol with a backward arrow causing an enemy's card to reverse mid-effect, floating back to their hand. Thick black outlines, flat shading, corrective mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -891,7 +891,7 @@
 
 ### 101. Org-Wide Sharing
 - **Tipo**: Passivo
-- **Effetto**: Gli AddOn che possiedi con Rarità Comune si applicano anche a tutti i giocatori alleati (se giocate in cooperativa) o a te al doppio dell'effetto
+- **Effetto**: Una volta per turno, un giocatore a tua scelta (incluso te stesso) guadagna +1L.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn broadcast antenna sharing signals to multiple player icons in the art style of The Binding of Isaac. A central antenna radiating waves outward to silhouetted players, AddOn card icons flowing along the signal paths. Thick black outlines, flat shading, generous mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -908,7 +908,7 @@
 
 ### 103. Named Credential
 - **Tipo**: Passivo
-- **Effetto**: Il tuo personaggio non può essere "derubato" dell'identità — carte che cambiano il tuo ruolo o abilità non hanno effetto su di te
+- **Effetto**: Immune alle carte di interferenza che ti fanno perdere Licenze.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn identity badge encased in an impenetrable crystal shell in the art style of The Binding of Isaac. A name tag inside a glowing crystal casing, a thief's hand bouncing off it harmlessly. Thick black outlines, flat shading, resolute mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 

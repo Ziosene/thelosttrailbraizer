@@ -44,6 +44,28 @@
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
 ## Sessione corrente — Implementazione effetti addon 1–41
 
+### Addon 91–110
+- **Addon 91** (Free Trial): `addon.py` — addon temporaneo dal mercato per 1 turno; rimosso in `end.py`
+- **Addon 92** (Beta Feature): `addon.py` — dopo acquisto addon, offerta di rifiuto; nuove azioni `beta_feature_reject/keep`
+- **Addon 93** (Pilot Program): `addon.py` — scegli addon dal cimitero; nuova azione `pilot_program_pick`
+- **Addon 94** (Release Train): `draw.py` — ogni 4 turni, addon gratis dal mazzo
+- **Addon 95** (Sprint Review): redesign + `addon.py` — scambia addon con avversario senza consenso; una volta per partita
+- **Addon 96** (Backlog Refinement): `draw.py` — spia prossimo addon nel mazzo a inizio turno
+- **Addon 97** (Definition of Done): `_boss_defeat_sequence` — +2L se HP al massimo alla vittoria
+- **Addon 98** (Acceptance Criteria): `_boss_defeat_sequence` — rinuncia a L del boss e pesca 2 carte invece (semplificato, senza scelta client)
+- **Addon 99** (Retrospective): redesign + `addon.py` — scarta 2 carte casuali dalla mano di un avversario; una volta per partita
+- **Addon 100** (Kanban Board): `draw.py` + `end.py` — limite mano 12 invece di 10
+- **Addon 101** (Org-Wide Sharing): redesign + `addon.py` — un giocatore a scelta (incluso sé) guadagna +1L; una volta per turno
+- **Addon 102** (Custom Permission): stub TODO — in attesa sistema ruoli/seniority
+- **Addon 103** (Named Credential): redesign + `play.py` — immune alle perdite di Licenze da carte interferenza
+- **Addon 104** (User Story): `addon.py` — pesca 3 carte e guadagna 3L; una volta per partita
+- **Addon 105** (Epic Feature): `_boss_defeat_sequence` + `_player_death_sequence` — streak 3 boss consecutivi → +1 cert
+- **Addon 106** (Story Points): `_boss_defeat_sequence` — +1L per ogni HP originale del boss sconfitto
+- **Addon 107** (Tech Debt): `draw.py` — addon non tappati da 3 turni generano 1L; contatore per-addon in `combat_state`
+- **Addon 108** (Architecture Review): `addon.py` — restituisci 1-2 addon al mazzo e recupera 8L ciascuno; una volta per partita
+- **Addon 109** (Proof of Concept): `addon.py` + `play.py` — una volta per turno, gioca carta senza consumare slot
+- **Addon 110** (Go-Live Celebration): `addon.py` — tutti +1L ad ogni acquisto addon; acquirente +3L se primo acquisto del turno
+
 ### Addon 68–90
 - **Addon 68** (Salesforce Authenticator): `economica.py` — furto licenze fallisce su dado ≤4
 - **Addon 69** (Two Factor Authentication): `economica.py` — furto cert costa 1 carta all'attaccante; fallisce se attaccante senza carte
