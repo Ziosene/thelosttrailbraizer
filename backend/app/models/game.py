@@ -73,6 +73,8 @@ class GameSession(Base):
     last_defeated_legendary_boss_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # Card IDs permanently banned from this game by boss 56 (Change Data Capture Lurker)
     banned_card_ids: Mapped[list] = mapped_column(JSON, default=list)
+    # Generic game-level state for tracking cross-player events (e.g. first_defeated_boss_ids)
+    game_state: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 

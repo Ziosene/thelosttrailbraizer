@@ -410,20 +410,17 @@ async def _boss_defeat_sequence(player, game, db, boss) -> bool:
     player.combat_state = _cs_bdc169
 
     # Addon 181 (Trailblazer Spirit): first player to defeat a specific boss gains +3L
-    _game_cs181 = dict(game.combat_state or {}) if hasattr(game, 'combat_state') else {}
-    _first_defeats181 = _game_cs181.get('first_defeated_boss_ids', [])
     _boss_id181 = player.current_boss_id  # capture before clearing
+    _gs181 = dict(game.game_state or {})
+    _first_defeats181 = _gs181.get('first_defeated_boss_ids', [])
     if has_addon(player, 181):
         if _boss_id181 and _boss_id181 not in _first_defeats181:
             player.licenze += 3
     # Always update the set (even if player doesn't have addon 181)
-    _game_cs_update181 = dict(game.combat_state or {}) if hasattr(game, 'combat_state') else {}
-    _fd181 = _game_cs_update181.get('first_defeated_boss_ids', [])
-    if _boss_id181 and _boss_id181 not in _fd181:
-        _fd181.append(_boss_id181)
-        _game_cs_update181['first_defeated_boss_ids'] = _fd181
-        if hasattr(game, 'combat_state'):
-            game.combat_state = _game_cs_update181
+    if _boss_id181 and _boss_id181 not in _first_defeats181:
+        _first_defeats181.append(_boss_id181)
+        _gs181['first_defeated_boss_ids'] = _first_defeats181
+        game.game_state = _gs181
 
     # Addon 185 (Customer Success): when opponent gets first boss defeat, gain 1L
     _bdc185 = (player.combat_state or {}).get('boss_defeats_count', 0)

@@ -146,10 +146,8 @@ def _card_62(player, game, db, *, target_player_id=None) -> dict:
 def _card_101(player, game, db, *, target_player_id=None) -> dict:
     """Next Best Offer — Pesca 3 carte (tieni 1, le altre 2 tornano in cima) + +1 al prossimo tiro.
 
-    Draws 3 from action deck: keeps first, returns other 2 to top of action_deck_1.
-    Also sets einstein_sto_next_roll_bonus=1 for the +1 to next roll.
-    Simplified: client receives all 3 drawn to choose from; auto-keeps first, returns 2.
-    TODO: accept chosen card ID from client for real player choice.
+    Draws 3, player chooses which to keep; the other 2 return to top of action_deck_1.
+    Also grants +1 to next roll.
     """
     if not player.is_in_combat:
         return {"applied": False, "reason": "not_in_combat"}
@@ -162,15 +160,20 @@ def _card_101(player, game, db, *, target_player_id=None) -> dict:
             drawn_ids.append(game.action_deck_2.pop(0))
     if not drawn_ids:
         return {"applied": False, "reason": "action_deck_empty"}
-    # Keep first, return remainder to top of deck_1
-    db.add(_PHC101(player_id=player.id, action_card_id=drawn_ids[0]))
-    if len(drawn_ids) > 1:
-        game.action_deck_1 = drawn_ids[1:] + (game.action_deck_1 or [])
-    # +1 to next roll
+    # Add all drawn cards to hand temporarily; player picks 1 to keep
+    for cid in drawn_ids:
+        db.add(_PHC101(player_id=player.id, action_card_id=cid))
+    db.flush()
+    # +1 to next roll (applied regardless of choice)
     cs = dict(player.combat_state or {})
     cs["einstein_sto_next_roll_bonus"] = cs.get("einstein_sto_next_roll_bonus", 0) + 1
     player.combat_state = cs
-    return {"applied": True, "cards_drawn": 1, "cards_returned": len(drawn_ids) - 1, "roll_bonus": 1}
+    return {
+        "status": "pending_choice",
+        "choice_type": "keep_one_from_drawn",
+        "card_number": 101,
+        "drawn_card_ids": drawn_ids,
+    }
 
 
 def _card_102(player, game, db, *, target_player_id=None) -> dict:
