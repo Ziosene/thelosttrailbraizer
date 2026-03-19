@@ -681,7 +681,7 @@ def apply_boss_ability(
         # ── Boss 13 — Flow Builder Gone Rogue ───────────────────────────────
         # At the start of every round: player must discard 1 card or take 1 HP.
         # Handler auto-discards if cards are available; otherwise deals 1 HP damage.
-        # TODO: make this a client choice (discard which card?) when UX is in place.
+        # Interactive flow implemented in roll.py via open_reaction_window (boss13_discard_required).
         case (13, "on_round_start"):
             return _boss_effect(force_discard_or_damage=1)
 
@@ -868,7 +868,7 @@ def apply_boss_ability(
         # Every round: boss offers 1 free Licenza. Accepting raises the dice threshold
         # by 1 for this round only. Handler broadcasts a deal_offer event and waits for
         # player response; if accepted, gain 1 licenza and apply +1 to effective threshold.
-        # TODO: implement client accept/reject flow; currently auto-accepts for simplicity.
+        # Interactive flow implemented in roll.py via open_reaction_window (boss63_deal_offer).
         case (63, "on_round_start"):
             return _boss_effect(deal_offer=True)
 
@@ -930,7 +930,7 @@ def apply_boss_ability(
         # Every round: siren offers a deal — skip the attack, gain 2 Licenze, boss recovers 1 HP.
         # Handler broadcasts a siren_deal event; if player accepts, grant 2 licenze, heal boss 1 HP,
         # and skip the roll for this round.
-        # TODO: implement client accept/reject flow; currently auto-rejects for simplicity.
+        # Interactive flow implemented in roll.py via open_reaction_window (boss83_siren_deal).
         case (83, "on_round_start"):
             return _boss_effect(siren_deal=True)
 
@@ -948,7 +948,7 @@ def apply_boss_ability(
         # At combat start: combatant must declare Attack OR Defense.
         # For the rest of the fight, only cards matching the declared type may be played.
         # Handler broadcasts declaration request; stores player choice in combat_state.allowed_card_type.
-        # TODO: implement client declaration flow; currently defaults to no restriction until UX ready.
+        # Interactive flow implemented in start.py via open_reaction_window (boss86_declaration_required).
         case (86, "on_combat_start"):
             return _boss_effect(force_card_type_declaration=True)
 

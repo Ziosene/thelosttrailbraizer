@@ -131,7 +131,8 @@ def _card_57(player, game, db, *, target_player_id=None) -> dict:
     """API Proxy — La prossima carta offensiva avversaria contro di te perde 1 punto di effetto.
 
     Stores api_proxy_active=True in combat_state.
-    TODO: offensive card handlers targeting a player check this flag and reduce effect by 1.
+    Enforcement in play.py: when an offensive card targets this player, api_proxy_active is checked and
+    the card's licenze_stolen or hp_damage is reduced by 1, then the flag is cleared.
     """
     cs = dict(player.combat_state or {})
     cs["api_proxy_active"] = True

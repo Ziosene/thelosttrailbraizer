@@ -867,6 +867,22 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
                 _reduction61 = min(1, _stolen61)
                 _tgt61.licenze += _reduction61
 
+    # Card 57 (API Proxy): defensive card — next offensive card against target loses 1 from licenze_stolen/hp_damage
+    if card and card_approved and not original_cancelled and target_player_id and card.card_type == "Offensiva":
+        _tgt57 = next((p for p in game.players if p.id == target_player_id and p.id != player.id), None)
+        if _tgt57 and (_tgt57.combat_state or {}).get("api_proxy_active") and isinstance(card_effect_result, dict):
+            _stolen57 = card_effect_result.get("licenze_stolen", 0)
+            _hp57 = card_effect_result.get("hp_damage", 0)
+            if _stolen57 > 0:
+                _tgt57.licenze += 1
+                card_effect_result["licenze_stolen"] = max(0, _stolen57 - 1)
+            elif _hp57 > 0:
+                card_effect_result["hp_damage"] = max(0, _hp57 - 1)
+            # Consume the proxy
+            _cs57_clear = dict(_tgt57.combat_state)
+            _cs57_clear.pop("api_proxy_active", None)
+            _tgt57.combat_state = _cs57_clear
+
     # Addon 79 (Auto-Response Rules): when hit by offensive card, steal 1L from attacker
     if card and card_approved and not original_cancelled and target_player_id and card.card_type == "Offensiva":
         _tgt79 = next((p for p in game.players if p.id == target_player_id and p.id != player.id), None)

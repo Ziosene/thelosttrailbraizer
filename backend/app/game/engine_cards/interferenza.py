@@ -138,7 +138,8 @@ def _card_74(player, game, db, *, target_player_id=None) -> dict:
 
     Target must fight the assigned boss at their next turn or lose 2 Licenze.
     Stores routing_assigned=True (+ routing_assigned_boss_id) in target's combat_state.
-    TODO: turn.py _handle_draw_card: enforce by checking routing_assigned flag.
+    Combat start enforcement in start.py: if routing_assigned_boss_id set, player is forced to fight that boss.
+    End-of-turn enforcement in end.py: if routing_assigned still set at end of turn, player loses 2L.
     """
     target = get_target(game, player, target_player_id)
     if not target:

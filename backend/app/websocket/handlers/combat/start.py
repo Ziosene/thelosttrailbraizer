@@ -35,6 +35,46 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
         await _error(game.code, user_id, "Cannot start combat while 404 Not Found is active")
         return
 
+    # Card 74 (Routing Configuration): if player has routing_assigned_boss_id, must fight that boss
+    _cs_routing = player.combat_state or {}
+    _routing_boss_id = _cs_routing.get("routing_assigned_boss_id")
+    if _routing_boss_id:
+        # Force boss_id and skip normal source logic
+        boss = db.get(BossCard, _routing_boss_id)
+        if not boss:
+            await _error(game.code, user_id, "Routed boss not found in DB")
+            return
+        # Remove from whatever deck it's still in (or market)
+        _found_in_deck = False
+        for _deck_attr in ("boss_deck_1", "boss_deck_2"):
+            _deck = list(getattr(game, _deck_attr) or [])
+            if _routing_boss_id in _deck:
+                _deck.remove(_routing_boss_id)
+                setattr(game, _deck_attr, _deck)
+                _found_in_deck = True
+                break
+        # Mark routing as consumed
+        _cs_routing_new = dict(_cs_routing)
+        _cs_routing_new.pop("routing_assigned_boss_id", None)
+        _cs_routing_new.pop("routing_assigned", None)
+        player.combat_state = _cs_routing_new
+        player.is_in_combat = True
+        player.current_boss_id = _routing_boss_id
+        player.current_boss_hp = boss.hp
+        player.current_boss_source = data.get("source", "deck_1")
+        db.commit()
+        db.refresh(game)
+        from app.websocket.connection_manager import manager as _mgr_routing
+        await _mgr_routing.broadcast(game.code, {
+            "type": "combat_started",
+            "player_id": user_id,
+            "boss_id": _routing_boss_id,
+            "boss_name": boss.name,
+            "boss_hp": boss.hp,
+            "routed": True,
+        })
+        return
+
     # source: "market_1" | "market_2" | "deck_1" | "deck_2"
     source = data.get("source", "market_1")
     if source not in ("market_1", "market_2", "deck_1", "deck_2"):
