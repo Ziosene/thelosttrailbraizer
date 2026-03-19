@@ -44,6 +44,31 @@
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
 ## Sessione corrente — Implementazione effetti addon 1–41
 
+### Addon 68–90
+- **Addon 68** (Salesforce Authenticator): `economica.py` — furto licenze fallisce su dado ≤4
+- **Addon 69** (Two Factor Authentication): `economica.py` — furto cert costa 1 carta all'attaccante; fallisce se attaccante senza carte
+- **Addon 70** (Einstein Relationship Insights): `draw.py` — invia mano di tutti gli avversari a inizio turno
+- **Addon 71** (Workflow Rule Combo): redesign + `play.py` — prima carta per turno non conta nel limite; flag `first_card_free_used` resettato a inizio turno
+- **Addon 72** (Process Builder Chain): redesign + `addon.py` — 2 addon attivi nello stesso turno → +2L bonus
+- **Addon 73** (Trigger Handler): `addon.py` — altri giocatori con addon 73 guadagnano +1L quando un addon attivo è usato
+- **Addon 74** (Before/After Save Hook): `addon.py` — scarta 1 carta e pescane 1 nuova (trattato come Attivo)
+- **Addon 75** (Cascade Update): `_boss_defeat_sequence` — tutti gli addon tappati si stappano alla sconfitta del boss
+- **Addon 76** (Rollup Summary): `_boss_defeat_sequence` — incrementa `rollup_boss_defeats` counter (ELO pendente)
+- **Addon 77** (Formula Field): redesign + `roll.py` — +1 al tiro dado, +1HP danno al boss su hit
+- **Addon 78** (Validation Rule): redesign + `draw.py` — se mano < 5 carte, pesca 2 carte invece di 1
+- **Addon 79** (Auto-Response Rules): `play.py` — carta offensiva ricevuta → ruba 1L all'attaccante automaticamente
+- **Addon 80** (Field Dependency): `addon.py` — ≥3 addon posseduti → costo addon -2L
+- **Addon 81** (Boss Vulnerability Scan): redesign + `addon.py` + `roll.py` — una volta per combattimento: prossimo tiro +4 bonus
+- **Addon 82** (Deployment Freeze): redesign + `addon.py` — una volta per partita, rimanda boss in fondo al mazzo senza combattere
+- **Addon 83** (Sandbox Preview): `start.py` — invia soglia dado del prossimo boss prima del combattimento
+- **Addon 84** (Governor Limit Enforcer): `start.py` — cap boss HP a 4 all'inizio del combattimento
+- **Addon 85** (Instance Refresh): `addon.py` — identico a 82, flag separato `instance_refresh_used`
+- **Addon 86** (Critical Patch): redesign + `roll.py` — +1L su ogni miss del dado
+- **Addon 87** (API Throttle Bypass): `play.py` — immunità ai limiti di carte per turno imposti da boss
+- **Addon 88** (Mass Update Override): `addon.py` — una volta per partita, -2HP a boss in combattimento (senza dado)
+- **Addon 89** (Data Migration Tool): `addon.py` — scambia ownership di due PlayerAddon tra giocatori
+- **Addon 90** (Org Split): `addon.py` — il giocatore perde metà HP, l'avversario target perde lo stesso ammontare
+
 ### Addon 42–67
 - **Addon 42** (Revenue Cloud Optimizer): `_boss_defeat_sequence` — +2L extra se licenze ≥ 20
 - **Addon 43** (Subscription Billing): `draw.py` — +1L automatico a inizio turno

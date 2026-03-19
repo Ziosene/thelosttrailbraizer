@@ -638,7 +638,7 @@
 
 ### 71. Workflow Rule Combo
 - **Tipo**: Passivo
-- **Effetto**: Ogni volta che giochi 2 carte nello stesso turno, la seconda carta vale il doppio
+- **Effetto**: La prima carta che giochi ogni turno non conta nel limite massimo di carte giocabili.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn two linked playing cards with a x2 multiplier symbol in the art style of The Binding of Isaac. Two cards chained together, the second one glowing brighter with a bold ×2 burst around it. Thick black outlines, flat shading, combo mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -646,7 +646,7 @@
 
 ### 72. Process Builder Chain
 - **Tipo**: Passivo
-- **Effetto**: Se usi 2 AddOn attivi nello stesso turno, il secondo ha effetto potenziato (+1 al dado o +1 Licenza bonus)
+- **Effetto**: Se usi 2 AddOn attivi nello stesso turno, guadagni +2L bonus.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn chain reaction domino sequence in the art style of The Binding of Isaac. A row of dominoes falling in sequence, the final one triggering a glowing plus symbol explosion. Thick black outlines, flat shading, sequential mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -686,8 +686,7 @@
 
 ### 77. Formula Field
 - **Tipo**: Passivo
-- **Effetto**: Il tuo bonus dado totale da tutti gli AddOn passivi è aumentato di 1 ulteriore punto
-- **Sinergia**: Platform Developer II
+- **Effetto**: Il tuo tiro dado vale +1 e ogni tua hit infligge +1HP extra al boss.
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn glowing mathematical formula floating in the air in the art style of The Binding of Isaac. An equation with all variables adding together, culminating in a bright +1 at the end. Thick black outlines, flat shading, precise mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -695,7 +694,7 @@
 
 ### 78. Validation Rule
 - **Tipo**: Passivo
-- **Effetto**: Una volta per turno, puoi annullare la pesca di una carta azione e scegliere di non pescarne (utile se la mano è al limite)
+- **Effetto**: Se hai meno di 5 carte in mano a inizio turno, peschi 2 carte invece di 1.
 - **Rarità**: Comune
 - **Image prompt**: `A 2D hand-drawn red X rubber stamp pressing down on a playing card in the art style of The Binding of Isaac. A large stamp pressing a bold red X on a card hovering above the draw pile, firmly rejected. Thick black outlines, flat shading, selective mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -723,7 +722,7 @@
 
 ### 81. Boss Vulnerability Scan
 - **Tipo**: Attivo
-- **Effetto**: Una volta per combattimento, azzera l'abilità speciale del boss per 2 round
+- **Effetto**: Una volta per combattimento, il tuo prossimo tiro dado ha +4 bonus.
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn radar scanner targeting a boss silhouette in the art style of The Binding of Isaac. A rotating radar dish with a reticle locked on a shadowy boss figure, its ability icon going dark and crossed out. Thick black outlines, flat shading, tactical mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -731,7 +730,7 @@
 
 ### 82. Deployment Freeze
 - **Tipo**: Attivo
-- **Effetto**: Una volta per partita, congela un boss nel mazzo — quel boss non può essere pescato per i prossimi 3 turni
+- **Effetto**: Una volta per partita, rimanda il boss attualmente in combattimento in fondo al mazzo senza combatterlo (non perdi il turno).
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn boss card encased in a block of ice in the art style of The Binding of Isaac. A playing card with a boss face frozen solid inside a crystal-clear ice block, frost cracks spreading. Thick black outlines, flat shading, cold mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
@@ -764,7 +763,7 @@
 
 ### 86. Critical Patch
 - **Tipo**: Passivo
-- **Effetto**: I boss con abilità che riducono il tuo dado hanno l'effetto dimezzato (arrotondato per difetto)
+- **Effetto**: Ogni volta che missi il dado, guadagni 1L come consolazione.
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn adhesive band-aid applied to a cracked dice in the art style of The Binding of Isaac. A large band-aid being pressed onto a broken d10, the damage penalty visibly splitting in half. Thick black outlines, flat shading, remedial mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 
