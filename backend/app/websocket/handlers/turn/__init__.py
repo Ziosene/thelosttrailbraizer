@@ -11,6 +11,7 @@ from app.websocket.handlers.turn.addon import (
     _handle_beta_feature_reject, _handle_beta_feature_keep,
     _handle_pilot_program_pick, _handle_acceptance_criteria_choose,
     _handle_external_object_pick, _handle_batch_schedule_card, _handle_territory_set,
+    _handle_fomo_buy_addon,
 )
 from app.websocket.handlers.turn.end import _handle_end_turn
 
@@ -32,4 +33,5 @@ __all__ = [
     "_handle_external_object_pick",
     "_handle_batch_schedule_card",
     "_handle_territory_set",
+    "_handle_fomo_buy_addon",
 ]

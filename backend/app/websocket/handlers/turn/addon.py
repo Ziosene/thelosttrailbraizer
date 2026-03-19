@@ -26,7 +26,8 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
         return
 
     player = _get_player(game, user_id)
-    if not player or not _is_player_turn(game, player):
+    _fomo_bypass = player and (player.combat_state or {}).get("fomo_bypass_turn", False)
+    if not player or (not _is_player_turn(game, player) and not _fomo_bypass):
         await _error(game.code, user_id, "Not your turn")
         return
 
@@ -208,6 +209,12 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
         _cs_acq["addon_acquired_turns"] = _aq_turns
         player.combat_state = _cs_acq
 
+    # Addon 151 (Certification Path): when this addon is bought, set pending flag for first cert
+    if addon.number == 151:
+        cs151_buy = dict(player.combat_state or {})
+        cs151_buy["cert_path_double_pending"] = True
+        player.combat_state = cs151_buy
+
     # Addon 92 (Beta Feature): offer to reject just-bought addon and draw another
     if _has_addon_addon(player, 92) and new_pa:
         cs92 = dict(player.combat_state or {})
@@ -237,6 +244,13 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
             _cs110_new["go_live_bought_this_turn"] = True
             _p110.combat_state = _cs110_new
             break
+
+    # Addon 147 (FOMO Trigger): when any opponent buys an addon, others with 147 can buy one immediately
+    for _p147 in game.players:
+        if _p147.id != player.id and _has_addon_addon(_p147, 147):
+            cs147 = dict(_p147.combat_state or {})
+            cs147["fomo_trigger_pending"] = True
+            _p147.combat_state = cs147
 
     db.commit()
     db.refresh(game)
@@ -275,7 +289,9 @@ async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Ses
         await _error(game.code, user_id, "Only active addons can be used manually")
         return
 
-    if pa.is_tapped:
+    # Addon 150 (Wildcards): skip tap check if wildcards active
+    _wildcards_active = (player.combat_state or {}).get("wildcards_active", False)
+    if pa.is_tapped and not _wildcards_active:
         await _error(game.code, user_id, "Addon is tapped (already used this turn)")
         return
 
@@ -300,7 +316,9 @@ async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Ses
             await _error(game.code, user_id, "Addons are disabled by the boss this round")
             return
 
-    pa.is_tapped = True
+    # Addon 150 (Wildcards): don't tap addons when wildcards active
+    if not _wildcards_active:
+        pa.is_tapped = True
 
     # Addon 72 (Process Builder Chain): track active addon usage; gain +2L on second use
     if _has_addon_addon(player, 72) and addon.addon_type.value == "Attivo":
@@ -1393,6 +1411,219 @@ async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Ses
         await _broadcast_state(game, db)
         return
 
+    # ── Active addon effects (141-160) ──────────────────────────────────────
+
+    # Addon 141 (Calculated Risk): before rolling, declare a bet; ≥8 → +5L; ≤3 → -2L
+    elif addon.number == 141:
+        if not player.is_in_combat:
+            await _error(game.code, user_id, "Must be in combat to use Calculated Risk")
+            pa.is_tapped = False
+            return
+        cs141 = dict(player.combat_state or {})
+        if cs141.get("calculated_risk_active"):
+            await _error(game.code, user_id, "Calculated Risk already active this combat")
+            pa.is_tapped = False
+            return
+        cs141["calculated_risk_active"] = True
+        player.combat_state = cs141
+
+    # Addon 142 (All or Nothing): skip this dice round, gain +4 to next roll
+    elif addon.number == 142:
+        if not player.is_in_combat:
+            await _error(game.code, user_id, "Must be in combat to use All or Nothing")
+            pa.is_tapped = False
+            return
+        cs142 = dict(player.combat_state or {})
+        if cs142.get("all_or_nothing_pending"):
+            await _error(game.code, user_id, "All or Nothing already charging")
+            pa.is_tapped = False
+            return
+        cs142["all_or_nothing_pending"] = True
+        player.combat_state = cs142
+        db.commit()
+        db.refresh(game)
+        await manager.broadcast(game.code, {"type": "all_or_nothing_charging", "player_id": player.id})
+        await _broadcast_state(game, db)
+        return
+
+    # Addon 143 (Double or Nothing): handled in _boss_defeat_sequence — passive trigger
+    # (no manual use effect needed here; the addon is Attivo but triggers on boss defeat)
+
+    # Addon 146 (Bet the Farm): once per game, dice duel with opponent — higher steals 3L
+    elif addon.number == 146:
+        cs146 = player.combat_state or {}
+        if cs146.get("bet_farm_used"):
+            await _error(game.code, user_id, "Bet the Farm already used this game")
+            pa.is_tapped = False
+            return
+        target_id146 = data.get("target_player_id")
+        target146 = next((p for p in game.players if p.id == target_id146), None)
+        if not target146 or target146.id == player.id:
+            await _error(game.code, user_id, "Invalid target for Bet the Farm")
+            pa.is_tapped = False
+            return
+        roll_p146 = engine.roll_d10()
+        roll_t146 = engine.roll_d10()
+        if roll_p146 > roll_t146:
+            stolen146 = min(3, target146.licenze)
+            target146.licenze -= stolen146
+            player.licenze += stolen146
+            winner_id146 = player.id
+        elif roll_t146 > roll_p146:
+            stolen146 = min(3, player.licenze)
+            player.licenze -= stolen146
+            target146.licenze += stolen146
+            winner_id146 = target146.id
+        else:
+            stolen146 = 0
+            winner_id146 = None  # tie
+        cs146_new = dict(cs146)
+        cs146_new["bet_farm_used"] = True
+        player.combat_state = cs146_new
+        db.commit()
+        db.refresh(game)
+        await manager.broadcast(game.code, {
+            "type": "bet_farm_result",
+            "player_id": player.id,
+            "target_id": target146.id,
+            "player_roll": roll_p146,
+            "target_roll": roll_t146,
+            "winner_id": winner_id146,
+            "licenze_stolen": stolen146,
+        })
+        await _broadcast_state(game, db)
+        return
+
+    # Addon 150 (Wildcards): for 1 full turn, play cards without limit and use all addons without limit
+    elif addon.number == 150:
+        cs150 = player.combat_state or {}
+        if cs150.get("wildcards_used"):
+            await _error(game.code, user_id, "Wildcards already used this game")
+            pa.is_tapped = False
+            return
+        cs150_new = dict(cs150)
+        cs150_new["wildcards_used"] = True
+        cs150_new["wildcards_active"] = True
+        player.combat_state = cs150_new
+        # With wildcards active, don't tap this addon (it stays available)
+        pa.is_tapped = False
+
+    # Addon 153 (Certification Theft Ring): steal 1 cert from opponent; roll ≤3 → fail and lose 3L
+    elif addon.number == 153:
+        cs153 = player.combat_state or {}
+        if cs153.get("cert_theft_used"):
+            await _error(game.code, user_id, "Certification Theft Ring already used this game")
+            pa.is_tapped = False
+            return
+        target_id153 = data.get("target_player_id")
+        target153 = next((p for p in game.players if p.id == target_id153), None)
+        if not target153 or target153.id == player.id:
+            await _error(game.code, user_id, "Invalid target for Certification Theft Ring")
+            pa.is_tapped = False
+            return
+        # Addon 157 (Portfolio Defense): immune to cert theft during own turn
+        if _has_addon_addon(target153, 157):
+            _is_target_turn153 = (
+                bool(game.turn_order) and
+                game.turn_order[game.current_turn_index] == target153.id
+            )
+            if _is_target_turn153:
+                await _error(game.code, user_id, "Target is protected by Portfolio Defense during their turn")
+                pa.is_tapped = False
+                return
+        roll153 = engine.roll_d10()
+        cs153_new = dict(cs153)
+        cs153_new["cert_theft_used"] = True
+        player.combat_state = cs153_new
+        if roll153 <= 3:
+            player.licenze = max(0, player.licenze - 3)
+            success153 = False
+        else:
+            if target153.certificazioni > 0:
+                # Addon 154 (Recertification): target gains 5L when losing a cert
+                if _has_addon_addon(target153, 154):
+                    target153.licenze += 5
+                target153.certificazioni -= 1
+                player.certificazioni += 1
+            success153 = True
+        db.commit()
+        db.refresh(game)
+        await manager.broadcast(game.code, {
+            "type": "cert_theft_result",
+            "player_id": player.id,
+            "target_id": target153.id,
+            "roll": roll153,
+            "success": success153,
+        })
+        await _broadcast_state(game, db)
+        return
+
+    # Addon 158 (Credential Vault): roll dice; if 10, gain 1 cert
+    elif addon.number == 158:
+        cs158 = player.combat_state or {}
+        if cs158.get("cred_vault_used"):
+            await _error(game.code, user_id, "Credential Vault already used this game")
+            pa.is_tapped = False
+            return
+        roll158 = engine.roll_d10()
+        cs158_new = dict(cs158)
+        cs158_new["cred_vault_used"] = True
+        player.combat_state = cs158_new
+        if roll158 == 10:
+            player.certificazioni += 1
+        db.commit()
+        db.refresh(game)
+        await manager.broadcast(game.code, {
+            "type": "credential_vault_roll",
+            "player_id": player.id,
+            "roll": roll158,
+            "success": roll158 == 10,
+        })
+        await _broadcast_state(game, db)
+        return
+
+    # Addon 159 (Final Exam): dice duel with opponent; winner steals 1 cert from loser
+    elif addon.number == 159:
+        cs159 = player.combat_state or {}
+        if cs159.get("final_exam_used"):
+            await _error(game.code, user_id, "Final Exam already used this game")
+            pa.is_tapped = False
+            return
+        target_id159 = data.get("target_player_id")
+        target159 = next((p for p in game.players if p.id == target_id159), None)
+        if not target159 or target159.id == player.id:
+            await _error(game.code, user_id, "Invalid target for Final Exam")
+            pa.is_tapped = False
+            return
+        roll_p159 = engine.roll_d10()
+        roll_t159 = engine.roll_d10()
+        cs159_new = dict(cs159)
+        cs159_new["final_exam_used"] = True
+        player.combat_state = cs159_new
+        if roll_p159 > roll_t159:
+            if target159.certificazioni > 0:
+                if _has_addon_addon(target159, 154):  # Recertification
+                    target159.licenze += 5
+                target159.certificazioni -= 1
+                player.certificazioni += 1
+        elif roll_t159 > roll_p159:
+            if player.certificazioni > 0:
+                if _has_addon_addon(player, 154):  # Recertification
+                    player.licenze += 5
+                player.certificazioni -= 1
+                target159.certificazioni += 1
+        db.commit()
+        db.refresh(game)
+        await manager.broadcast(game.code, {
+            "type": "final_exam_result",
+            "player_id": player.id,
+            "target_id": target159.id,
+            "player_roll": roll_p159,
+            "target_roll": roll_t159,
+        })
+        await _broadcast_state(game, db)
+        return
+
     db.commit()
     db.refresh(game)
 
@@ -1402,6 +1633,31 @@ async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Ses
         "addon": {"id": addon.id, "name": addon.name, "effect": addon.effect},
     })
     await _broadcast_state(game, db)
+
+
+async def _handle_fomo_buy_addon(game, user_id: int, data: dict, db):
+    """Handle out-of-turn addon purchase triggered by Addon 147 (FOMO Trigger)."""
+    from app.websocket.game_helpers import _get_player, _error, _broadcast_state
+    player = _get_player(game, user_id)
+    if not player:
+        return
+    cs_fomo = player.combat_state or {}
+    if not cs_fomo.get("fomo_trigger_pending"):
+        await _error(game.code, user_id, "No FOMO trigger active")
+        return
+    # Clear FOMO pending flag and set bypass flag to skip turn ownership check
+    cs_fomo_new = dict(cs_fomo)
+    del cs_fomo_new["fomo_trigger_pending"]
+    cs_fomo_new["fomo_bypass_turn"] = True
+    player.combat_state = cs_fomo_new
+    db.commit()
+    # Delegate to normal buy logic with bypass flag set
+    await _handle_buy_addon(game, user_id, data, db)
+    # Clean up bypass flag
+    cs_after = dict(player.combat_state or {})
+    cs_after.pop("fomo_bypass_turn", None)
+    player.combat_state = cs_after
+    db.commit()
 
 
 async def _handle_appexchange_pick(game, user_id: int, data: dict, db):

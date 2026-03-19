@@ -89,7 +89,8 @@ async def _boss_defeat_sequence(player, game, db, boss) -> bool:
         player.combat_state = _cs75
 
     # Step 2: award Licenze reward
-    player.licenze += boss.reward_licenze
+    _licenze_reward = boss.reward_licenze
+    player.licenze += _licenze_reward
     # Card 262 (World Tour Event): bonus +2L on boss defeat if event active; first combatant +1L extra
     if (player.combat_state or {}).get("world_tour_event_active"):
         player.licenze += 2
@@ -158,9 +159,79 @@ async def _boss_defeat_sequence(player, game, db, boss) -> bool:
             _cs_sb.pop("consecutive_boss_defeats_alive", None)
         player.combat_state = _cs_sb
 
+    # Addon 143 (Double or Nothing): after boss defeat, roll: ≥6 → double L; ≤3 → lose earned L
+    if has_addon(player, 143):
+        cs143 = player.combat_state or {}
+        if not cs143.get("double_or_nothing_used"):
+            _don_roll = engine.roll_d10()
+            cs143_new = dict(cs143)
+            cs143_new["double_or_nothing_used"] = True
+            player.combat_state = cs143_new
+            await manager.broadcast(game.code, {
+                "type": "double_or_nothing_roll",
+                "player_id": player.id,
+                "roll": _don_roll,
+            })
+            if _don_roll >= 6:
+                player.licenze += _licenze_reward  # double (add same amount again)
+            elif _don_roll <= 3:
+                player.licenze = max(0, player.licenze - _licenze_reward)  # lose earned L
+
+    # Addon 145 (Risk Matrix): if risk_matrix_reward flag set, gain L equal to boss base HP
+    if has_addon(player, 145) and (player.combat_state or {}).get("risk_matrix_reward"):
+        _boss_hp_start145 = boss.hp  # boss.hp is the base/original HP
+        player.licenze += _boss_hp_start145
+        cs145d = dict(player.combat_state)
+        del cs145d["risk_matrix_reward"]
+        player.combat_state = cs145d
+
     # Step 3: award Certification (if cert boss)
+    _licenze_before_cert = player.licenze  # unused now but kept for reference
     if boss.has_certification:
         player.certificazioni += 1
+
+        # Addon 151 (Certification Path): first cert earned doubles score (flag-based)
+        if has_addon(player, 151):
+            cs151d = player.combat_state or {}
+            if cs151d.get("cert_path_double_pending"):
+                cs151d_new = dict(cs151d)
+                cs151d_new.pop("cert_path_double_pending", None)
+                cs151d_new["cert_path_score_bonus"] = True
+                player.combat_state = cs151d_new
+
+        # Addon 152 (Superbadge Grind): 3 consecutive cert boss defeats → extra cert
+        if has_addon(player, 152):
+            cs152 = dict(player.combat_state or {})
+            cs152["superbadge_grind_streak"] = cs152.get("superbadge_grind_streak", 0) + 1
+            if cs152["superbadge_grind_streak"] >= 3:
+                player.certificazioni += 1
+                cs152["superbadge_grind_streak"] = 0
+            player.combat_state = cs152
+
+        # Addon 149 (Comeback Mechanic): when any opponent reaches 4 certs, gain 3L
+        if player.certificazioni >= 4:
+            for _p149 in game.players:
+                if _p149.id != player.id and has_addon(_p149, 149):
+                    _p149.licenze += 3
+
+        # Addon 160 (Graduation Day): reaching exactly 4 certs → +10L and +2 dice next turn
+        if has_addon(player, 160) and player.certificazioni == 4:
+            cs160 = dict(player.combat_state or {})
+            if not cs160.get("graduation_day_triggered"):
+                cs160["graduation_day_triggered"] = True
+                cs160["graduation_day_dice_bonus"] = 2
+                player.licenze += 10
+                player.combat_state = cs160
+                await manager.broadcast(game.code, {
+                    "type": "graduation_day_triggered",
+                    "player_id": player.id,
+                })
+    else:
+        # Non-cert boss resets Addon 152 (Superbadge Grind) streak
+        if has_addon(player, 152):
+            cs152r = dict(player.combat_state or {})
+            cs152r["superbadge_grind_streak"] = 0
+            player.combat_state = cs152r
 
     # Addon 15 (Trailhead Superbadge): +2L when defeating a boss that has a certification
     if has_addon(player, 15) and boss.has_certification:
@@ -230,6 +301,11 @@ async def _boss_defeat_sequence(player, game, db, boss) -> bool:
     if player.combat_state and player.combat_state.get("addons_blocked_until_boss_defeat"):
         cs = dict(player.combat_state)
         cs.pop("addons_blocked_until_boss_defeat", None)
+        player.combat_state = cs
+    # Addon 141 (Calculated Risk): clear flag on boss defeat
+    if player.combat_state and player.combat_state.get("calculated_risk_active"):
+        cs = dict(player.combat_state)
+        cs.pop("calculated_risk_active", None)
         player.combat_state = cs
     # Boss 55 / Boss 74: also apply shadow copy's on_boss_defeated effects
     copy_boss_id = getattr(player, "_copy_boss_id_for_defeat", None)
@@ -544,6 +620,21 @@ async def _player_death_sequence(player, game, db, boss) -> None:
         _cs7_death.pop("no_damage_this_combat", None)
         player.combat_state = _cs7_death
 
+    # Addon 141 (Calculated Risk): clear flag on player death
+    if (player.combat_state or {}).get("calculated_risk_active"):
+        _cs141_death = dict(player.combat_state)
+        _cs141_death.pop("calculated_risk_active", None)
+        player.combat_state = _cs141_death
+
+    # Addon 152 (Superbadge Grind): reset streak on death
+    if has_addon(player, 152):
+        cs152d = dict(player.combat_state or {})
+        cs152d["superbadge_grind_streak"] = 0
+        player.combat_state = cs152d
+
+    # Addon 154 (Recertification): cert loss on death not implemented (certs not reduced on death in GDD)
+    # Recertification trigger on cert theft is handled in addon.py addon 153
+
     # Addon 48 (Net Zero Tracker): reset turn counter on death
     if has_addon(player, 48):
         _cs48d = dict(player.combat_state or {})
@@ -614,6 +705,18 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         db.commit()
         db.refresh(game)
         await manager.broadcast(game.code, {"type": "round_skipped", "player_id": player.id, "reason": "einstein_nba"})
+        await _broadcast_state(game, db)
+        return
+
+    # Addon 142 (All or Nothing): skip this round — gain +4 to next roll
+    if (player.combat_state or {}).get("all_or_nothing_pending"):
+        cs142_skip = dict(player.combat_state)
+        del cs142_skip["all_or_nothing_pending"]
+        cs142_skip["all_or_nothing_bonus"] = 4
+        player.combat_state = cs142_skip
+        db.commit()
+        db.refresh(game)
+        await manager.broadcast(game.code, {"type": "all_or_nothing_skipped", "player_id": player.id})
         await _broadcast_state(game, db)
         return
 
@@ -998,6 +1101,39 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
                 _bonus136 += 1
         roll = min(10, roll + min(_bonus136, 3))
 
+    # Addon 142 (All or Nothing): apply +4 bonus from skipped round
+    _aon_bonus = (player.combat_state or {}).get("all_or_nothing_bonus", 0)
+    if _aon_bonus:
+        roll = min(roll + _aon_bonus, 10)
+        cs_aon = dict(player.combat_state)
+        del cs_aon["all_or_nothing_bonus"]
+        player.combat_state = cs_aon
+
+    # Addon 144 (High Stakes): +3 if player has 0 certs AND 0 other addons
+    if has_addon(player, 144):
+        _other_addons144 = [pa for pa in player.addons if pa.card and pa.card.number != 144]
+        if player.certificazioni == 0 and len(_other_addons144) == 0:
+            roll = min(roll + 3, 10)
+
+    # Addon 148 (Last Stand): +2 if flag set at turn start
+    if has_addon(player, 148) and (player.combat_state or {}).get("last_stand_active"):
+        roll = min(roll + 2, 10)
+
+    # Addon 155 (Fast Track Program): cert bosses have dice threshold -1
+    # (applied later in threshold calculation; see below)
+
+    # Addon 156 (Trailhead Ranger): +1 per cert beyond the first if ≥2 certs
+    if has_addon(player, 156) and player.certificazioni >= 2:
+        roll = min(roll + (player.certificazioni - 1), 10)
+
+    # Addon 160 (Graduation Day): +2 dice bonus for next turn after reaching 4 certs
+    _grad_bonus = (player.combat_state or {}).get("graduation_day_dice_bonus", 0)
+    if _grad_bonus:
+        roll = min(roll + _grad_bonus, 10)
+        cs_grad = dict(player.combat_state)
+        del cs_grad["graduation_day_dice_bonus"]
+        player.combat_state = cs_grad
+
     # Addon 4 (Apex Governor Override): original roll of 1 → round neutral (before addon bonuses)
     _addon4_override = has_addon(player, 4) and _raw_roll_for_addon4 == 1
 
@@ -1060,6 +1196,9 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         player.combat_state = cs
     # Addon 34 (SOQL Optimizer): reduce effective threshold by 1
     if has_addon(player, 34):
+        threshold = max(1, threshold - 1)
+    # Addon 155 (Fast Track Program): cert bosses have threshold -1
+    if has_addon(player, 155) and boss.has_certification:
         threshold = max(1, threshold - 1)
     threshold = max(1, threshold)  # can't go below 1
     # Boss 58 (Prompt Builder Djinn): random threshold set this round overrides everything
@@ -1173,6 +1312,17 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
     result = engine.resolve_combat_round(roll, threshold)
     if _lurker_miss:
         result = "miss"  # Boss 56: duplicate roll → forced miss
+
+    # Addon 141 (Calculated Risk): apply bet outcome after roll
+    _cs141 = player.combat_state or {}
+    if _cs141.get("calculated_risk_active"):
+        cs141_new = dict(_cs141)
+        del cs141_new["calculated_risk_active"]
+        player.combat_state = cs141_new
+        if roll >= 8:
+            player.licenze += 5
+        elif roll <= 3:
+            player.licenze = max(0, player.licenze - 2)
 
     # Boss 65 (Einstein Vision Stalker): if prediction matches roll direction → player -1L
     _stalker_pred = (player.combat_state or {}).get("stalker_prediction")

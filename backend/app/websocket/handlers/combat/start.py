@@ -384,6 +384,21 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
                 cs["oracle_predicted_rounds"] = predicted
                 player.combat_state = cs
 
+    # Addon 145 (Risk Matrix): before each combat, roll a "risk die"
+    if _has_addon_start(player, 145):
+        _risk_roll145 = engine.roll_d10()
+        cs145 = dict(player.combat_state or {})
+        if _risk_roll145 >= 7:
+            cs145["risk_matrix_reward"] = True  # gain L per boss base HP at defeat
+        elif _risk_roll145 <= 3:
+            player.licenze = max(0, player.licenze - 1)
+        player.combat_state = cs145
+        await manager.broadcast(game.code, {
+            "type": "risk_matrix_roll",
+            "player_id": player.id,
+            "roll": _risk_roll145,
+        })
+
     # Addon 52 (Scratch Org): draw 1 extra action card at start of each combat
     if _has_addon_start(player, 52):
         from app.models.game import PlayerHandCard as _PHC52

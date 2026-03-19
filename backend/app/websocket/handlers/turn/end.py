@@ -256,6 +256,12 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
         _cs_hrt.pop("hand_revealed_this_turn", None)
         player.combat_state = _cs_hrt
 
+    # Addon 150 (Wildcards): clear wildcards_active at end of turn
+    if player.combat_state and player.combat_state.get("wildcards_active"):
+        cs_wc = dict(player.combat_state)
+        cs_wc.pop("wildcards_active", None)
+        player.combat_state = cs_wc
+
     # Addon 66 (Trust Layer): clear protection flag at end of turn for ALL players
     for _p_tl in game.players:
         if (_p_tl.combat_state or {}).get("trust_layer_active"):

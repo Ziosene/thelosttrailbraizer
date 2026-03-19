@@ -53,7 +53,9 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
     # Addon 37 (Deployment Pipeline): +1 extra card this turn
     if (player.combat_state or {}).get("deployment_pipeline_extra_card"):
         max_cards += 1
-    if player.cards_played_this_turn >= max_cards:
+    # Addon 150 (Wildcards): bypass card play limit for this turn
+    _wildcards_play = (player.combat_state or {}).get("wildcards_active", False)
+    if player.cards_played_this_turn >= max_cards and not _wildcards_play:
         await _error(game.code, user_id, "Card limit reached this turn")
         return
 

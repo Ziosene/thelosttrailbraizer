@@ -363,6 +363,23 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
                 from app.models.game import PlayerHandCard as _PHC78
                 db.add(_PHC78(player_id=player.id, action_card_id=_extra78))
 
+    # Addon 148 (Last Stand): if player is only one with 0 certs while all others have ≥1, +1HP and +2 dice
+    if _has_addon_draw(player, 148):
+        _others148 = [p for p in game.players if p.id != player.id]
+        if (
+            player.certificazioni == 0
+            and _others148
+            and all(p.certificazioni >= 1 for p in _others148)
+        ):
+            player.hp = min(player.hp + 1, player.max_hp)
+            cs148 = dict(player.combat_state or {})
+            cs148["last_stand_active"] = True
+            player.combat_state = cs148
+        else:
+            cs148 = dict(player.combat_state or {})
+            cs148.pop("last_stand_active", None)
+            player.combat_state = cs148
+
     # Addon 48 (Net Zero Tracker): every 5 turns completed without dying, gain 3L
     if _has_addon_draw(player, 48):
         _cs48 = dict(player.combat_state or {})
