@@ -11,6 +11,7 @@ from app.websocket.game_helpers import (
 from app.models.game import GameSession, GameStatus, TurnPhase
 from app.models.card import ActionCard, BossCard
 from app.game import engine
+from app.game import engine_boss
 from app.game.engine_cards import apply_action_card_effect
 from app.game.engine_addons import has_addon as _has_addon_play
 from app.websocket.reaction_manager import open_reaction_window
@@ -69,10 +70,16 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
         current_round_pc = (player.combat_round or 0) + 1
 
         # Boss  9 (Code Coverage Ghoul): offensive cards blocked
-        # TODO: enforce once card.card_type is used in apply_action_card_effect
-        # Boss 17 (Validation Rule Hell): dice-modifier cards have no effect
-        # TODO: pass flag into apply_action_card_effect
-        # Boss  8 (MuleSoft Kraken): interference doubled in card effect logic — TODO
+        if engine_boss.boss_offensive_cards_blocked(player.current_boss_id):
+            if card and card.card_type == "offensiva":
+                await _error(game.code, user_id, "Boss 9: offensive cards are blocked during this fight")
+                return
+
+        # Boss 17 (Validation Rule Hell): dice-modifier cards have no effect (silently consumed)
+        _boss17_dice_blocked = engine_boss.boss_dice_modifiers_blocked(player.current_boss_id)
+
+        # Boss  8 (MuleSoft Kraken): interference cards double their licenze effect
+        _boss8_interference_doubled = engine_boss.boss_interference_doubled(player.current_boss_id)
 
         # Boss 38 (Einstein Bot Imposter): on even rounds, first card played is cancelled
         if engine.boss_cancels_next_card(player.current_boss_id, current_round_pc):
@@ -553,10 +560,35 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
     if not card_effect_result:
         card_effect_result = {}
     if card and card_approved and not original_cancelled:
-        card_effect_result = apply_action_card_effect(
-            card, player, game, db,
-            target_player_id=target_player_id,
-        )
+        # Boss 17 (Validation Rule Hell): dice-modifier cards are silently consumed with no effect
+        _b17_blocked = _boss17_dice_blocked if player.is_in_combat and player.current_boss_id else False
+        _dice_modifier_types = {"manipolazione"}  # card types that modify dice
+        _is_dice_modifier = card.card_type and card.card_type.lower() in _dice_modifier_types
+        if _b17_blocked and _is_dice_modifier:
+            card_effect_result = {"applied": False, "blocked_by": "validation_rule_hell"}
+        else:
+            card_effect_result = apply_action_card_effect(
+                card, player, game, db,
+                target_player_id=target_player_id,
+            )
+        # Boss 8 (MuleSoft Kraken): interference cards double their licenze steal/loss effect
+        if (player.is_in_combat and player.current_boss_id and
+                _boss8_interference_doubled and
+                card.card_type and card.card_type.lower() == "interferenza" and
+                isinstance(card_effect_result, dict) and card_effect_result.get("applied")):
+            _licenze_stolen8 = card_effect_result.get("licenze_stolen", 0)
+            _licenze_lost8 = card_effect_result.get("licenze_lost", 0)
+            if _licenze_stolen8 > 0:
+                _target8 = next((p for p in game.players if p.id == target_player_id), None)
+                if _target8:
+                    _extra8 = min(_licenze_stolen8, _target8.licenze)
+                    _target8.licenze -= _extra8
+                    player.licenze += _extra8
+            if _licenze_lost8 > 0 and target_player_id:
+                _target8b = next((p for p in game.players if p.id == target_player_id), None)
+                if _target8b:
+                    _extra8b = min(_licenze_lost8, _target8b.licenze)
+                    _target8b.licenze -= _extra8b
 
     # ── Pending choice: the engine function needs player input before completing ──
     if isinstance(card_effect_result, dict) and card_effect_result.get("status") == "pending_choice":

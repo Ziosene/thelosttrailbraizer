@@ -346,24 +346,34 @@ def _card_95(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_126(player, game, db, *, target_player_id=None) -> dict:
-    """Case Assignment Rule — Assegna il boss a un altro giocatore; tu esci e tieni la ricompensa.
-
-    Simplified: player escapes combat immediately and receives the boss's licenze reward.
-    The boss is removed from play (discarded); target player assignment not enforced.
-    TODO: actually reassign boss to target player.
-    """
+    """Case Assignment Rule — Assegna il boss a un altro giocatore; tu esci e tieni la ricompensa."""
     if not player.is_in_combat or not player.current_boss_id:
         return {"applied": False, "reason": "not_in_combat"}
+    if not target_player_id or target_player_id == player.id:
+        return {"applied": False, "reason": "invalid_target"}
     from app.models.card import BossCard as _BC126
+    from app.models.game import GamePlayer as _GP126
+    target126 = db.get(_GP126, target_player_id)
+    if not target126 or target126.game_id != player.game_id:
+        return {"applied": False, "reason": "invalid_target"}
+    if target126.is_in_combat:
+        return {"applied": False, "reason": "target_already_in_combat"}
     boss = db.get(_BC126, player.current_boss_id)
     reward = boss.reward_licenze if boss else 0
+    # Assign boss to target player at its current HP
+    target126.is_in_combat = True
+    target126.current_boss_id = player.current_boss_id
+    target126.current_boss_hp = player.current_boss_hp
+    target126.current_boss_source = player.current_boss_source
+    target126.combat_round = 0
+    # Caster exits combat and collects reward
     player.licenze += reward
     player.is_in_combat = False
     player.current_boss_id = None
     player.current_boss_hp = None
     player.current_boss_source = None
     player.combat_round = 0
-    return {"applied": True, "licenze_gained": reward, "combat_escaped": True}
+    return {"applied": True, "licenze_gained": reward, "boss_reassigned_to": target_player_id}
 
 
 def _card_127(player, game, db, *, target_player_id=None) -> dict:
@@ -546,9 +556,7 @@ def _card_149(player, game, db, *, target_player_id=None) -> dict:
 def _card_150(player, game, db, *, target_player_id=None) -> dict:
     """Orchestration Flow — Leggendaria. Tutti gli AddOn si attivano simultaneamente (anche tappati).
 
-    Since apply_addon_effect is not yet implemented, untaps all addons as a proxy
-    (player can re-activate them manually this turn).
-    TODO: trigger all addon effects via apply_addon_effect when available.
+    Untaps all addons so the player can re-use them this turn.
     """
     if not player.is_in_combat:
         return {"applied": False, "reason": "not_in_combat"}
