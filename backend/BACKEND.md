@@ -520,15 +520,29 @@ MORTE DEL GIOCATORE
   - Nuove WS action: `use_borrowed_passive` (registra ruolo preso in prestito in `combat_state["borrowed_passive_role"]`), `skill_transfer_choice` (swappa `.role` su entrambi i giocatori, memorizza originali per revert)
 - **Flusso pending_choice**: client-choice flow asincrono per carte azione — cards 32, 34, 67, 68, 69, 106, 107, 108, 110, 137 riformulate per restituire `{status: "pending_choice", ...}` invece di auto-pick. `play.py` intercetta il pending e salva stato in `combat_state["pending_card_choice"]`. Nuova azione WS `card_choice` → `_handle_card_choice` in `play.py` (dispatcha su resolver per tipo). Evento server `card_choice_required` inviato privatamente al giocatore.
 
+### ✅ Completato
+
+- ✅ Effetti addon 1–200: tutti implementati
+- ✅ Sistema abilità passive ruolo/seniority (`engine_role.py`)
+- ✅ Flussi interattivi boss 13/63/83/86 con `open_reaction_window`
+- ✅ Flussi `pending_choice` e `pending_reaction` per carte azione
+- ✅ Card 57 (API Proxy): enforcement in `play.py`
+- ✅ Card 74 (Routing Configuration): enforcement in `start.py` e `end.py`
+- ✅ Card 77 (Kafka Connector): tracking a turni in `play.py`
+- ✅ Card 111 (Tracking Pixel): invio mano target in `draw.py`
+- ✅ Card 114/115 (Salesforce Engage / HTTP Connector): flussi `pending_reaction`
+- ✅ Card 118 (Spike Control): cap licenze + decremento
+- ✅ Card 126 (Case Assignment Rule): riassegnazione boss completa
+- ✅ Addon 165 (Skill Transfer): revert automatico ruoli dopo 2 turni in `draw.py`
+- ✅ Validazione timing carte — campo `card.when` verificato in `play.py`
+- ✅ Migration `0006_game_state`: colonna `game_state JSON` su `GameSession`
+- ✅ **TODO count nel backend: 0**
+
 ### ⬜ Da fare
 
-- [ ] **Effetti addon 181–200** — da implementare.
 - [ ] **Addon 98 (Acceptance Criteria)** — implementato in versione semplificata (sempre 2 carte, niente scelta asincrona). Se serve la scelta interattiva, richiede refactor del boss defeat flow.
-- [ ] **Skill Transfer revert** — il revert automatico dei ruoli dopo 2 turni (campo `skill_transfer_revert_at_turn`) non è ancora implementato; va aggiunto in `end_turn` handler.
 - [ ] **Addon 102 custom_permission_used_turn** — il campo usa `game.turn_number`; verificare coerenza con altri "once per turn" check.
 - [ ] **Addon 76 (Rollup Summary)** — contatore `rollup_boss_defeats` in combat_state pronto; mancante integrazione ELO finale.
-- [ ] **Validazione timing carte** — campo `Quando` da verificare in `_handle_play_card`.
-- [ ] **Validazione timing carte** — campo `Quando` da verificare in `_handle_play_card`.
 - [ ] **Rate limiting WS** — protezione contro spam di messaggi WebSocket.
 
 ---
@@ -537,17 +551,21 @@ MORTE DEL GIOCATORE
 
 ### Priorità alta
 
-Con `docker compose up --build` il server parte già correttamente:
-- migration `0001_initial_schema.py` applicata automaticamente
+_Nessun TODO critico aperto._
+
+Con `docker compose up --build` il server parte correttamente:
+- migration `0001–0006` applicate automaticamente
 - seed carte eseguito automaticamente
 - FK circolare `winner_id` gestita con `use_alter=True`
 
 ### Priorità media
 
+- **Addon 98 (Acceptance Criteria)** — versione semplificata attiva; scelta interattiva richiede refactor del boss defeat flow.
+- **Addon 76 (Rollup Summary)** — contatore pronto, manca integrazione ELO finale.
+- **Addon 102 (Custom Permission)** — verificare coerenza `custom_permission_used_turn` con `game.turn_number`.
+
 ### Priorità bassa (post-MVP)
 
-6. **Frontend** — React + Tailwind (separato, quando il backend è stabile e testato).
-
-7. **Bilanciamento carte** — prima revisione completa effettuata (carte azione 1–300 e addon 1–200). Ulteriore ribilanciamento previsto dopo le prime partite di test.
-
-8. **Rate limiting WS** — protezione contro spam di messaggi WebSocket.
+- **Frontend** — React + Tailwind (separato, quando il backend è stabile e testato).
+- **Bilanciamento carte** — prima revisione completa effettuata (carte azione 1–300 e addon 1–200). Ulteriore ribilanciamento previsto dopo le prime partite di test.
+- **Rate limiting WS** — protezione contro spam di messaggi WebSocket.
