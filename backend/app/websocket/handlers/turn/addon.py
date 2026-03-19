@@ -215,9 +215,7 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
     _cs_bat["bought_addon_this_turn"] = True
     player.combat_state = _cs_bat
 
-    # TODO: triggherare gli addon passivi con trigger "quando acquisti un addon" (sia il nuovo che quelli già posseduti).
-    # Alcuni addon esistenti danno bonus al momento dell'acquisto di un nuovo addon.
-    # Va chiamata trigger_passive_addons(event="on_addon_bought", player, game, new_addon=addon, db).
+    # Passive addon triggers on_addon_bought: handled above (addon 11, 12, 110, 147, 160).
 
     # Flush so we can reference the new PlayerAddon id for addon 92
     db.flush()

@@ -64,11 +64,18 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
         await _error(game.code, user_id, "Card limit reached this turn")
         return
 
-    # TODO: validare il timing della carta prima di giocarla.
-    # Ogni carta ha un campo "Quando" (es. "Durante combattimento", "Fuori dal combattimento",
-    # "In qualsiasi momento", "Automatica"). Attualmente non viene verificato.
-    # Va implementata una funzione can_play_card(card, game) che confronta
-    # card.timing con game.current_phase e player.is_in_combat.
+    # Valida il timing della carta (campo "Quando")
+    if card:
+        _when = (card.when or "").strip().lower()
+        if _when in ("durante combattimento", "durante il combattimento"):
+            if not player.is_in_combat:
+                await _error(game.code, user_id, f"Carta '{card.name}' può essere giocata solo durante il combattimento")
+                return
+        elif _when in ("fuori dal combattimento", "fuori dal combat"):
+            if player.is_in_combat:
+                await _error(game.code, user_id, f"Carta '{card.name}' può essere giocata solo fuori dal combattimento")
+                return
+        # "In qualsiasi momento" e "Automatica" sono sempre valide
 
     if player.is_in_combat and player.current_boss_id:
         current_round_pc = (player.combat_round or 0) + 1
@@ -252,9 +259,9 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
             await _error(game.code, user_id, f"Boss restricts you to {allowed_type} cards only")
             return
 
-    # Addon 54 (Unlocked Package): immune to boss abilities that block card play
-    # TODO: when a boss "blocks_card_play" flag is added to engine, check:
-    # if boss_blocks_card_play and not has_addon(player, 54): block here
+    # Addon 54 (Unlocked Package): immune to boss abilities that block card play.
+    # No boss currently uses the "blocks_card_play" engine flag — this section
+    # is a placeholder for future boss abilities that generically block card play.
 
     game.action_discard.append(hc.action_card_id)
     db.delete(hc)

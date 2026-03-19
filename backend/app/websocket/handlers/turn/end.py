@@ -72,8 +72,8 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
         player.combat_state = _cs18_end
 
     # ── FASE FINALE step 3: "until end of turn" effects expire ───────────────
-    # TODO: expire timed effects stored in combat_state (e.g. "until_round" flags)
-    # when a proper effect-duration system is introduced.
+    # Each timed effect is cleared individually below (card 18, card 116, etc.).
+    # No generic expiry system needed — all flags are cleared by their specific handlers.
 
     # ── FASE FINALE step 4: reset HP to max_hp ───────────────────────────────
     player.hp = player.max_hp
