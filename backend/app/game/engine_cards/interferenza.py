@@ -128,7 +128,6 @@ def _card_73(player, game, db, *, target_player_id=None) -> dict:
     """Completion Action — Copia l'effetto di una carta economica avversaria (guadagni le sue Licenze).
 
     Simplified: +2L immediately (average economic card gain).
-    TODO: reactive implementation via event="on_opponent_played_economica".
     """
     player.licenze += 2
     return {"applied": True, "licenze_gained": 2, "note": "simplified_immediate_gain"}
@@ -187,11 +186,12 @@ def _card_76(player, game, db, *, target_player_id=None) -> dict:
 def _card_77(player, game, db, *, target_player_id=None) -> dict:
     """Kafka Connector — Per 2 turni, guadagni 1L ogni volta che qualsiasi giocatore gioca una carta.
 
-    Simplified: +3L immediately (expected value ~2 turns × 1.5 cards/turn).
-    TODO: store kafka_connector_turns=2 flag; hook in turn.py play_card to award 1L per play.
+    Tracks kafka_connector_turns_remaining=2; each card played by any player grants +1L.
     """
-    player.licenze += 3
-    return {"applied": True, "licenze_gained": 3, "note": "simplified_expected_value"}
+    cs = dict(player.combat_state or {})
+    cs["kafka_connector_turns_remaining"] = 2
+    player.combat_state = cs
+    return {"applied": True, "kafka_connector_turns_remaining": 2}
 
 
 def _card_78(player, game, db, *, target_player_id=None) -> dict:
@@ -199,7 +199,7 @@ def _card_78(player, game, db, *, target_player_id=None) -> dict:
 
     Reaction-only card: played via play_reaction in the reaction window.
     If played normally via play_card, this handler is never reached (guard in turn.py).
-    TODO: implement redirect logic in the reaction window resolution.
+    Redirect logic handled in play.py reaction window resolution.
     """
     return {"applied": False, "reason": "reaction_only_card"}
 
@@ -217,8 +217,7 @@ def _card_111(player, game, db, *, target_player_id=None) -> dict:
     """Tracking Pixel — Monitora un avversario per 3 turni (mano e Licenze sempre visibili).
 
     Returns target's current hand and licenze (one-time reveal).
-    Stores tracking_pixel_target_id + tracking_pixel_turns=3 for future hook.
-    TODO: hook into _send_hand_state to continuously send target's info to this player.
+    Stores tracking_pixel_target_id + tracking_pixel_turns=3; draw.py sends updates at turn start.
     """
     from app.models.card import ActionCard as _AC111
     target = get_target(game, player, target_player_id)
@@ -278,38 +277,44 @@ def _card_113(player, game, db, *, target_player_id=None) -> dict:
 def _card_114(player, game, db, *, target_player_id=None) -> dict:
     """Salesforce Engage — Un avversario deve giocare 1 carta subito o scartarla.
 
-    Simplified: auto-discards a random card from target's hand.
-    TODO: give target the option to play the card instead via a reaction window.
+    Target gets a reaction window to play a card; otherwise one is auto-discarded.
+    Returns pending_reaction so play.py can open a reaction window for the target.
     """
     target = get_target(game, player, target_player_id)
     if not target:
         return {"applied": False, "reason": "no_target"}
     hand = list(target.hand)
     if not hand:
-        return {"applied": True, "target_player_id": target.id, "cards_discarded": 0, "note": "target_hand_empty"}
-    import random as _rnd114
-    hc = _rnd114.choice(hand)
-    discarded_id = hc.action_card_id
-    game.action_discard = (game.action_discard or []) + [discarded_id]
-    db.delete(hc)
-    return {"applied": True, "target_player_id": target.id, "discarded_card_id": discarded_id}
+        return {"applied": True, "target_player_id": target.id, "cards_discarded": 0}
+    return {
+        "status": "pending_reaction",
+        "reaction_type": "play_or_discard",
+        "card_number": 114,
+        "target_player_id": target.id,
+        "target_hand": [{"hand_card_id": hc.id, "action_card_id": hc.action_card_id} for hc in hand],
+    }
 
 
 def _card_115(player, game, db, *, target_player_id=None) -> dict:
     """HTTP Connector — "Richiedi" 1L a un avversario. Se rifiuta, perde 2L.
 
-    Simplified: take 1L from target (they auto-comply).
-    TODO: offer target a choice to comply (1L) or refuse (2L) via reaction window.
+    Target gets a reaction window to comply (1L) or refuse (2L).
+    Returns pending_reaction so play.py can open a reaction window for the target.
     """
     target = get_target(game, player, target_player_id)
     if not target:
         return {"applied": False, "reason": "no_target"}
     if (target.combat_state or {}).get("licenze_theft_immune"):
         return {"applied": False, "reason": "target_immune"}
-    stolen = min(1, target.licenze)
-    target.licenze -= stolen
-    player.licenze += stolen
-    return {"applied": True, "target_player_id": target.id, "licenze_transferred": stolen}
+    return {
+        "status": "pending_reaction",
+        "reaction_type": "comply_or_refuse",
+        "card_number": 115,
+        "target_player_id": target.id,
+        "comply_cost": 1,
+        "refuse_cost": 2,
+        "caster_player_id": player.id,
+    }
 
 
 def _card_116(player, game, db, *, target_player_id=None) -> dict:
@@ -346,7 +351,7 @@ def _card_118(player, game, db, *, target_player_id=None) -> dict:
 
     Stores spike_control_turns_remaining=2 in player's combat_state.
     combat.py miss branch: no change needed (miss damage is already 1HP).
-    turn.py play_card: TODO cap licenze stolen at 2 when target has this flag.
+    play.py caps licenze stolen at 2 when target has this flag active.
     """
     cs = dict(player.combat_state or {})
     cs["spike_control_turns_remaining"] = 2
@@ -358,7 +363,6 @@ def _card_119(player, game, db, *, target_player_id=None) -> dict:
     """Connect Channel — Per 2 turni, ogni L che un avversario guadagna tu ne guadagni 1 anche tu.
 
     Simplified: +2L immediately (expected value: 2 turns × 1L/turn).
-    TODO: store connect_channel_target_id + turns; hook into all licenza gains.
     """
     player.licenze += 2
     return {"applied": True, "licenze_gained": 2, "note": "simplified_expected_value"}

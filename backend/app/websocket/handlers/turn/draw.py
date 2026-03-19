@@ -53,7 +53,33 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
         pa.is_tapped = False
 
     # ── FASE INIZIALE step 2: on-start abilities ──────────────────────────────
-    # TODO: trigger_passive_addons(event="on_turn_start", player, game, db)
+    # Passive addon effects on turn start are handled inline below (addons 43, 48, 78, etc.)
+
+    # Card 111 (Tracking Pixel): send target's current hand to tracker at start of each turn
+    _tp111 = (player.combat_state or {}).get("tracking_pixel_target_id")
+    _tp111_turns = (player.combat_state or {}).get("tracking_pixel_turns", 0)
+    if _tp111 and _tp111_turns > 0:
+        _tp111_target = next((p for p in game.players if p.id == _tp111), None)
+        if _tp111_target:
+            from app.models.card import ActionCard as _AC111d
+            _hand111 = []
+            for hc111 in _tp111_target.hand:
+                c111 = db.get(_AC111d, hc111.action_card_id)
+                if c111:
+                    _hand111.append({"id": c111.id, "number": c111.number, "name": c111.name})
+            await manager.send_to_player(game.code, player.user_id, {
+                "type": "tracking_pixel_update",
+                "target_player_id": _tp111,
+                "target_licenze": _tp111_target.licenze,
+                "target_hand": _hand111,
+                "turns_remaining": _tp111_turns - 1,
+            })
+        _cs111 = dict(player.combat_state)
+        _cs111["tracking_pixel_turns"] = _tp111_turns - 1
+        if _cs111["tracking_pixel_turns"] <= 0:
+            _cs111.pop("tracking_pixel_target_id", None)
+            _cs111.pop("tracking_pixel_turns", None)
+        player.combat_state = _cs111
 
     # ── FASE INIZIALE step 3: process cross-turn combat_state flags ───────────
     _cs_init = dict(player.combat_state or {})
@@ -336,7 +362,7 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
                 from app.models.game import PlayerHandCard as _PHC17
                 db.add(_PHC17(player_id=player.id, action_card_id=_extra17))
 
-    # TODO: trigger_passive_addons(event="on_draw", player, game, db)
+    # Passive addon effects on draw are handled inline below (addon 41, etc.)
 
     # Addon 41 (Trailhead Quest): every 5 cards drawn, gain 1L
     if _has_addon_draw(player, 41) and not jinxed:

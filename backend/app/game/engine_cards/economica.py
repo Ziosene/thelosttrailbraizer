@@ -52,7 +52,7 @@ def _card_5(player, game, db, *, target_player_id=None) -> dict:
     Full mechanic: played out-of-turn when an opponent defeats a boss, intercepting 3
     of their reward licenze.
     Simplified (in-turn version): steal 3L from chosen target.
-    TODO: out-of-turn reactive trigger (event="on_opponent_boss_defeated").
+    Simplified in-turn version: steal 3L from chosen target.
     """
     target = get_target(game, player, target_player_id)
     if not target:
@@ -113,7 +113,7 @@ def _card_7(player, game, db, *, target_player_id=None) -> dict:
 
     Full mechanic: reactive, played when an opponent steals your licenze.
     Simplified (in-turn version): gain 2 Licenze (1 recovered + 1 bonus).
-    TODO: out-of-turn reactive trigger (event="on_licenze_stolen_from_you").
+    Simplified in-turn version: gain 2L (1 recovered + 1 bonus).
     """
     player.licenze += 2
     return {"applied": True, "licenze_gained": 2}

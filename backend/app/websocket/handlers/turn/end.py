@@ -28,7 +28,25 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
         return
 
     # ── FASE FINALE step 1: on-end abilities ─────────────────────────────────
-    # TODO: trigger_passive_addons(event="on_turn_end", player, game, db)
+    # Passive addon effects on turn end are handled inline below (addons 125, 117, 183, etc.)
+
+    # Card 74 (Routing Configuration): if player still has routing_assigned at end of turn, lose 2L
+    _cs74 = player.combat_state or {}
+    if _cs74.get("routing_assigned"):
+        player.licenze = max(0, player.licenze - 2)
+        cs74_clear = dict(_cs74)
+        cs74_clear.pop("routing_assigned", None)
+        cs74_clear.pop("routing_assigned_boss_id", None)
+        player.combat_state = cs74_clear
+
+    # Card 118 (Spike Control): decrement turns_remaining at end of turn
+    _cs118 = player.combat_state or {}
+    if _cs118.get("spike_control_turns_remaining", 0) > 0:
+        cs118e = dict(_cs118)
+        cs118e["spike_control_turns_remaining"] -= 1
+        if cs118e["spike_control_turns_remaining"] <= 0:
+            cs118e.pop("spike_control_turns_remaining", None)
+        player.combat_state = cs118e
 
     # ── FASE FINALE step 2: discard excess cards (hand > 10 or 12 with Kanban/Platform Cache) ───
     # Addon 100 (Kanban Board): max hand size 12 instead of 10

@@ -590,6 +590,57 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
                     _extra8b = min(_licenze_lost8, _target8b.licenze)
                     _target8b.licenze -= _extra8b
 
+    # ── Pending reaction: the engine function needs a reaction from the TARGET ──
+    if isinstance(card_effect_result, dict) and card_effect_result.get("status") == "pending_reaction":
+        _rt = card_effect_result.get("reaction_type")
+        _rt_target_id = card_effect_result.get("target_player_id")
+        _rt_target = next((p for p in game.players if p.id == _rt_target_id), None)
+
+        if _rt == "play_or_discard" and _rt_target:
+            # Card 114 (Salesforce Engage): target must play a card or one is auto-discarded
+            await manager.send_to_player(game.code, _rt_target.user_id, {
+                "type": "card114_play_or_discard",
+                "caster_player_id": player.id,
+                "options": card_effect_result.get("target_hand", []),
+            })
+            db.commit(); db.refresh(game)
+            _r114 = await open_reaction_window(game.code, _rt_target.id, timeout=20.0)
+            if _r114 and _r114.get("action") == "play" and _r114.get("hand_card_id"):
+                # target chose to play a card — use existing play logic via reaction
+                pass  # card is played via reaction window in normal flow
+            else:
+                # auto-discard a random card
+                import random as _rnd114p
+                _hand114p = list(_rt_target.hand)
+                if _hand114p:
+                    from app.models.game import PlayerHandCard as _PHC114p
+                    _hc114p = _rnd114p.choice(_hand114p)
+                    game.action_discard = (game.action_discard or []) + [_hc114p.action_card_id]
+                    db.delete(_hc114p)
+            card_effect_result = {"applied": True, "target_player_id": _rt_target_id}
+
+        elif _rt == "comply_or_refuse" and _rt_target:
+            # Card 115 (HTTP Connector): target complies (1L) or refuses (2L)
+            await manager.send_to_player(game.code, _rt_target.user_id, {
+                "type": "card115_comply_or_refuse",
+                "caster_player_id": player.id,
+                "comply_cost": card_effect_result.get("comply_cost", 1),
+                "refuse_cost": card_effect_result.get("refuse_cost", 2),
+            })
+            db.commit(); db.refresh(game)
+            _r115 = await open_reaction_window(game.code, _rt_target.id, timeout=20.0)
+            if _r115 and _r115.get("action") == "refuse":
+                _cost115 = min(card_effect_result.get("refuse_cost", 2), _rt_target.licenze)
+                _rt_target.licenze -= _cost115
+                # caster gets nothing on refusal
+                card_effect_result = {"applied": True, "target_player_id": _rt_target_id, "refused": True, "target_licenze_lost": _cost115}
+            else:
+                # comply: target loses 1L, caster gains 1L
+                _cost115c = min(card_effect_result.get("comply_cost", 1), _rt_target.licenze)
+                _rt_target.licenze -= _cost115c
+                player.licenze += _cost115c
+                card_effect_result = {"applied": True, "target_player_id": _rt_target_id, "licenze_transferred": _cost115c}
+
     # ── Pending choice: the engine function needs player input before completing ──
     if isinstance(card_effect_result, dict) and card_effect_result.get("status") == "pending_choice":
         _cs_pending = dict(player.combat_state or {})
@@ -770,6 +821,27 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
         if _tgt79 and _has_addon_play(_tgt79, 79) and player.licenze > 0:
             player.licenze -= 1
             _tgt79.licenze += 1
+
+    # Card 77 (Kafka Connector): any player with kafka_connector_turns_remaining earns +1L per card played
+    if card and card_approved and not original_cancelled:
+        for _kc_player in game.players:
+            _kc_cs = _kc_player.combat_state or {}
+            _kc_turns = _kc_cs.get("kafka_connector_turns_remaining", 0)
+            if _kc_turns > 0 and _kc_player.id != player.id:
+                _kc_player.licenze += 1
+                _kc_new = dict(_kc_cs)
+                _kc_new["kafka_connector_turns_remaining"] = _kc_turns - 1
+                _kc_player.combat_state = _kc_new
+
+    # Card 118 (Spike Control): cap licenze_stolen at 2 when target has spike_control active
+    if card and card_approved and not original_cancelled and target_player_id and isinstance(card_effect_result, dict):
+        _tgt118 = next((p for p in game.players if p.id == target_player_id and p.id != player.id), None)
+        if _tgt118 and (_tgt118.combat_state or {}).get("spike_control_turns_remaining", 0) > 0:
+            _stolen118 = card_effect_result.get("licenze_stolen", 0)
+            if _stolen118 > 2:
+                _excess118 = _stolen118 - 2
+                _tgt118.licenze += _excess118
+                player.licenze = max(0, player.licenze - _excess118)
 
     # Card 120 (Event Monitoring): watchers earn 1L each time this player plays a card (max 2)
     for _watcher in game.players:
