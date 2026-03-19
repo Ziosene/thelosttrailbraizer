@@ -395,6 +395,18 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
         if _extra52 is not None:
             db.add(_PHC52(player_id=player.id, action_card_id=_extra52))
 
+    # Addon 114 (Event Bus): when any player draws a boss, all players with addon 114 draw 1 action card
+    from app.models.game import PlayerHandCard as _PHC114
+    for _p114 in game.players:
+        if _has_addon_start(_p114, 114):
+            _cid114 = None
+            if game.action_deck_1:
+                _cid114 = game.action_deck_1.pop(0)
+            elif game.action_deck_2:
+                _cid114 = game.action_deck_2.pop(0)
+            if _cid114:
+                db.add(_PHC114(player_id=_p114.id, action_card_id=_cid114))
+
     db.commit()
     db.refresh(game)
 

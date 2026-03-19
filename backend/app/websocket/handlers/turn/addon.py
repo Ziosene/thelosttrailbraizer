@@ -15,7 +15,13 @@ from app.game.engine_addons import has_addon as _has_addon_addon
 
 
 async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Session):
-    if game.status != GameStatus.in_progress or game.current_phase != TurnPhase.action:
+    if game.status != GameStatus.in_progress:
+        await _error(game.code, user_id, "Cannot buy addon now")
+        return
+    # Addon 111 (Quick Deploy): allow buying addons during combat phase too
+    _player_111 = _get_player(game, user_id)
+    _allow_combat_buy = _player_111 and _has_addon_addon(_player_111, 111)
+    if game.current_phase not in (TurnPhase.action,) and not (game.current_phase == TurnPhase.combat and _allow_combat_buy):
         await _error(game.code, user_id, "Cannot buy addon now")
         return
 
@@ -78,7 +84,13 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
             await _error(game.code, user_id, "Addon purchases are blocked by the boss")
             return
 
+
     cost = addon.cost + (player.pending_addon_cost_penalty or 0)
+    # Addon 139 (Unmanaged Package): market costs +2L for all opponents of the player with this addon
+    for _p139 in game.players:
+        if _p139.id != player.id and _has_addon_addon(_p139, 139):
+            cost += 2
+            break  # one player with addon 139 is enough
     # Card 272 (ISV Ecosystem): fix next addon cost to 5 for this turn (one-shot)
     if (player.combat_state or {}).get("isv_ecosystem_active"):
         cost = 5
@@ -130,6 +142,19 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
         cs_addon.pop("next_addon_price_half", None)
         player.combat_state = cs_addon
 
+    # Addon 124 (Bulk API): check once-per-game bulk purchase slots
+    _cs_buy124 = player.combat_state or {}
+    _bulk_remaining = _cs_buy124.get("bulk_api_purchases_remaining", 0)
+    if _bulk_remaining > 0:
+        # Allow extra purchase, decrement counter
+        _cs_new_buy124 = dict(_cs_buy124)
+        _cs_new_buy124["bulk_api_purchases_remaining"] -= 1
+        player.combat_state = _cs_new_buy124
+    else:
+        # Normal: check once-per-turn limit (not blocking for now — game uses bought_addon_this_turn
+        # purely for information; actual enforcement done below if needed)
+        pass
+
     # Bought addons are tracked as owned by player; market slot gets refilled
     if source == "market_1":
         game.addon_market_1 = game.addon_deck_1.pop(0) if game.addon_deck_1 else None
@@ -173,6 +198,15 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
         _PA_bought.player_id == player.id,
         _PA_bought.addon_id == addon_id,
     ).order_by(_PA_bought.id.desc()).first()
+
+    # Track addon acquisition turn for addon 133 (Winter Release) and 136 (Package Upgrade)
+    # Always record acquisition turn in buyer's combat_state so future addons are covered
+    if new_pa:
+        _cs_acq = dict(player.combat_state or {})
+        _aq_turns = dict(_cs_acq.get("addon_acquired_turns", {}))
+        _aq_turns[str(new_pa.id)] = game.turn_number
+        _cs_acq["addon_acquired_turns"] = _aq_turns
+        player.combat_state = _cs_acq
 
     # Addon 92 (Beta Feature): offer to reject just-bought addon and draw another
     if _has_addon_addon(player, 92) and new_pa:
@@ -733,6 +767,11 @@ async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Ses
             await _error(game.code, user_id, "Addon not owned by target")
             pa.is_tapped = False
             return
+        # Addon 138 (Managed Package): target's addons are protected
+        if _has_addon_addon(_target67, 138):
+            await _error(game.code, user_id, "Target's addons are protected by Managed Package")
+            pa.is_tapped = False
+            return
         _target_pa67.is_tapped = True
         _cs67_new = dict(_cs67)
         _cs67_new["connected_app_used"] = True
@@ -872,6 +911,12 @@ async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Ses
             await _error(game.code, user_id, "Invalid opponent addon")
             pa.is_tapped = False
             return
+        # Addon 138 (Managed Package): target's addons are protected
+        _their_player89 = next((p for p in game.players if p.id == their_pa89.player_id), None)
+        if _their_player89 and _has_addon_addon(_their_player89, 138):
+            await _error(game.code, user_id, "Target's addons are protected by Managed Package")
+            pa.is_tapped = False
+            return
         their_old_player_id = their_pa89.player_id
         my_pa89.player_id = their_old_player_id
         their_pa89.player_id = player.id
@@ -973,6 +1018,12 @@ async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Ses
             return
         if not their_pa95 or their_pa95.player_id == player.id:
             await _error(game.code, user_id, "Invalid opponent addon")
+            pa.is_tapped = False
+            return
+        # Addon 138 (Managed Package): target's addons are protected
+        _their_player95 = next((p for p in game.players if p.id == their_pa95.player_id), None)
+        if _their_player95 and _has_addon_addon(_their_player95, 138):
+            await _error(game.code, user_id, "Target's addons are protected by Managed Package")
             pa.is_tapped = False
             return
         their_old_player_id = their_pa95.player_id
@@ -1090,6 +1141,257 @@ async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Ses
         cs109["proof_of_concept_active"] = True
         cs109["proof_of_concept_used_this_turn"] = True
         player.combat_state = cs109
+
+    # ── Active addon effects (111-140) ──────────────────────────────────────
+
+    # Addon 115 (Future Method): next dice roll is doubled (capped at 10)
+    elif addon.number == 115:
+        if not player.is_in_combat:
+            await _error(game.code, user_id, "Must be in combat to use Future Method")
+            pa.is_tapped = False
+            return
+        cs115 = dict(player.combat_state or {})
+        if cs115.get("future_method_active"):
+            await _error(game.code, user_id, "Future Method already active")
+            pa.is_tapped = False
+            return
+        cs115["future_method_active"] = True
+        player.combat_state = cs115
+
+    # Addon 119 (Queueable Job): once per game, buy any market addon for free
+    elif addon.number == 119:
+        cs119 = player.combat_state or {}
+        if cs119.get("queueable_job_used"):
+            await _error(game.code, user_id, "Queueable Job already used this game")
+            pa.is_tapped = False
+            return
+        target_addon_id119 = data.get("target_addon_id")
+        market119 = []
+        if game.addon_market_1:
+            market119.append(game.addon_market_1)
+        if game.addon_market_2:
+            market119.append(game.addon_market_2)
+        if target_addon_id119 not in market119:
+            await _error(game.code, user_id, "Addon not in market")
+            pa.is_tapped = False
+            return
+        if game.addon_market_1 == target_addon_id119:
+            game.addon_market_1 = game.addon_deck_1.pop(0) if game.addon_deck_1 else (game.addon_deck_2.pop(0) if game.addon_deck_2 else None)
+        elif game.addon_market_2 == target_addon_id119:
+            game.addon_market_2 = game.addon_deck_1.pop(0) if game.addon_deck_1 else (game.addon_deck_2.pop(0) if game.addon_deck_2 else None)
+        from app.models.game import PlayerAddon as _PA119
+        db.add(_PA119(player_id=player.id, addon_id=target_addon_id119, is_tapped=False))
+        cs119_new = dict(cs119)
+        cs119_new["queueable_job_used"] = True
+        player.combat_state = cs119_new
+
+    # Addon 120 (Scheduled Flow): declare 2-4 turns; when they expire, gain that many L
+    elif addon.number == 120:
+        declared120 = data.get("turns_declared")
+        if declared120 not in (2, 3, 4):
+            await _error(game.code, user_id, "Declare 2, 3 or 4 turns")
+            pa.is_tapped = False
+            return
+        cs120 = dict(player.combat_state or {})
+        if cs120.get("scheduled_flow_countdown") is not None:
+            await _error(game.code, user_id, "Scheduled Flow already running")
+            pa.is_tapped = False
+            return
+        cs120["scheduled_flow_countdown"] = declared120
+        cs120["scheduled_flow_reward"] = declared120
+        player.combat_state = cs120
+
+    # Addon 121 (Mass Email): play 1 economic card — effect applies to you AND 1 other player
+    elif addon.number == 121:
+        target_id121 = data.get("target_player_id")
+        hand_card_id121 = data.get("hand_card_id")
+        target121 = next((p for p in game.players if p.id == target_id121), None)
+        if not target121 or target121.id == player.id:
+            await _error(game.code, user_id, "Invalid target for Mass Email")
+            pa.is_tapped = False
+            return
+        from app.models.game import PlayerHandCard as _PHC121
+        hc121 = db.get(_PHC121, hand_card_id121)
+        if not hc121 or hc121.player_id != player.id:
+            await _error(game.code, user_id, "Card not in hand")
+            pa.is_tapped = False
+            return
+        from app.models.card import ActionCard as _AC121
+        card121 = db.get(_AC121, hc121.action_card_id)
+        if not card121 or card121.card_type != "Economica":
+            await _error(game.code, user_id, "Must be an economic card")
+            pa.is_tapped = False
+            return
+        from app.game.engine_cards import apply_action_card_effect as _apply121
+        _apply121(card121, player, game, db)
+        _apply121(card121, target121, game, db)
+        game.action_discard = (game.action_discard or []) + [hc121.action_card_id]
+        db.delete(hc121)
+
+    # Addon 122 (Broadcast Message): once per game, all opponents discard 1 card
+    elif addon.number == 122:
+        cs122 = player.combat_state or {}
+        if cs122.get("broadcast_used"):
+            await _error(game.code, user_id, "Broadcast Message already used this game")
+            pa.is_tapped = False
+            return
+        import random as _r122
+        from app.models.game import PlayerHandCard as _PHC122
+        for _p122 in game.players:
+            if _p122.id == player.id:
+                continue
+            _hand122 = list(_p122.hand)
+            if _hand122:
+                _discard122 = _r122.choice(_hand122)
+                game.action_discard = (game.action_discard or []) + [_discard122.action_card_id]
+                db.delete(_discard122)
+        cs122_new = dict(cs122)
+        cs122_new["broadcast_used"] = True
+        player.combat_state = cs122_new
+
+    # Addon 123 (Global Action): once per game, all opponents lose 2L
+    elif addon.number == 123:
+        cs123 = player.combat_state or {}
+        if cs123.get("global_action_used"):
+            await _error(game.code, user_id, "Global Action already used this game")
+            pa.is_tapped = False
+            return
+        for _p123 in game.players:
+            if _p123.id != player.id:
+                _p123.licenze = max(0, _p123.licenze - 2)
+        cs123_new = dict(cs123)
+        cs123_new["global_action_used"] = True
+        player.combat_state = cs123_new
+
+    # Addon 124 (Bulk API): once per game, buy up to 3 addons in one turn ignoring 1-per-turn limit
+    elif addon.number == 124:
+        cs124 = player.combat_state or {}
+        if cs124.get("bulk_api_used"):
+            await _error(game.code, user_id, "Bulk API already used this game")
+            pa.is_tapped = False
+            return
+        cs124_new = dict(cs124)
+        cs124_new["bulk_api_used"] = True
+        cs124_new["bulk_api_purchases_remaining"] = 3
+        player.combat_state = cs124_new
+
+    # Addon 127 (Sharing Set): once per game, redistribute all players' L equally (floor)
+    elif addon.number == 127:
+        cs127 = player.combat_state or {}
+        if cs127.get("sharing_set_used"):
+            await _error(game.code, user_id, "Sharing Set already used this game")
+            pa.is_tapped = False
+            return
+        total127 = sum(p.licenze for p in game.players)
+        per_player127 = total127 // len(game.players)
+        for _p127 in game.players:
+            _p127.licenze = per_player127
+        cs127_new = dict(cs127)
+        cs127_new["sharing_set_used"] = True
+        player.combat_state = cs127_new
+
+    # Addon 129 (Junction Object): once per turn, untap one of your tapped addons
+    elif addon.number == 129:
+        target_pa_id129 = data.get("target_addon_id")
+        from app.models.game import PlayerAddon as _PA129
+        target_pa129 = db.get(_PA129, target_pa_id129)
+        if not target_pa129 or target_pa129.player_id != player.id:
+            await _error(game.code, user_id, "Invalid addon for Junction Object")
+            pa.is_tapped = False
+            return
+        if not target_pa129.is_tapped:
+            await _error(game.code, user_id, "Addon is not tapped")
+            pa.is_tapped = False
+            return
+        if target_pa129.id == pa.id:
+            await _error(game.code, user_id, "Cannot untap itself")
+            pa.is_tapped = False
+            return
+        target_pa129.is_tapped = False
+
+    # Addon 130 (External Object): once per game, choose addon from graveyard and acquire by paying cost
+    elif addon.number == 130:
+        cs130 = player.combat_state or {}
+        if cs130.get("external_object_used"):
+            await _error(game.code, user_id, "External Object already used this game")
+            pa.is_tapped = False
+            return
+        graveyard130 = list(game.addon_graveyard or [])
+        if not graveyard130:
+            await _error(game.code, user_id, "Addon graveyard is empty")
+            pa.is_tapped = False
+            return
+        cs130_new = dict(cs130)
+        cs130_new["external_object_used"] = True
+        cs130_new["external_object_pending"] = True
+        player.combat_state = cs130_new
+        db.commit()
+        db.refresh(game)
+        await manager.send_to_player(game.code, player.user_id, {
+            "type": "external_object_options",
+            "addon_card_ids": graveyard130,
+        })
+        await _broadcast_state(game, db)
+        return
+
+    # Addon 134 (Major Release): once per game, roll dice: ≥6 → +3L; ≤5 → draw 2 cards
+    elif addon.number == 134:
+        cs134 = player.combat_state or {}
+        if cs134.get("major_release_used"):
+            await _error(game.code, user_id, "Major Release already used this game")
+            pa.is_tapped = False
+            return
+        roll134 = engine.roll_d10()
+        cs134_new = dict(cs134)
+        cs134_new["major_release_used"] = True
+        player.combat_state = cs134_new
+        if roll134 >= 6:
+            player.licenze += 3
+        else:
+            from app.models.game import PlayerHandCard as _PHC134
+            for _ in range(2):
+                if game.action_deck_1:
+                    cid134 = game.action_deck_1.pop(0)
+                elif game.action_deck_2:
+                    cid134 = game.action_deck_2.pop(0)
+                else:
+                    break
+                db.add(_PHC134(player_id=player.id, action_card_id=cid134))
+        db.commit()
+        db.refresh(game)
+        await manager.broadcast(game.code, {
+            "type": "major_release_roll",
+            "player_id": player.id,
+            "roll": roll134,
+        })
+        await _broadcast_state(game, db)
+        return
+
+    # Addon 140 (OmniScript): once per game, roll 2 dice, gain L equal to sum (max 20)
+    elif addon.number == 140:
+        cs140 = player.combat_state or {}
+        if cs140.get("omniscript_used"):
+            await _error(game.code, user_id, "OmniScript already used this game")
+            pa.is_tapped = False
+            return
+        r1_140 = engine.roll_d10()
+        r2_140 = engine.roll_d10()
+        gain140 = min(r1_140 + r2_140, 20)
+        player.licenze += gain140
+        cs140_new = dict(cs140)
+        cs140_new["omniscript_used"] = True
+        player.combat_state = cs140_new
+        db.commit()
+        db.refresh(game)
+        await manager.broadcast(game.code, {
+            "type": "omniscript_roll",
+            "player_id": player.id,
+            "roll_1": r1_140,
+            "roll_2": r2_140,
+            "gain": gain140,
+        })
+        await _broadcast_state(game, db)
+        return
 
     db.commit()
     db.refresh(game)
@@ -1375,6 +1677,98 @@ async def _handle_acceptance_criteria_choose(game, user_id: int, data: dict, db)
             elif game.action_deck_2:
                 db.add(_PHC98(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
     player.combat_state = cs_new
+    db.commit()
+    db.refresh(game)
+    await _broadcast_state(game, db)
+
+
+async def _handle_external_object_pick(game, user_id: int, data: dict, db):
+    """Handle Addon 130 (External Object): pick addon from graveyard paying its normal cost."""
+    from app.websocket.game_helpers import _get_player, _error, _broadcast_state
+    player = _get_player(game, user_id)
+    if not player:
+        return
+    cs = player.combat_state or {}
+    if not cs.get("external_object_pending"):
+        await _error(game.code, user_id, "No External Object pick pending")
+        return
+    addon_card_id130 = data.get("addon_card_id")
+    graveyard130 = list(game.addon_graveyard or [])
+    if addon_card_id130 not in graveyard130:
+        await _error(game.code, user_id, "Addon not in graveyard")
+        return
+    from app.models.card import AddonCard as _AC130
+    ac130 = db.get(_AC130, addon_card_id130)
+    if not ac130:
+        await _error(game.code, user_id, "Addon card not found")
+        return
+    cost130 = ac130.cost
+    if player.licenze < cost130:
+        await _error(game.code, user_id, f"Need {cost130}L to acquire this addon (have {player.licenze}L)")
+        return
+    player.licenze -= cost130
+    graveyard130.remove(addon_card_id130)
+    game.addon_graveyard = graveyard130
+    from app.models.game import PlayerAddon as _PA130
+    db.add(_PA130(player_id=player.id, addon_id=addon_card_id130, is_tapped=False))
+    cs_new130 = dict(cs)
+    cs_new130.pop("external_object_pending", None)
+    player.combat_state = cs_new130
+    db.commit()
+    db.refresh(game)
+    await _broadcast_state(game, db)
+
+
+async def _handle_batch_schedule_card(game, user_id: int, data: dict, db):
+    """Handle Addon 113 (Batch Apex Scheduler): schedule a card for next turn."""
+    from app.websocket.game_helpers import _get_player, _error, _broadcast_state
+    from app.game.engine_addons import has_addon as _has_addon_bs
+    player = _get_player(game, user_id)
+    if not player:
+        return
+    if not _has_addon_bs(player, 113):
+        await _error(game.code, user_id, "You don't have Batch Apex Scheduler")
+        return
+    hand_card_id113 = data.get("hand_card_id")
+    from app.models.game import PlayerHandCard as _PHC113
+    hc113 = db.get(_PHC113, hand_card_id113)
+    if not hc113 or hc113.player_id != player.id:
+        await _error(game.code, user_id, "Card not in hand")
+        return
+    cs113 = dict(player.combat_state or {})
+    if cs113.get("batch_scheduled_card_id"):
+        await _error(game.code, user_id, "Already have a scheduled card")
+        return
+    cs113["batch_scheduled_card_id"] = hc113.action_card_id
+    player.combat_state = cs113
+    db.delete(hc113)
+    db.commit()
+    db.refresh(game)
+    await manager.send_to_player(game.code, player.user_id, {
+        "type": "batch_schedule_confirmed",
+        "scheduled_card_id": cs113["batch_scheduled_card_id"],
+    })
+    await _broadcast_state(game, db)
+
+
+async def _handle_territory_set(game, user_id: int, data: dict, db):
+    """Handle Addon 126 (Territory Management): set territory target player."""
+    from app.websocket.game_helpers import _get_player, _error, _broadcast_state
+    from app.game.engine_addons import has_addon as _has_addon_ts
+    player = _get_player(game, user_id)
+    if not player:
+        return
+    if not _has_addon_ts(player, 126):
+        await _error(game.code, user_id, "You don't have Territory Management")
+        return
+    target_id126 = data.get("target_player_id")
+    target126 = next((p for p in game.players if p.id == target_id126), None)
+    if not target126 or target126.id == player.id:
+        await _error(game.code, user_id, "Invalid target")
+        return
+    cs126 = dict(player.combat_state or {})
+    cs126["territory_player_id"] = target_id126
+    player.combat_state = cs126
     db.commit()
     db.refresh(game)
     await _broadcast_state(game, db)

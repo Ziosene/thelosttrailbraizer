@@ -246,8 +246,16 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
     game.action_discard.append(hc.action_card_id)
     db.delete(hc)
     # Card 243 (Einstein GPT): next card plays for free (no slot consumed)
+    # Addon 113 (Batch Apex Scheduler): scheduled card plays for free (no slot consumed)
+    _batch_scheduled113 = (player.combat_state or {}).get("batch_scheduled_active")
+    _is_scheduled113 = _batch_scheduled113 is not None and card and card.id == _batch_scheduled113
     _egpt_free = (player.combat_state or {}).get("einstein_gpt_free_play")
-    if _egpt_free:
+    if _is_scheduled113:
+        _cs113_play = dict(player.combat_state)
+        _cs113_play.pop("batch_scheduled_active", None)
+        player.combat_state = _cs113_play
+        # Don't increment cards_played_this_turn
+    elif _egpt_free:
         _cs_egpt = dict(player.combat_state)
         _cs_egpt.pop("einstein_gpt_free_play", None)
         player.combat_state = _cs_egpt

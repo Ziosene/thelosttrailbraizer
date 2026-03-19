@@ -32,7 +32,10 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
 
     # ── FASE FINALE step 2: discard excess cards (hand > 10 or 12 with Kanban/Platform Cache) ───
     # Addon 100 (Kanban Board): max hand size 12 instead of 10
+    # Addon 112 (Asynchronous Callout): +1 extra card beyond hand limit
     _hand_limit_end = 12 if (_has_addon_end(player, 100) or _has_addon_end(player, 10)) else engine.MAX_HAND_SIZE
+    if _has_addon_end(player, 112):
+        _hand_limit_end += 1
     hand_cards = list(player.hand)
     excess = len(hand_cards) - _hand_limit_end
     discarded_card_ids: list = []
@@ -263,6 +266,21 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
     # Addon 65 (Permission Set Group): clear locked_out for all players at end of turn (already immune,
     # but clearing is still needed for other players without addon 65)
     # (locked_out is cleared when the player's turn ends via the Anypoint MQ card effect)
+
+    # Addon 125 (Aggregate Query): at end of turn, if played ≥2 cards, gain +1L
+    if _has_addon_end(player, 125):
+        _played125 = player.cards_played_this_turn
+        if _played125 >= 2:
+            player.licenze += 1
+
+    # Addon 117 (Change Data Capture): if player lost ≥5L this turn, flag recovery for next turn
+    if _has_addon_end(player, 117):
+        _cs117e = dict(player.combat_state or {})
+        _start117 = _cs117e.get("cdc_licenze_start", player.licenze)
+        if _start117 - player.licenze >= 5:
+            _cs117e["cdc_recovery_pending"] = True
+        _cs117e.pop("cdc_licenze_start", None)
+        player.combat_state = _cs117e
 
     player.cards_played_this_turn = 0
 

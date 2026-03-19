@@ -14,6 +14,7 @@ from app.websocket.handlers.turn import (
     _handle_metadata_api_reorder, _handle_release_notes_confirm, _handle_sharing_rules_pick,
     _handle_beta_feature_reject, _handle_beta_feature_keep,
     _handle_pilot_program_pick, _handle_acceptance_criteria_choose,
+    _handle_external_object_pick, _handle_batch_schedule_card, _handle_territory_set,
 )
 from app.websocket.handlers.combat import (
     _handle_start_combat, _handle_roll_dice, _handle_retreat,
@@ -88,5 +89,11 @@ async def handle_message(
         await _handle_pilot_program_pick(game, user_id, data, db)
     elif action == "acceptance_criteria_choose":
         await _handle_acceptance_criteria_choose(game, user_id, data, db)
+    elif action == "external_object_pick":
+        await _handle_external_object_pick(game, user_id, data, db)
+    elif action == "batch_schedule_card":
+        await _handle_batch_schedule_card(game, user_id, data, db)
+    elif action == "territory_set":
+        await _handle_territory_set(game, user_id, data, db)
     else:
         await _error(game_code, user_id, f"Unknown action: {action}")

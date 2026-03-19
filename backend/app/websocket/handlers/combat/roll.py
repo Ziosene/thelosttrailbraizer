@@ -261,6 +261,24 @@ async def _boss_defeat_sequence(player, game, db, boss) -> bool:
     if has_addon(player, 97) and player.hp >= player.max_hp:
         player.licenze += 2
 
+    # Addon 128 (Cross-Object Formula): each boss defeated gives +1L extra
+    if has_addon(player, 128):
+        player.licenze += 1
+
+    # Addon 137 (ISV Partner): if player owns ≥2 addons of same type, gain +1L on boss defeat
+    if has_addon(player, 137):
+        _active137 = sum(1 for _pa137 in player.addons if _pa137.card and _pa137.card.addon_type.value == "Attivo")
+        _passive137 = sum(1 for _pa137 in player.addons if _pa137.card and _pa137.card.addon_type.value == "Passivo")
+        if _active137 >= 2 or _passive137 >= 2:
+            player.licenze += 1
+
+    # Addon 126 (Territory Management): other players watching this player defeat a boss gain 1L
+    for _p126 in game.players:
+        if _p126.id != player.id:
+            _terr126 = (_p126.combat_state or {}).get("territory_player_id")
+            if _terr126 == player.id:
+                _p126.licenze += 1
+
     # Addon 98 (Acceptance Criteria): simplified — always give 2 cards and skip licenze reward.
     # NOTE: A full async-choice flow would require deferring the entire defeat sequence, which
     # is not cleanly possible here. Simplified implementation per spec note.
@@ -406,6 +424,11 @@ async def _player_death_sequence(player, game, db, boss) -> None:
             await _broadcast_state(game, db)
             return  # survived, skip death
 
+    # Addon 116 (Platform Event): when any player dies, all OTHER players with addon 116 gain 2L
+    for _p116 in game.players:
+        if _p116.id != player.id and has_addon(_p116, 116):
+            _p116.licenze += 2
+
     # Apply death penalty
     hand_ids = [hc.action_card_id for hc in player.hand]
     addon_ids = [pa.addon_id for pa in player.addons]
@@ -444,6 +467,20 @@ async def _player_death_sequence(player, game, db, boss) -> None:
         if hc_to_remove:
             game.action_discard = (game.action_discard or []) + [lost_card_id]
             db.delete(hc_to_remove)
+
+    # Addon 132 (Summer Release): when any of player's addons go to graveyard on death, draw 1 card (max 3)
+    if has_addon(player, 132):
+        _addons_count132 = len(player.addons)
+        if _addons_count132 > 0:
+            for _ in range(min(_addons_count132, 3)):
+                if game.action_deck_1:
+                    _cid132 = game.action_deck_1.pop(0)
+                elif game.action_deck_2:
+                    _cid132 = game.action_deck_2.pop(0)
+                else:
+                    break
+                from app.models.game import PlayerHandCard as _PHC132
+                db.add(_PHC132(player_id=player.id, action_card_id=_cid132))
 
     # Remove lost addon
     # Addon 23 (Field Service Mobile): if dying outside own turn, skip addon loss
@@ -943,6 +980,24 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         del _cs81_new["vulnerability_scan_bonus"]
         player.combat_state = _cs81_new
 
+    # Addon 115 (Future Method): next dice roll doubled (capped at 10)
+    _cs115 = player.combat_state or {}
+    if _cs115.get("future_method_active"):
+        roll = min(roll * 2, 10)
+        _cs115_new = dict(_cs115)
+        del _cs115_new["future_method_active"]
+        player.combat_state = _cs115_new
+
+    # Addon 136 (Package Upgrade): each addon owned for ≥3 turns gives +1 to dice rolls (max +3)
+    if has_addon(player, 136):
+        _aq136 = (player.combat_state or {}).get("addon_acquired_turns", {})
+        _bonus136 = 0
+        for _pa136 in player.addons:
+            _acq_turn136 = _aq136.get(str(_pa136.id), game.turn_number)
+            if game.turn_number - _acq_turn136 >= 3:
+                _bonus136 += 1
+        roll = min(10, roll + min(_bonus136, 3))
+
     # Addon 4 (Apex Governor Override): original roll of 1 → round neutral (before addon bonuses)
     _addon4_override = has_addon(player, 4) and _raw_roll_for_addon4 == 1
 
@@ -1312,6 +1367,9 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             else:
                 player.hp = max(0, _new_hp)
             player_took_damage = True
+            # Addon 135 (Hotfix): +1L per HP lost on miss
+            if _player_hp_damage > 0 and has_addon(player, 135):
+                player.licenze += _player_hp_damage
             # Addon 7 (Flow Automation): clear no_damage_this_combat flag when player takes HP damage
             if _player_hp_damage > 0 and (player.combat_state or {}).get("no_damage_this_combat"):
                 _cs7_dmg = dict(player.combat_state)

@@ -65,6 +65,12 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
     _cs_init.pop("proof_of_concept_used_this_turn", None)
     # Addon 110 (Go-Live Celebration): clear per-turn purchase flag at turn start
     _cs_init.pop("go_live_bought_this_turn", None)
+    # Addon 115 (Future Method): clear active flag at turn start (in case combat ended without rolling)
+    _cs_init.pop("future_method_active", None)
+    # Addon 118 (Pub/Sub API): clear pubsub_earned_from at own turn start
+    _cs_init.pop("pubsub_earned_from", None)
+    # Addon 124 (Bulk API): clear per-turn bulk purchase slots (per-game used flag persists)
+    _cs_init.pop("bulk_api_purchases_remaining", None)
     # Card 44 (Object Store): auto-return stored licenze at start of new turn
     _stored_lic = _cs_init.pop("object_store_licenze", 0)
     if _stored_lic:
@@ -101,6 +107,57 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
         await _broadcast_state(game, db)
         await _send_hand_state(game.code, player, db)
         return
+
+    # Addon 117 (Change Data Capture): apply pending recovery from last turn (+2L if lost ≥5L last turn)
+    if _has_addon_draw(player, 117):
+        _cs117 = dict(player.combat_state or {})
+        if _cs117.get("cdc_recovery_pending"):
+            player.licenze += 2
+            del _cs117["cdc_recovery_pending"]
+        _cs117["cdc_licenze_start"] = player.licenze
+        player.combat_state = _cs117
+
+    # Addon 113 (Batch Apex Scheduler): deliver scheduled card at turn start (add to hand)
+    _cs113_draw = player.combat_state or {}
+    if _cs113_draw.get("batch_scheduled_card_id"):
+        _scheduled_id113 = _cs113_draw["batch_scheduled_card_id"]
+        _cs113_new_draw = dict(_cs113_draw)
+        _cs113_new_draw["batch_scheduled_active"] = _scheduled_id113
+        del _cs113_new_draw["batch_scheduled_card_id"]
+        from app.models.game import PlayerHandCard as _PHC113draw
+        db.add(_PHC113draw(player_id=player.id, action_card_id=_scheduled_id113))
+        player.combat_state = _cs113_new_draw
+
+    # Addon 120 (Scheduled Flow): decrement countdown at turn start; grant reward when expired
+    if _has_addon_draw(player, 120):
+        _cs120d = dict(player.combat_state or {})
+        if _cs120d.get("scheduled_flow_countdown") is not None:
+            _cs120d["scheduled_flow_countdown"] -= 1
+            if _cs120d["scheduled_flow_countdown"] <= 0:
+                player.licenze += _cs120d.get("scheduled_flow_reward", 0)
+                del _cs120d["scheduled_flow_countdown"]
+                del _cs120d["scheduled_flow_reward"]
+            player.combat_state = _cs120d
+
+    # Addon 131 (Spring Release): every 5 turns, gain 2L automatically
+    if _has_addon_draw(player, 131):
+        _cs131 = dict(player.combat_state or {})
+        _cs131["spring_release_turns"] = _cs131.get("spring_release_turns", 0) + 1
+        if _cs131["spring_release_turns"] >= 5:
+            player.licenze += 2
+            _cs131["spring_release_turns"] = 0
+        player.combat_state = _cs131
+
+    # Addon 133 (Winter Release): each addon owned for ≥5 turns gives +1L at start (max 3L)
+    if _has_addon_draw(player, 133):
+        _cs133d = dict(player.combat_state or {})
+        _aq133d = _cs133d.get("addon_acquired_turns", {})
+        _earned133 = 0
+        for _pa133 in player.addons:
+            _acquired_turn133 = _aq133d.get(str(_pa133.id), game.turn_number)
+            if game.turn_number - _acquired_turn133 >= 5:
+                _earned133 += 1
+        player.licenze += min(_earned133, 3)
 
     # Addon 16 (License Manager): +1L at turn start if player has fewer licenze than any opponent
     if _has_addon_draw(player, 16):
@@ -158,7 +215,10 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
 
     # Addon 10 (Platform Cache): hand size up to 12 instead of 10
     # Addon 100 (Kanban Board): hand size up to 12 instead of 10
+    # Addon 112 (Asynchronous Callout): +1 extra card beyond hand limit
     _max_hand = 12 if (_has_addon_draw(player, 10) or _has_addon_draw(player, 100)) else engine.MAX_HAND_SIZE
+    if _has_addon_draw(player, 112):
+        _max_hand += 1
     if len(player.hand) >= _max_hand:
         await _error(game.code, user_id, "Hand is full")
         return
@@ -196,6 +256,17 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
 
     if not jinxed:
         db.add(PlayerHandCard(player_id=player.id, action_card_id=drawn[0]))
+
+    # Addon 118 (Pub/Sub API): when any opponent draws a card, players with addon 118 gain 1L (max 1 per opponent per turn)
+    for _p118 in game.players:
+        if _p118.id != player.id and _has_addon_draw(_p118, 118):
+            _cs118 = dict(_p118.combat_state or {})
+            _already_got118 = list(_cs118.get("pubsub_earned_from") or [])
+            if player.id not in _already_got118:
+                _p118.licenze += 1
+                _already_got118.append(player.id)
+                _cs118["pubsub_earned_from"] = _already_got118
+                _p118.combat_state = _cs118
 
     # Card 138 (Pardot Form Handler): when ANY player draws, other players watching earn a mirror draw (max 2)
     from app.models.game import PlayerHandCard as _PHC138

@@ -10,6 +10,7 @@ from app.websocket.handlers.turn.addon import (
     _handle_metadata_api_reorder, _handle_release_notes_confirm, _handle_sharing_rules_pick,
     _handle_beta_feature_reject, _handle_beta_feature_keep,
     _handle_pilot_program_pick, _handle_acceptance_criteria_choose,
+    _handle_external_object_pick, _handle_batch_schedule_card, _handle_territory_set,
 )
 from app.websocket.handlers.turn.end import _handle_end_turn
 
@@ -28,4 +29,7 @@ __all__ = [
     "_handle_beta_feature_keep",
     "_handle_pilot_program_pick",
     "_handle_acceptance_criteria_choose",
+    "_handle_external_object_pick",
+    "_handle_batch_schedule_card",
+    "_handle_territory_set",
 ]
