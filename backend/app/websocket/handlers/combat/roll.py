@@ -208,6 +208,12 @@ async def _boss_defeat_sequence(player, game, db, boss) -> bool:
                 cs152["superbadge_grind_streak"] = 0
             player.combat_state = cs152
 
+        # Addon 185 (Customer Success): when opponent gets first cert, gain 1L
+        if player.certificazioni == 1:  # just got first cert
+            for _p185b in game.players:
+                if _p185b.id != player.id and has_addon(_p185b, 185):
+                    _p185b.licenze += 1
+
         # Addon 149 (Comeback Mechanic): when any opponent reaches 4 certs, gain 3L
         if player.certificazioni >= 4:
             for _p149 in game.players:
@@ -402,6 +408,37 @@ async def _boss_defeat_sequence(player, game, db, boss) -> bool:
     _cs_bdc169 = dict(player.combat_state or {})
     _cs_bdc169["boss_defeats_count"] = _cs_bdc169.get("boss_defeats_count", 0) + 1
     player.combat_state = _cs_bdc169
+
+    # Addon 181 (Trailblazer Spirit): first player to defeat a specific boss gains +3L
+    _game_cs181 = dict(game.combat_state or {}) if hasattr(game, 'combat_state') else {}
+    _first_defeats181 = _game_cs181.get('first_defeated_boss_ids', [])
+    _boss_id181 = player.current_boss_id  # capture before clearing
+    if has_addon(player, 181):
+        if _boss_id181 and _boss_id181 not in _first_defeats181:
+            player.licenze += 3
+    # Always update the set (even if player doesn't have addon 181)
+    _game_cs_update181 = dict(game.combat_state or {}) if hasattr(game, 'combat_state') else {}
+    _fd181 = _game_cs_update181.get('first_defeated_boss_ids', [])
+    if _boss_id181 and _boss_id181 not in _fd181:
+        _fd181.append(_boss_id181)
+        _game_cs_update181['first_defeated_boss_ids'] = _fd181
+        if hasattr(game, 'combat_state'):
+            game.combat_state = _game_cs_update181
+
+    # Addon 185 (Customer Success): when opponent gets first boss defeat, gain 1L
+    _bdc185 = (player.combat_state or {}).get('boss_defeats_count', 0)
+    if _bdc185 == 1:  # this is their first boss defeat
+        for _p185 in game.players:
+            if _p185.id != player.id and has_addon(_p185, 185):
+                _p185.licenze += 1
+
+    # Addon 188 (Trailhead Badge Hunter): every 5 boss defeats gain 1 scoring cert
+    if has_addon(player, 188):
+        _bdc188 = (player.combat_state or {}).get('boss_defeats_count', 0)
+        if _bdc188 > 0 and _bdc188 % 5 == 0:
+            cs188 = dict(player.combat_state)
+            cs188['badge_hunter_score_certs'] = cs188.get('badge_hunter_score_certs', 0) + 1
+            player.combat_state = cs188
 
     # Addon 126 (Territory Management): other players watching this player defeat a boss gain 1L
     for _p126 in game.players:
@@ -624,8 +661,10 @@ async def _player_death_sequence(player, game, db, boss) -> None:
         lost_addon_id = penalty["lost"]["addon"]
         pa_to_remove = next((pa for pa in player.addons if pa.addon_id == lost_addon_id), None)
         if pa_to_remove:
-            game.addon_graveyard = (game.addon_graveyard or []) + [lost_addon_id]
-            db.delete(pa_to_remove)
+            # Addon 200 (The Lost Trailbraizer): skip graveyard (already deleted above)
+            if not (pa_to_remove.card and pa_to_remove.card.number == 200):
+                game.addon_graveyard = (game.addon_graveyard or []) + [lost_addon_id]
+                db.delete(pa_to_remove)
 
     player.licenze = penalty["licenze"]
     player.hp = player.max_hp  # respawn with full HP
@@ -655,11 +694,20 @@ async def _player_death_sequence(player, game, db, boss) -> None:
         _cs31.pop("locked_addon_id", None)
         player.combat_state = _cs31
 
+    # Addon 200 (The Lost Trailbraizer): vanishes forever on death — delete permanently before graveyard loop
+    _pa200_death = get_addon_pa(player, 200)
+    if _pa200_death:
+        db.delete(_pa200_death)
+        db.flush()
+
     # GDD §6: tutti gli AddOn rimanenti si tappano alla morte
     # Card 84 (Renewal Opportunity): first addon is spared if player paid 5L proactively
     _renewal = (player.combat_state or {}).get("renewal_protected", False)
     _first_addon_spared = False
-    for pa_death in player.addons:
+    for pa_death in list(player.addons):
+        # Addon 200 (The Lost Trailbraizer): already deleted above, skip
+        if pa_death.card and pa_death.card.number == 200:
+            continue
         if _renewal and not _first_addon_spared:
             _first_addon_spared = True
             continue  # protect this one addon from tapping
@@ -1209,6 +1257,10 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         del cs_eva167["evangelist_aura_dice_bonus"]
         player.combat_state = cs_eva167
 
+    # Addon 200 (The Lost Trailbraizer): +1 to every dice roll
+    if has_addon(player, 200):
+        roll = min(roll + 1, 10)
+
     # Addon 4 (Apex Governor Override): original roll of 1 → round neutral (before addon bonuses)
     _addon4_override = has_addon(player, 4) and _raw_roll_for_addon4 == 1
 
@@ -1360,6 +1412,12 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         player.combat_state = cs
         round_nullified = True
 
+    # Addon 192 (NullPointerException): if roll == 1, skip HP damage (neutral round)
+    if roll == 1 and has_addon(player, 192):
+        _null_192 = True
+    else:
+        _null_192 = False
+
     # Card 288 (NullPointerException): if roll == 1, nullify this round (one-shot)
     if (player.combat_state or {}).get("null_pointer_active") and roll == 1:
         cs = dict(player.combat_state)
@@ -1435,7 +1493,7 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         cs.pop("omni_channel_next_hit_bonus", None)
         player.combat_state = cs
 
-    if round_nullified:
+    if round_nullified or _null_192:
         # No damage in either direction this round
         pass
     elif result == "hit":

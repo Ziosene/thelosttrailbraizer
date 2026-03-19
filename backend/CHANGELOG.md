@@ -44,6 +44,28 @@
 - **Carta 45** (Prospect Score): cambiata da `+1L/boss (max 5)` a `+2L/boss (max 10)` — stessa scala, valore doppio
 ## Sessione corrente — Implementazione effetti addon 1–41
 
+### Addon 181–200
+- **Addon 181** (Trailblazer Spirit): `_boss_defeat_sequence` — +3L se primo a sconfiggere quel boss (richiede colonna JSON su GameSession per tracking completo — TODO schema migration)
+- **Addon 182** (Salesforce Values): `play.py` — +2L quando giochi carta difensiva/economica durante il turno di un avversario (reazione)
+- **Addon 183** (Ohana Spirit): `end.py` — +1L se tutti i giocatori sono vivi a fine turno
+- **Addon 184** (Trust First): `play.py` — la prima carta offensiva ricevuta in tutta la partita viene annullata; flag `trust_first_used` permanente
+- **Addon 185** (Customer Success): `_boss_defeat_sequence` — +1L agli altri giocatori con addon 185 quando un avversario sconfigge il suo primo boss o ottiene la prima cert
+- **Addon 186** (Marc Benioff Mode): `addon.py` — tutti i giocatori +3L e pescano 1 carta; una volta per partita
+- **Addon 187** (Dreamforce Keynote): `addon.py` — guadagni 1L per ogni addon posseduto; una volta per partita
+- **Addon 188** (Trailhead Badge Hunter): `_boss_defeat_sequence` — ogni 5 boss sconfitti +1 cert di punteggio (non win condition); tracciato in `badge_hunter_score_certs`
+- **Addon 189** (ISV Ecosystem): `_handle_buy_addon` — se possiedi ≥5 addon, costo massimo 5L
+- **Addon 190** (Salesforce+ Premium): `draw.py` — +1L e pesca 1 carta extra a inizio turno
+- **Addon 191** (404 Not Found): `addon.py` + `play.py` + `start.py` + `end.py` — immunità a carte avversarie e blocco combattimento per 1 turno; flag `not_found_active` pulito in `end.py`
+- **Addon 192** (NullPointerException): `roll.py` — dado = 1 → round neutro, nessun danno HP
+- **Addon 193** (Stack Trace): `addon.py` — pesca 4 carte; una volta per partita
+- **Addon 194** (Lorem Ipsum Boss): `addon.py` — boss placeholder auto-sconfitto, +2L; una volta per partita
+- **Addon 195** (Copy/Paste): `addon.py` + `play.py` + `end.py` — prossima carta non conta nel limite; flag `copy_paste_active` consumato in `play.py`
+- **Addon 196** (Ctrl+Z): `addon.py` — avversario -4L e scarta 1 carta casuale; una volta per partita
+- **Addon 197** (Lost Trailblazer Fragment): `start.py` — se unico possessore, boss Omega -3HP
+- **Addon 198** (Trailhead Hoodie): `_handle_buy_addon` — +1L una tantum all'acquisto
+- **Addon 199** (Admin Appreciation Day): `addon.py` — solo ruolo Administrator/Advanced Administrator: +5L e pesca 2 carte; una volta per partita
+- **Addon 200** (The Lost Trailbraizer): `addon.py` + `roll.py` + `draw.py` — +1 dado (max 10), +1L/turno, immunità furto cert; blocca acquisto altri addon; alla morte scompare dalla partita (non al cimitero)
+
 ### Addon 161–180
 - **Addon 161** (Junior Hustle): `_boss_defeat_sequence` — +2L se `seniority == junior`
 - **Addon 162** (Senior Privilege): `roll.py` — salta `licenza_drain` boss una volta per partita per senior/evangelist

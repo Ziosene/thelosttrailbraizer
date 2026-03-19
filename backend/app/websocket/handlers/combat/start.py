@@ -30,6 +30,11 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
         await _error(game.code, user_id, "Already in combat")
         return
 
+    # Addon 191 (404 Not Found): cannot start combat while active
+    if (player.combat_state or {}).get('not_found_active'):
+        await _error(game.code, user_id, "Cannot start combat while 404 Not Found is active")
+        return
+
     # source: "market_1" | "market_2" | "deck_1" | "deck_2"
     source = data.get("source", "market_1")
     if source not in ("market_1", "market_2", "deck_1", "deck_2"):
@@ -113,6 +118,14 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
     # Addon 84 (Governor Limit Enforcer): boss HP is capped at 4
     if _has_addon_start(player, 84):
         player.current_boss_hp = min(player.current_boss_hp, 4)
+
+    # Addon 197 (The Lost Trailblazer Fragment): sole holder vs Omega boss gets -3HP
+    if _has_addon_start(player, 197):
+        _others197 = [p for p in game.players if p.id != player.id and _has_addon_start(p, 197)]
+        if not _others197:
+            _boss197 = db.get(BossCard, player.current_boss_id) if player.current_boss_id else None
+            if _boss197 and ('omega' in (_boss197.name or '').lower() or 'lost trailblazer' in (_boss197.name or '').lower()):
+                player.current_boss_hp = max(1, (player.current_boss_hp or 0) - 3)
     # Reset per-combat state; preserve cross-turn flags set by action cards
     _old_cs = player.combat_state or {}
     _persist_cs = {

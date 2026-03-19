@@ -351,6 +351,22 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
     if _has_addon_draw(player, 43):
         player.licenze += 1
 
+    # Addon 190 (Salesforce+ Premium): draw 1 extra card AND gain 1L at start of each turn
+    if _has_addon_draw(player, 190):
+        player.licenze += 1
+        from app.models.game import PlayerHandCard as _PHC190
+        _cid190 = None
+        if game.action_deck_1:
+            _cid190 = game.action_deck_1.pop(0)
+        elif game.action_deck_2:
+            _cid190 = game.action_deck_2.pop(0)
+        if _cid190:
+            db.add(_PHC190(player_id=player.id, action_card_id=_cid190))
+
+    # Addon 200 (The Lost Trailbraizer): +1L per turn
+    if _has_addon_draw(player, 200):
+        player.licenze += 1
+
     # Addon 70 (Einstein Relationship Insights): see all opponents' hands
     if _has_addon_draw(player, 70):
         db.flush()

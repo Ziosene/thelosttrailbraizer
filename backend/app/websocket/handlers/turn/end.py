@@ -273,6 +273,24 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
     # but clearing is still needed for other players without addon 65)
     # (locked_out is cleared when the player's turn ends via the Anypoint MQ card effect)
 
+    # Addon 183 (Ohana Spirit): if all players are alive at end of turn, gain 1L
+    if _has_addon_end(player, 183):
+        if all(p.hp > 0 for p in game.players):
+            player.licenze += 1
+
+    # Addon 191 (404 Not Found): clear not_found_active flag at end of turn for ALL players
+    for _p191 in game.players:
+        if (_p191.combat_state or {}).get('not_found_active'):
+            _cs191e = dict(_p191.combat_state)
+            _cs191e.pop('not_found_active', None)
+            _p191.combat_state = _cs191e
+
+    # Addon 195 (Copy/Paste): clear copy_paste_active at end of turn (safety cleanup)
+    if player.combat_state and player.combat_state.get('copy_paste_active'):
+        _cs195e = dict(player.combat_state)
+        _cs195e.pop('copy_paste_active', None)
+        player.combat_state = _cs195e
+
     # Addon 125 (Aggregate Query): at end of turn, if played ≥2 cards, gain +1L
     if _has_addon_end(player, 125):
         _played125 = player.cards_played_this_turn

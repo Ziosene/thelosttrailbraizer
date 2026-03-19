@@ -63,6 +63,18 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
         await _error(game.code, user_id, "Addon not found")
         return
 
+    # Addon 200 (The Lost Trailbraizer): block buying other addons while holding it
+    if addon.number != 200 and _has_addon_addon(player, 200):
+        await _error(game.code, user_id, "The Lost Trailbraizer: cannot buy addons while holding this card")
+        return
+
+    # Addon 200 (The Lost Trailbraizer): block others buying it if already owned
+    if addon.number == 200:
+        for _p200 in game.players:
+            if _p200.id != player.id and _has_addon_addon(_p200, 200):
+                await _error(game.code, user_id, "The Lost Trailbraizer is already owned by another player")
+                return
+
     # Card 18 (Org Takeover): opponent blocked this player from buying addons next turn
     if (player.combat_state or {}).get("addons_blocked_next_turn"):
         await _error(game.code, user_id, "Addon purchases blocked this turn (Org Takeover)")
@@ -124,6 +136,10 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
     if _has_addon_addon(player, 80) and len(player.addons) >= 3:
         cost = max(0, cost - 2)
 
+    # Addon 189 (ISV Ecosystem): if player owns ≥5 addons, new addons cost at most 5L
+    if _has_addon_addon(player, 189) and len(list(player.addons)) >= 5:
+        cost = min(cost, 5)
+
     if player.licenze < cost:
         await _error(game.code, user_id, f"Need {cost} Licenze (have {player.licenze})")
         return
@@ -165,6 +181,10 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
 
     from app.models.game import PlayerAddon
     db.add(PlayerAddon(player_id=player.id, addon_id=addon_id))
+
+    # Addon 198 (Trailhead Hoodie): cosmetic — on acquisition gain 1L once
+    if addon.number == 198:
+        player.licenze += 1
 
     # Addon 11 (Revenue Intelligence): other players with this addon earn +1L on each addon purchase
     for _other11 in game.players:
@@ -1521,6 +1541,11 @@ async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Ses
             await _error(game.code, user_id, "Invalid target for Certification Theft Ring")
             pa.is_tapped = False
             return
+        # Addon 200 (The Lost Trailbraizer): cert theft immunity
+        if _has_addon_addon(target153, 200):
+            await _error(game.code, user_id, "Target is protected by The Lost Trailbraizer")
+            pa.is_tapped = False
+            return
         # Addon 157 (Portfolio Defense): immune to cert theft during own turn
         if _has_addon_addon(target153, 157):
             _is_target_turn153 = (
@@ -1593,6 +1618,11 @@ async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Ses
         target159 = next((p for p in game.players if p.id == target_id159), None)
         if not target159 or target159.id == player.id:
             await _error(game.code, user_id, "Invalid target for Final Exam")
+            pa.is_tapped = False
+            return
+        # Addon 200 (The Lost Trailbraizer): cert theft immunity
+        if _has_addon_addon(target159, 200):
+            await _error(game.code, user_id, "Target is protected by The Lost Trailbraizer")
             pa.is_tapped = False
             return
         roll_p159 = engine.roll_d10()
@@ -1855,6 +1885,162 @@ async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Ses
                 db.refresh(game)
                 await _bds178(player, game, db, boss178)
                 return
+
+    # ── Active addon effects (181-200) ──────────────────────────────────────
+
+    # Addon 186 (Marc Benioff Mode): all players gain 3L and draw 1 card (once per game)
+    elif addon.number == 186:
+        cs186 = player.combat_state or {}
+        if cs186.get('benioff_used'):
+            await _error(game.code, user_id, "Marc Benioff Mode already used this game")
+            pa.is_tapped = False
+            return
+        from app.models.game import PlayerHandCard as _PHC186
+        for _p186 in game.players:
+            _p186.licenze += 3
+            _cid186 = None
+            if game.action_deck_1:
+                _cid186 = game.action_deck_1.pop(0)
+            elif game.action_deck_2:
+                _cid186 = game.action_deck_2.pop(0)
+            if _cid186:
+                db.add(_PHC186(player_id=_p186.id, action_card_id=_cid186))
+        cs186_new = dict(cs186)
+        cs186_new['benioff_used'] = True
+        player.combat_state = cs186_new
+
+    # Addon 187 (Dreamforce Keynote): gain 1L per addon owned (once per game)
+    elif addon.number == 187:
+        cs187 = player.combat_state or {}
+        if cs187.get('keynote_used'):
+            await _error(game.code, user_id, "Dreamforce Keynote already used this game")
+            pa.is_tapped = False
+            return
+        player.licenze += len(list(player.addons))
+        cs187_new = dict(cs187)
+        cs187_new['keynote_used'] = True
+        player.combat_state = cs187_new
+
+    # Addon 191 (404 Not Found): for 1 turn opponents can't target you and you can't start combat (once per game)
+    elif addon.number == 191:
+        cs191 = player.combat_state or {}
+        if cs191.get('not_found_used'):
+            await _error(game.code, user_id, "404 Not Found already used this game")
+            pa.is_tapped = False
+            return
+        cs191_new = dict(cs191)
+        cs191_new['not_found_used'] = True
+        cs191_new['not_found_active'] = True
+        player.combat_state = cs191_new
+
+    # Addon 193 (Stack Trace): draw 4 cards (once per game)
+    elif addon.number == 193:
+        cs193 = player.combat_state or {}
+        if cs193.get('stack_trace_used'):
+            await _error(game.code, user_id, "Stack Trace already used this game")
+            pa.is_tapped = False
+            return
+        from app.models.game import PlayerHandCard as _PHC193
+        for _ in range(4):
+            _cid193 = None
+            if game.action_deck_1:
+                _cid193 = game.action_deck_1.pop(0)
+            elif game.action_deck_2:
+                _cid193 = game.action_deck_2.pop(0)
+            if _cid193:
+                db.add(_PHC193(player_id=player.id, action_card_id=_cid193))
+            else:
+                break
+        cs193_new = dict(cs193)
+        cs193_new['stack_trace_used'] = True
+        player.combat_state = cs193_new
+
+    # Addon 194 (Lorem Ipsum Boss): auto-win placeholder boss, gain 2L (once per game)
+    elif addon.number == 194:
+        cs194 = player.combat_state or {}
+        if cs194.get('lorem_ipsum_used'):
+            await _error(game.code, user_id, "Lorem Ipsum Boss already used this game")
+            pa.is_tapped = False
+            return
+        if player.is_in_combat:
+            await _error(game.code, user_id, "Already in combat")
+            pa.is_tapped = False
+            return
+        player.licenze += 2
+        cs194_new = dict(cs194)
+        cs194_new['lorem_ipsum_used'] = True
+        player.combat_state = cs194_new
+        db.commit()
+        db.refresh(game)
+        await manager.broadcast(game.code, {
+            "type": "lorem_ipsum_boss_defeated",
+            "player_id": player.id,
+            "licenze_gained": 2,
+        })
+        await _broadcast_state(game, db)
+        return
+
+    # Addon 195 (Copy/Paste): play 1 card without counting it in the turn limit (once per turn)
+    elif addon.number == 195:
+        cs195 = dict(player.combat_state or {})
+        if cs195.get('copy_paste_active'):
+            await _error(game.code, user_id, "Copy/Paste already active this turn")
+            pa.is_tapped = False
+            return
+        cs195['copy_paste_active'] = True
+        player.combat_state = cs195
+
+    # Addon 196 (Ctrl+Z): target opponent loses 4L and discards 1 random card (once per game)
+    elif addon.number == 196:
+        cs196 = player.combat_state or {}
+        if cs196.get('ctrlz_used'):
+            await _error(game.code, user_id, "Ctrl+Z already used this game")
+            pa.is_tapped = False
+            return
+        target_id196 = data.get("target_player_id")
+        target196 = next((p for p in game.players if p.id == target_id196), None)
+        if not target196 or target196.id == player.id:
+            await _error(game.code, user_id, "Invalid target for Ctrl+Z")
+            pa.is_tapped = False
+            return
+        target196.licenze = max(0, target196.licenze - 4)
+        import random as _r196
+        _hand196 = list(target196.hand)
+        if _hand196:
+            _discard196 = _r196.choice(_hand196)
+            game.action_discard = (game.action_discard or []) + [_discard196.action_card_id]
+            db.delete(_discard196)
+        cs196_new = dict(cs196)
+        cs196_new['ctrlz_used'] = True
+        player.combat_state = cs196_new
+
+    # Addon 199 (Admin Appreciation Day): Administrator/Advanced Administrator gains 5L and draws 2 cards (once per game)
+    elif addon.number == 199:
+        cs199 = player.combat_state or {}
+        if cs199.get('admin_day_used'):
+            await _error(game.code, user_id, "Admin Appreciation Day already used this game")
+            pa.is_tapped = False
+            return
+        _role199 = str(getattr(player, 'role', '') or '').lower()
+        if 'admin' not in _role199:
+            await _error(game.code, user_id, "Only Administrator/Advanced Administrator roles can use this")
+            pa.is_tapped = False
+            return
+        player.licenze += 5
+        from app.models.game import PlayerHandCard as _PHC199
+        for _ in range(2):
+            _cid199 = None
+            if game.action_deck_1:
+                _cid199 = game.action_deck_1.pop(0)
+            elif game.action_deck_2:
+                _cid199 = game.action_deck_2.pop(0)
+            if _cid199:
+                db.add(_PHC199(player_id=player.id, action_card_id=_cid199))
+            else:
+                break
+        cs199_new = dict(cs199)
+        cs199_new['admin_day_used'] = True
+        player.combat_state = cs199_new
 
     # Addon 179 (Hot Reload): discard entire hand, draw same number of cards
     elif addon.number == 179:

@@ -273,6 +273,12 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
             _cs71_new = dict(_cs109_play)
             _cs71_new["first_card_free_used"] = True
             player.combat_state = _cs71_new
+        # Addon 195 (Copy/Paste): one free card play per activation
+        elif _cs109_play.get('copy_paste_active'):
+            _cs195p_new = dict(_cs109_play)
+            del _cs195p_new['copy_paste_active']
+            player.combat_state = _cs195p_new
+            # skip cards_played increment
         else:
             player.cards_played_this_turn += 1
     card_approved = True  # may be set to False by boss 69 below
@@ -322,6 +328,13 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
             await _error(game.code, user_id, "404 Not Found: you cannot target other players this turn")
             return
 
+    # Addon 191 (404 Not Found): block incoming card targeting
+    if card and card_approved and target_player_id:
+        _tgt191 = next((p for p in game.players if p.id == target_player_id and p.id != player.id), None)
+        if _tgt191 and (_tgt191.combat_state or {}).get('not_found_active'):
+            await _error(game.code, user_id, "Target is 404 Not Found this turn")
+            return
+
     # Check target-side protections for any card targeting another player
     if card and card_approved and target_player_id:
         _tgt_trust = next((p for p in game.players if p.id == target_player_id and p.id != player.id), None)
@@ -364,6 +377,19 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
                     "reason": "trust_first",
                     "target_player_id": _tgt_check.id,
                 })
+
+            # Addon 184 (Trust First): block the very first offensive card ever played against this player
+            if card_approved and _has_addon_play(_tgt_check, 184):
+                _cs184 = _tgt_check.combat_state or {}
+                if not _cs184.get('trust_first_used') and card.card_type == 'offensiva':
+                    cs184_new = dict(_cs184)
+                    cs184_new['trust_first_used'] = True
+                    _tgt_check.combat_state = cs184_new
+                    card_approved = False
+                    db.commit()
+                    await manager.broadcast(game.code, {"type": "trust_first_blocked", "player_id": _tgt_check.id})
+                    await _broadcast_state(game, db)
+                    return
 
     reaction_target = None
     reaction_response = None
@@ -631,6 +657,14 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
             _victim14 = next((p for p in game.players if p.id == _stolen_from14), None)
             if _victim14 and _has_addon_play(_victim14, 14):
                 _victim14.licenze += 1
+
+    # Addon 182 (Salesforce Values): when playing defensive or economic card during opponent's turn, gain 2L
+    if card and card_approved and not original_cancelled and _has_addon_play(player, 182):
+        _current_turn_player_id182 = game.turn_order[game.current_turn_index] if game.turn_order else None
+        if _current_turn_player_id182 and _current_turn_player_id182 != player.id:
+            _card_type182 = card.card_type if card else ''
+            if _card_type182 in ('difensiva', 'economica', 'Difensiva', 'Economica'):
+                player.licenze += 2
 
     # Addon 8 (MuleSoft Connector): other players with this addon earn +1L when this player plays a card
     if card and card_approved and not original_cancelled:
