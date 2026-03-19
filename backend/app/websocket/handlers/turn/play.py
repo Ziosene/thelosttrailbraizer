@@ -14,6 +14,7 @@ from app.game import engine
 from app.game import engine_boss
 from app.game.engine_cards import apply_action_card_effect
 from app.game.engine_addons import has_addon as _has_addon_play
+from app.game import engine_role as _engine_role
 from app.websocket.reaction_manager import open_reaction_window
 
 
@@ -27,13 +28,16 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
         await _error(game.code, user_id, "Not your turn")
         return
 
+    # Role passive: JavaScript Developer I can play 3 cards per turn
+    _role_max_cards = _engine_role.get_cards_per_turn(player)
+    _effective_max = max(engine.MAX_CARDS_PER_TURN, _role_max_cards)
     # Addon 87 (API Throttle Bypass): immune to boss card-play limits
     _boss_card_limit_raw = (
-        engine.boss_max_cards_per_turn(player.current_boss_id, engine.MAX_CARDS_PER_TURN)
+        engine.boss_max_cards_per_turn(player.current_boss_id, _effective_max)
         if player.is_in_combat and player.current_boss_id
-        else engine.MAX_CARDS_PER_TURN
+        else _effective_max
     )
-    max_cards = engine.MAX_CARDS_PER_TURN if _has_addon_play(player, 87) else _boss_card_limit_raw
+    max_cards = _effective_max if _has_addon_play(player, 87) else _boss_card_limit_raw
     # Card 116 (API Rate Limiting): opponent imposed a lower card-play limit for this turn
     _api_limit = (player.combat_state or {}).get("api_rate_limit_max_cards")
     if _api_limit is not None and not _has_addon_play(player, 87):
@@ -728,6 +732,54 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
                 # Refund the stolen licenze back to target and reverse from caster
                 _tgt103.licenze += _stolen103
                 player.licenze = max(0, player.licenze - _stolen103)
+
+    # Role passive: IAM Architect — immune to licenze theft (any card type)
+    if card and card_approved and not original_cancelled and target_player_id and isinstance(card_effect_result, dict):
+        _tgt_iam = next((p for p in game.players if p.id == target_player_id and p.id != player.id), None)
+        if _tgt_iam and _engine_role.is_immune_to_licenze_theft(_tgt_iam):
+            _stolen_iam = card_effect_result.get("licenze_stolen", 0)
+            if _stolen_iam and _stolen_iam > 0:
+                # Refund the stolen licenze back to target and reverse from caster
+                _tgt_iam.licenze += _stolen_iam
+                player.licenze = max(0, player.licenze - _stolen_iam)
+                card_effect_result = dict(card_effect_result)
+                card_effect_result["licenze_stolen"] = 0
+
+    # Role passive: Role Hierarchy (addon 64) — passive addon, always active
+    # If target has addon 64 AND target's seniority > attacker's seniority, halve licenze_stolen
+    if card and card_approved and not original_cancelled and target_player_id and isinstance(card_effect_result, dict):
+        _tgt64 = next((p for p in game.players if p.id == target_player_id and p.id != player.id), None)
+        if _tgt64:
+            _rh_active64 = any(
+                pa.addon.number == 64 and not pa.is_tapped
+                for pa in (_tgt64.addons if hasattr(_tgt64, "addons") else [])
+                if pa.addon
+            )
+            if _rh_active64:
+                from app.models.game import Seniority as _SenRH64
+                _RH_RANK64 = {_SenRH64.junior: 1, _SenRH64.experienced: 2, _SenRH64.senior: 3, _SenRH64.evangelist: 4}
+                _my_rank_rh64 = _RH_RANK64.get(player.seniority, 0)
+                _target_rank_rh64 = _RH_RANK64.get(_tgt64.seniority, 0)
+                if _target_rank_rh64 > _my_rank_rh64:
+                    _stolen_rh64 = card_effect_result.get("licenze_stolen", 0)
+                    if _stolen_rh64 > 0:
+                        _refund_rh64 = _stolen_rh64 - _stolen_rh64 // 2
+                        _tgt64.licenze += _refund_rh64
+                        player.licenze = max(0, player.licenze - _refund_rh64)
+                        card_effect_result = dict(card_effect_result)
+                        card_effect_result["licenze_stolen"] = _stolen_rh64 // 2
+
+    # Role passive: Marketing Cloud Developer — offensive cards deal +1 damage (applied as +1L grant to caster)
+    # NOTE: boss HP damage is handled separately in roll.py; here we handle player-vs-player offensive cards
+    if card and card_approved and not original_cancelled and target_player_id and card.card_type == "Offensiva":
+        _mcd_bonus = _engine_role.get_offensive_card_bonus_damage(player)
+        if _mcd_bonus > 0:
+            _tgt_mcd = next((p for p in game.players if p.id == target_player_id and p.id != player.id), None)
+            if _tgt_mcd:
+                # Steal 1 extra licenza from target as bonus offensive damage
+                _mcd_steal = min(_mcd_bonus, _tgt_mcd.licenze)
+                _tgt_mcd.licenze -= _mcd_steal
+                player.licenze += _mcd_steal
 
     # Addon 168 (Role Conflict): when an opponent with the same role plays a card against you, effect halved
     if card and card_approved and not original_cancelled and target_player_id and isinstance(card_effect_result, dict):

@@ -100,5 +100,99 @@ async def handle_message(
         await _handle_fomo_buy_addon(game, user_id, data, db)
     elif action == "card_choice":
         await _handle_card_choice(game, user_id, data, db)
+    elif action == "use_borrowed_passive":
+        await _handle_use_borrowed_passive(game, user_id, data, db)
+    elif action == "skill_transfer_choice":
+        await _handle_skill_transfer_choice(game, user_id, data, db)
     else:
         await _error(game_code, user_id, f"Unknown action: {action}")
+
+
+async def _handle_use_borrowed_passive(game, user_id: int, data: dict, db):
+    """Handle use_borrowed_passive: borrow the passive role of a target player for this turn.
+    Data: {"action": "use_borrowed_passive", "target_player_id": X}
+    Stores the borrowed role in player.combat_state["borrowed_passive_role"] for 1 turn.
+    """
+    from app.websocket.game_helpers import _get_player, _broadcast_state
+    from app.websocket.manager import manager
+
+    player = _get_player(game, user_id)
+    if not player:
+        await _error(game.code, user_id, "Player not found")
+        return
+
+    target_player_id = data.get("target_player_id")
+    target = next((p for p in game.players if p.id == target_player_id and p.id != player.id), None)
+    if not target or not target.role:
+        await _error(game.code, user_id, "Invalid target or target has no role")
+        return
+
+    cs = dict(player.combat_state or {})
+    cs["borrowed_passive_role"] = target.role
+    cs["borrowed_passive_until_turn"] = game.turn_number
+    player.combat_state = cs
+
+    db.commit()
+    db.refresh(game)
+
+    await manager.broadcast(game.code, {
+        "type": "borrowed_passive_active",
+        "player_id": player.id,
+        "borrowed_role": target.role,
+        "source_player_id": target.id,
+    })
+    await _broadcast_state(game, db)
+
+
+async def _handle_skill_transfer_choice(game, user_id: int, data: dict, db):
+    """Handle skill_transfer_choice: swap roles with target player for 2 turns.
+    Data: {"action": "skill_transfer_choice", "target_player_id": X}
+    Stores original roles in combat_state and swaps player.role for both parties.
+    """
+    from app.websocket.game_helpers import _get_player, _broadcast_state
+    from app.websocket.manager import manager
+
+    player = _get_player(game, user_id)
+    if not player:
+        await _error(game.code, user_id, "Player not found")
+        return
+
+    target_player_id = data.get("target_player_id")
+    target = next((p for p in game.players if p.id == target_player_id and p.id != player.id), None)
+    if not target:
+        await _error(game.code, user_id, "Invalid target player")
+        return
+
+    # Store original roles before swapping
+    original_my_role = player.role
+    original_target_role = target.role
+
+    # Swap roles
+    player.role = original_target_role
+    target.role = original_my_role
+
+    # Store swap metadata in both players' combat_state for reversal after 2 turns
+    cs_player = dict(player.combat_state or {})
+    cs_player["skill_transfer_original_role"] = original_my_role
+    cs_player["skill_transfer_revert_at_turn"] = game.turn_number + 2
+    cs_player["skill_transfer_partner_id"] = target.id
+    player.combat_state = cs_player
+
+    cs_target = dict(target.combat_state or {})
+    cs_target["skill_transfer_original_role"] = original_target_role
+    cs_target["skill_transfer_revert_at_turn"] = game.turn_number + 2
+    cs_target["skill_transfer_partner_id"] = player.id
+    target.combat_state = cs_target
+
+    db.commit()
+    db.refresh(game)
+
+    await manager.broadcast(game.code, {
+        "type": "roles_swapped",
+        "player_id": player.id,
+        "target_player_id": target.id,
+        "player_new_role": player.role,
+        "target_new_role": target.role,
+        "revert_at_turn": game.turn_number + 2,
+    })
+    await _broadcast_state(game, db)

@@ -948,13 +948,28 @@ def _card_243(player, game, db, *, target_player_id=None) -> dict:
 def _card_245(player, game, db, *, target_player_id=None) -> dict:
     """Agent Skill — Applica l'abilità passiva del personaggio una seconda volta questo turno.
 
-    Simplified: grants +2L (proxy for a passive ability re-trigger).
-    TODO: trigger actual passive_ability(player, game, db) when that system exists.
+    For 'active' passive abilities that have a once-per-turn limit, resets the used flag.
+    For 'automatic' passive abilities, grants a one-time bonus trigger (+2L proxy).
     """
-    if player.is_in_combat:
-        return {"applied": False, "reason": "in_combat"}
-    player.licenze += 2
-    return {"applied": True, "licenze_gained": 2, "note": "passive_ability_proxy"}
+    from app.game.engine_role import ROLE_PASSIVE_TYPE
+    role = getattr(player, "role", "") or ""
+    passive_type = ROLE_PASSIVE_TYPE.get(role, "automatic")
+
+    cs = dict(player.combat_state or {})
+    if passive_type == "active":
+        # Reset the "used this turn" flag for active passives
+        if "custom_permission_used_turn" in cs:
+            del cs["custom_permission_used_turn"]
+        if "admin_discard_used_turn" in cs:
+            del cs["admin_discard_used_turn"]
+        if "integration_arch_recover_used_turn" in cs:
+            del cs["integration_arch_recover_used_turn"]
+        player.combat_state = cs
+        return {"applied": True, "note": "active_passive_reset", "role": role}
+    else:
+        # For automatic passives, grant +2L as a proxy benefit
+        player.licenze = (player.licenze or 0) + 2
+        return {"applied": True, "licenze_gained": 2, "note": "automatic_passive_proxy", "role": role}
 
 
 def _card_247(player, game, db, *, target_player_id=None) -> dict:

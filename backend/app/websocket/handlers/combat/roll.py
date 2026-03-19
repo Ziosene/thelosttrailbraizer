@@ -13,6 +13,7 @@ from app.websocket.game_helpers import (
 from app.models.game import GameSession, GameStatus, TurnPhase
 from app.models.card import ActionCard, BossCard, AddonCard
 from app.game import engine
+from app.game import engine_role as _engine_role
 from app.game.engine_addons import has_addon, get_addon_pa
 from app.websocket.reaction_manager import open_reaction_window
 
@@ -436,6 +437,26 @@ async def _boss_defeat_sequence(player, game, db, boss) -> bool:
             cs188 = dict(player.combat_state)
             cs188['badge_hunter_score_certs'] = cs188.get('badge_hunter_score_certs', 0) + 1
             player.combat_state = cs188
+
+    # Role passive: Sales Cloud Consultant +1L / B2C Commerce Dev extra card / Pardot Consultant watchers
+    _role_boss_reward = _engine_role.on_boss_defeated(player)
+    if _role_boss_reward["extra_licenze"]:
+        player.licenze += _role_boss_reward["extra_licenze"]
+    if _role_boss_reward["extra_cards"]:
+        from app.models.game import PlayerHandCard as _PHC_role_b2c
+        for _ in range(_role_boss_reward["extra_cards"]):
+            if game.action_deck_1:
+                _extra_role_card_id = game.action_deck_1.pop(0)
+                db.add(_PHC_role_b2c(player_id=player.id, action_card_id=_extra_role_card_id))
+            elif game.action_deck_2:
+                _extra_role_card_id = game.action_deck_2.pop(0)
+                db.add(_PHC_role_b2c(player_id=player.id, action_card_id=_extra_role_card_id))
+    # Pardot Consultant: other players watching gain 1L
+    for _other_pardot in game.players:
+        if _other_pardot.id != player.id:
+            _pardot_reward = _engine_role.on_opponent_boss_defeated(_other_pardot)
+            if _pardot_reward["extra_licenze"]:
+                _other_pardot.licenze += _pardot_reward["extra_licenze"]
 
     # Addon 126 (Territory Management): other players watching this player defeat a boss gain 1L
     for _p126 in game.players:
@@ -1506,6 +1527,14 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
     if has_addon(player, 40) and (player.combat_round or 0) % 3 == 0 and (player.combat_round or 0) > 0:
         player.hp = min(player.max_hp, player.hp + 1)
 
+    # Role passive: Service Cloud Consultant — recover 1 HP after round 3 (once per combat)
+    _scc_hp_recover = _engine_role.should_recover_hp_at_round(player, current_round)
+    if _scc_hp_recover > 0:
+        player.hp = min(player.max_hp, player.hp + _scc_hp_recover)
+        _scc_cs = dict(player.combat_state or {})
+        _scc_cs["service_cloud_hp_recovered"] = True
+        player.combat_state = _scc_cs
+
     player_took_damage = False
 
     # Card 12 (Governor Limit Exploit): double boss damage per successful hit for N rounds
@@ -1556,6 +1585,10 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         _cs_hit = dict(player.combat_state or {})
         _cs_hit["combat_hits_dealt"] = _cs_hit.get("combat_hits_dealt", 0) + 1
         player.combat_state = _cs_hit
+        # Role passive: Platform Developer I/II / CTA — critical hit bonus boss damage
+        _role_roll_result = _engine_role.on_roll_result(player, roll)
+        if _role_roll_result["extra_boss_hp_damage"] > 0 and not engine.boss_immune_to_dice(boss.id, current_round):
+            player.current_boss_hp = max(0, (player.current_boss_hp or 0) - _role_roll_result["extra_boss_hp_damage"])
         # Addon 32 (Apex Batch Processor): set bonus for next round on hit
         if has_addon(player, 32):
             cs32 = dict(player.combat_state or {})

@@ -140,6 +140,13 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
     if _has_addon_addon(player, 189) and len(list(player.addons)) >= 5:
         cost = min(cost, 5)
 
+    # Role passive (Dev Lifecycle Architect / CTA): addon costs 8L instead of base 10
+    from app.game import engine_role as _engine_role_buy
+    _role_base_cost = addon.cost  # base cost before all modifiers
+    if _role_base_cost == 10:  # only discount base-10-cost addons
+        _role_cost = _engine_role_buy.get_addon_cost(player, cost)
+        cost = min(cost, _role_cost)  # take the lower value
+
     if player.licenze < cost:
         await _error(game.code, user_id, f"Need {cost} Licenze (have {player.licenze})")
         return
@@ -1110,13 +1117,39 @@ async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Ses
             return
         target101.licenze += 1
 
-    # Addon 102 (Custom Permission): TODO pending role/seniority system
+    # Addon 102 (Custom Permission): once per turn, use passive ability of a player with lower seniority
     elif addon.number == 102:
-        # TODO: implement when role and seniority system is complete
-        # Effect: use the passive ability of a character with lower seniority than yours
-        await _error(game.code, user_id, "Custom Permission not yet implemented (pending role system)")
-        pa.is_tapped = False
-        return
+        from app.models.game import Seniority as _Sen102
+        _SENIORITY_RANK102 = {_Sen102.junior: 1, _Sen102.experienced: 2, _Sen102.senior: 3, _Sen102.evangelist: 4}
+        _my_rank102 = _SENIORITY_RANK102.get(player.seniority, 0)
+        # Find players with lower seniority
+        _lower_players102 = [
+            p for p in game.players
+            if p.id != player.id and _SENIORITY_RANK102.get(p.seniority, 0) < _my_rank102
+            and p.role  # must have a role
+        ]
+        if not _lower_players102:
+            await _error(game.code, user_id, "No players with lower seniority available")
+            pa.is_tapped = False
+            return
+        cs102 = player.combat_state or {}
+        if cs102.get("custom_permission_used_turn") == game.turn_number:
+            await _error(game.code, user_id, "Custom Permission already used this turn")
+            pa.is_tapped = False
+            return
+        # Player must choose which lower-seniority player's passive to borrow
+        _options102 = [{"player_id": p.id, "name": p.user.username if p.user else str(p.id), "role": p.role} for p in _lower_players102]
+        _cs102_new = dict(cs102)
+        _cs102_new["custom_permission_used_turn"] = game.turn_number
+        player.combat_state = _cs102_new
+        db.flush()
+        await manager.broadcast(game.code, {
+            "type": "passive_choice_required",
+            "choice_type": "borrow_passive",
+            "player_id": user_id,
+            "options": _options102
+        })
+        return  # client responds with "use_borrowed_passive" action
 
     # Addon 104 (User Story): once per game, draw 3 cards and gain 3L
     elif addon.number == 104:
@@ -1656,19 +1689,56 @@ async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Ses
 
     # ── Active addon effects (161-180) ──────────────────────────────────────
 
-    # Addon 164 (Cross-Training): use passive ability of another player for 1 full turn
+    # Addon 164 (Cross-Training): once per game, use passive ability of any other player for 1 full turn
     elif addon.number == 164:
-        # TODO: implement when role passive ability system is ready
-        await _error(game.code, user_id, "Cross-Training: role system not yet implemented")
-        pa.is_tapped = False
-        return
+        cs164 = player.combat_state or {}
+        if cs164.get("cross_training_used"):
+            await _error(game.code, user_id, "Cross-Training already used this game")
+            pa.is_tapped = False
+            return
+        _other_players164 = [p for p in game.players if p.id != player.id and p.role]
+        if not _other_players164:
+            await _error(game.code, user_id, "No other players with roles available")
+            pa.is_tapped = False
+            return
+        _options164 = [{"player_id": p.id, "name": p.user.username if p.user else str(p.id), "role": p.role} for p in _other_players164]
+        _cs164_new = dict(cs164)
+        _cs164_new["cross_training_used"] = True
+        player.combat_state = _cs164_new
+        db.flush()
+        await manager.broadcast(game.code, {
+            "type": "passive_choice_required",
+            "choice_type": "borrow_passive_full_turn",
+            "player_id": user_id,
+            "options": _options164
+        })
+        return  # client responds with "use_borrowed_passive" action
 
-    # Addon 165 (Skill Transfer): swap roles with an opponent for 2 turns
+    # Addon 165 (Skill Transfer): once per game, swap roles with an opponent for 2 turns
     elif addon.number == 165:
-        # TODO: implement when role swap system is ready
-        await _error(game.code, user_id, "Skill Transfer: role system not yet implemented")
-        pa.is_tapped = False
-        return
+        cs165 = player.combat_state or {}
+        if cs165.get("skill_transfer_used"):
+            await _error(game.code, user_id, "Skill Transfer already used this game")
+            pa.is_tapped = False
+            return
+        _other_players165 = [p for p in game.players if p.id != player.id]
+        if not _other_players165:
+            await _error(game.code, user_id, "No other players available")
+            pa.is_tapped = False
+            return
+        _options165 = [{"player_id": p.id, "name": p.user.username if p.user else str(p.id), "role": p.role or "(no role)"} for p in _other_players165]
+        # Return pending choice — player picks who to swap with
+        _cs165_new = dict(cs165)
+        _cs165_new["skill_transfer_used"] = True
+        player.combat_state = _cs165_new
+        db.flush()
+        await manager.broadcast(game.code, {
+            "type": "passive_choice_required",
+            "choice_type": "skill_transfer_target",
+            "player_id": user_id,
+            "options": _options165
+        })
+        return  # client responds with "skill_transfer_choice" action
 
     # Addon 166 (Parallel Career): gain certifications × 3 Licenze
     elif addon.number == 166:

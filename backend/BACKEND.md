@@ -508,12 +508,24 @@ MORTE DEL GIOCATORE
 - Effetti addon 141–160: implementati (batch 7) — 141 (calculated risk bet on roll), 142 (all or nothing skip+4 bonus), 143 (double or nothing after boss defeat), 144 (high stakes 0cert 0addons +3), 145 (risk matrix pre-combat roll), 146 (bet the farm dice duel steal 3L), 147 (FOMO trigger out-of-turn buy), 148 (last stand +1HP +2dice solo 0cert), 149 (comeback mechanic opp reach 4cert +3L), 150 (wildcards unlimited cards+addons), 151 (certification path first cert score bonus), 152 (superbadge grind 3 streak extra cert), 153 (cert theft ring steal cert roll≤3 fail), 154 (recertification +5L on cert theft), 155 (fast track cert boss threshold-1), 156 (trailhead ranger +1/cert beyond first), 157 (portfolio defense cert theft immunity on own turn), 158 (credential vault roll10 +1cert), 159 (final exam dice duel steal cert), 160 (graduation day 4cert +10L +2dice)
 - Nuova client action: `fomo_buy_addon` (addon 147 FOMO Trigger)
 - Effetti addon 161–180: implementati (batch 8)
+- **Sistema abilità passive ruolo** — implementato in `app/game/engine_role.py`:
+  - 25 ruoli con abilità passive (tipo `"active"` o `"automatic"`)
+  - Hook automatici: `on_roll_result` (Platform Dev I/II, CTA), `on_boss_defeated` (Sales/B2C/CTA), `on_opponent_boss_defeated` (Pardot), `get_offensive_card_bonus_damage` (Marketing Cloud Dev), `is_immune_to_licenze_theft` (IAM Arch/CTA), `get_addon_cost` (Dev Lifecycle Arch/CTA), `get_cards_per_turn` (JS Dev I), `should_recover_hp_at_round` (Service Cloud Consultant), `can_buy_addon_during_combat` (OmniStudio Consultant)
+  - Addon 102 (Custom Permission): borrow passive di player con seniority inferiore (una volta per turno)
+  - Addon 164 (Cross-Training): borrow passive di qualsiasi player per 1 turno completo (once per game)
+  - Addon 165 (Skill Transfer): swap ruoli con un avversario per 2 turni (once per game)
+  - Addon 64 (Role Hierarchy): passivo — se il target ha seniority maggiore dell'attaccante, licenze_stolen dimezzate
+  - Role discount addon cost: Dev Lifecycle Architect e CTA pagano 8L invece di 10L per addon base-10
+  - Card 245 (Agent Skill): usa `engine_role.ROLE_PASSIVE_TYPE` per decidere se resettare flag "used" (active) o grant +2L (automatic)
+  - Nuove WS action: `use_borrowed_passive` (registra ruolo preso in prestito in `combat_state["borrowed_passive_role"]`), `skill_transfer_choice` (swappa `.role` su entrambi i giocatori, memorizza originali per revert)
 - **Flusso pending_choice**: client-choice flow asincrono per carte azione — cards 32, 34, 67, 68, 69, 106, 107, 108, 110, 137 riformulate per restituire `{status: "pending_choice", ...}` invece di auto-pick. `play.py` intercetta il pending e salva stato in `combat_state["pending_card_choice"]`. Nuova azione WS `card_choice` → `_handle_card_choice` in `play.py` (dispatcha su resolver per tipo). Evento server `card_choice_required` inviato privatamente al giocatore.
 
 ### ⬜ Da fare
 
-- [ ] **Effetti addon 161–200** — da implementare.
+- [ ] **Effetti addon 181–200** — da implementare.
 - [ ] **Addon 98 (Acceptance Criteria)** — implementato in versione semplificata (sempre 2 carte, niente scelta asincrona). Se serve la scelta interattiva, richiede refactor del boss defeat flow.
+- [ ] **Skill Transfer revert** — il revert automatico dei ruoli dopo 2 turni (campo `skill_transfer_revert_at_turn`) non è ancora implementato; va aggiunto in `end_turn` handler.
+- [ ] **Addon 102 custom_permission_used_turn** — il campo usa `game.turn_number`; verificare coerenza con altri "once per turn" check.
 - [ ] **Addon 76 (Rollup Summary)** — contatore `rollup_boss_defeats` in combat_state pronto; mancante integrazione ELO finale.
 - [ ] **Validazione timing carte** — campo `Quando` da verificare in `_handle_play_card`.
 - [ ] **Validazione timing carte** — campo `Quando` da verificare in `_handle_play_card`.
