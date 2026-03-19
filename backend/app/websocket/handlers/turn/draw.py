@@ -445,6 +445,17 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
             _cs48["net_zero_turns"] = 0
         player.combat_state = _cs48
 
+    # Role passive: Skill Transfer (addon 165) — revert role swap after 2 turns
+    _cs_st = dict(player.combat_state or {})
+    _st_revert_turn = _cs_st.get("skill_transfer_revert_at_turn")
+    if _st_revert_turn and game.turn_number >= _st_revert_turn:
+        _orig_role = _cs_st.pop("skill_transfer_original_role", None)
+        _cs_st.pop("skill_transfer_revert_at_turn", None)
+        _cs_st.pop("skill_transfer_partner_id", None)
+        if _orig_role is not None:
+            player.role = _orig_role
+        player.combat_state = _cs_st
+
     # Addon 170 (Promotion): decrement temporary seniority promotion counter at turn start
     if _has_addon_draw(player, 170):
         _cs170d = dict(player.combat_state or {})

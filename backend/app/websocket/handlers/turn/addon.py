@@ -777,8 +777,9 @@ async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Ses
         await _broadcast_state(game, db)
         return  # wait for sharing_rules_pick
 
-    # Addon 64 (Role Hierarchy): SKIP — seniority comparison system not fully implemented for cross-player ranking
-    # TODO: implement when seniority ordering/ranking between players is available
+    # Addon 64 (Role Hierarchy): PASSIVO — effetto automatico in play.py
+    # Quando un avversario gioca una carta contro di te, se la tua seniority è maggiore, l'effetto è dimezzato.
+    # Tipo Passivo: non si tappa, è sempre attivo.
 
     # Addon 66 (Trust Layer): once per game, protect from opponent cards for 1 turn
     elif addon.number == 66:
