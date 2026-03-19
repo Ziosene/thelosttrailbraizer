@@ -5,6 +5,51 @@
 
 ---
 
+## Sessione corrente — Chiusura tutti i TODO + sistema ruoli/seniority
+
+### Sistema ruoli passivi (`engine_role.py`)
+- **Nuovo file `app/game/engine_role.py`**: 25 costanti ruolo, `ROLE_PASSIVE_TYPE`, funzioni hook per tutte le abilità passive automatiche
+- **Platform Developer I/II**: critical hit su tiro 10 (o 9+) in `roll.py` — boss prende HP extra
+- **Identity & Access Management Architect**: immune al furto di Licenze in `play.py`
+- **Development Lifecycle Architect**: addon costano 8L invece di 10 in `addon.py`
+- **Sales Cloud Consultant**: +1L extra su sconfitta boss in `roll.py`
+- **B2C Commerce Developer**: +1 carta extra su sconfitta boss in `roll.py`
+- **Pardot Consultant**: +1L quando un avversario sconfigge un boss in `roll.py`
+- **Marketing Cloud Developer**: carte offensive fanno +1 danno in `play.py`
+- **JavaScript Developer I**: può giocare 3 carte per turno in `play.py`
+- **Service Cloud Consultant**: recupera 1 HP al round 3 di combattimento in `roll.py`
+
+### Addon ruoli interattivi
+- **Addon 102 (Custom Permission)**: implementato — sceglie il passivo di un giocatore con seniority inferiore; invia `passive_choice_required` al client
+- **Addon 164 (Cross-Training)**: implementato — una volta per partita, usa il passivo di qualsiasi altro giocatore per 1 turno
+- **Addon 165 (Skill Transfer)**: implementato — swap ruoli con un avversario per 2 turni; revert automatico in `draw.py`
+- **Addon 64 (Role Hierarchy)**: rimosso TODO — passivo già gestito in `play.py` (halve `licenze_stolen` se seniority target > attaccante)
+- **Nuovi WS action**: `use_borrowed_passive`, `skill_transfer_choice` in `game_handler.py`
+
+### Card 245 (Agent Skill)
+- Aggiornato per usare `engine_role.ROLE_PASSIVE_TYPE` — resetta flag "usato questo turno" per passivi attivi, oppure +2L proxy per passivi automatici
+
+### Flussi interattivi boss (già implementati, TODO rimossi)
+- **Boss 13** (discard o danno), **Boss 63** (deal offer), **Boss 83** (siren deal), **Boss 86** (dichiarazione tipo carta): TODOs in `engine_boss.py` sostituiti con note descrittive sui rispettivi handler in `roll.py`/`start.py`
+
+### Card 57 (API Proxy)
+- **Implementato enforcement** in `play.py`: quando una carta offensiva colpisce il target, `api_proxy_active` riduce di 1 `licenze_stolen` o `hp_damage` e poi si consuma
+
+### Card 74 (Routing Configuration)
+- **Implementato enforcement in `start.py`**: se `routing_assigned_boss_id` è impostato, il giocatore viene forzato a combattere quel boss specifico (rimosso dal mazzo, flag pulito)
+- Già presente: enforcement in `end.py` (-2L a fine turno se routing non completato)
+
+### Validazione timing carte
+- **`play.py`**: validazione del campo `card.when` — le carte "Durante combattimento" sono bloccate fuori combat, le carte "Fuori dal combattimento" sono bloccate in combat
+
+### Migration DB
+- **`0006_game_state.py`**: aggiunge colonna `game_state JSON` a `game_sessions` (cross-player state, es. `first_defeated_boss_ids` per addon 181)
+
+### TODO count: 0
+- Tutti i TODO/FIXME/SKIP nel backend sono stati risolti o convertiti in note descrittive
+
+---
+
 ## Sessione corrente — Revisione carte azione (1–25)
 
 - **Carta 3** (Licenza Provvisoria): effetto `+3L (o +5L al primo turno)` → flat `+5L`
