@@ -129,8 +129,29 @@ backend/
 │   │   └── handlers/
 │   │       ├── __init__.py       ✅
 │   │       ├── lobby.py          ✅ _handle_join, _handle_select_character, _handle_start_game
-│   │       ├── turn.py           ✅ _handle_draw_card, _handle_play_card, _handle_buy_addon, _handle_use_addon, _handle_end_turn
-│   │       └── combat.py         ✅ _handle_start_combat, _handle_roll_dice, _handle_retreat, _handle_declare_card, _handle_declare_card_type
+│   │       ├── turn/
+│   │       │   ├── draw.py       ✅ _handle_draw_card
+│   │       │   ├── end.py        ✅ _handle_end_turn
+│   │       │   ├── play/
+│   │       │   │   ├── card_play.py  ✅ _handle_play_card (943 righe)
+│   │       │   │   └── choices.py    ✅ _handle_card_choice + 8 _resolve_*
+│   │       │   └── addons/
+│   │       │       ├── buy.py        ✅ _handle_buy_addon
+│   │       │       ├── use.py        ✅ _handle_use_addon (dispatcher)
+│   │       │       ├── combat.py     ✅ addon 3,9,24,33,81,82,85,88,115,141,142,146,175,178,194
+│   │       │       ├── hand.py       ✅ addon 18,26,37,49,50,51,53,55,74,104,109,172,173,174,179,193,195
+│   │       │       ├── market.py     ✅ addon 13,45,67,89,91,93,95,108,119,124,129,130,150
+│   │       │       ├── social.py     ✅ addon 19,62,63,90,99,121,122,123,127,171,176,186,191,196
+│   │       │       ├── economy.py    ✅ addon 29,101,120,134,140,153,158,159,166,169,187
+│   │       │       ├── role.py       ✅ addon 66,102,164,165,170,199
+│   │       │       └── callbacks.py  ✅ handler secondari (fomo_buy, appexchange, chatter_feed, …)
+│   │       └── combat/
+│   │           ├── start.py      ✅ _handle_start_combat
+│   │           ├── declare.py    ✅ _handle_declare_card, _handle_declare_card_type
+│   │           └── roll/
+│   │               ├── defeat.py ✅ _boss_defeat_sequence (561 righe)
+│   │               ├── death.py  ✅ _player_death_sequence (245 righe)
+│   │               └── dice.py   ✅ _handle_roll_dice (1238 righe)
 │   └── game/
 │       ├── __init__.py           ✅
 │       ├── engine.py             ✅ funzioni pure core (~165 righe): roll, combat, deck, death, ELO + re-export engine_boss

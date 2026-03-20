@@ -5,7 +5,34 @@
 
 ---
 
-## Sessione corrente — Chiusura addon 98/76/102
+## Sessione corrente — Refactoring handler in package
+
+### Motivazione
+I file handler principali erano diventati monolitici (addon.py 2538 righe, roll.py 2024, play.py 1143). Suddivisi in package per facilità di navigazione e manutenzione, senza modificare alcuna logica.
+
+### `handlers/turn/addons/` package (da addon.py 2538 righe)
+- Prima divisione per range numerico (effects_1_50, effects_51_100, …) — scartata
+- Seconda divisione per **categoria di gioco**:
+  - `combat.py` — dado, boss HP, meccaniche combattimento (addon 3,9,24,33,81,82,85,88,115,141,142,146,175,178,194)
+  - `hand.py` — mano e mazzo: pesca, scarto, recupero, riordino
+  - `market.py` — mercato addon: acquisto, swap, prestito
+  - `social.py` — interazione tra giocatori: spia, sabota, redistribuisce
+  - `economy.py` — licenze e certificazioni: guadagna, ruba, trasferisce
+  - `role.py` — ruolo e seniority
+  - `buy.py`, `use.py` (dispatcher), `callbacks.py` (handler secondari)
+
+### `handlers/combat/roll/` package (da roll.py 2024 righe)
+- `defeat.py` — `_boss_defeat_sequence` (561 righe)
+- `death.py` — `_player_death_sequence` (245 righe)
+- `dice.py` — `_handle_roll_dice` (1238 righe, indivisibile per variabili condivise)
+
+### `handlers/turn/play/` package (da play.py 1143 righe)
+- `card_play.py` — `_handle_play_card` (943 righe)
+- `choices.py` — `_handle_card_choice` + 8 `_resolve_*` (208 righe)
+
+---
+
+## Sessione precedente — Chiusura addon 98/76/102
 
 ### Addon rimasti
 - **Addon 98 (Acceptance Criteria)**: rimosso flusso semplificato, implementato flusso interattivo completo — revoca le licenze boss reward, salva `acceptance_criteria_pending_reward` in combat_state, invia `acceptance_criteria_choice_required` al giocatore; routing `acceptance_criteria_choose` già esistente gestisce la risposta
