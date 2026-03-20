@@ -536,13 +536,13 @@ MORTE DEL GIOCATORE
 - ✅ Addon 165 (Skill Transfer): revert automatico ruoli dopo 2 turni in `draw.py`
 - ✅ Validazione timing carte — campo `card.when` verificato in `play.py`
 - ✅ Migration `0006_game_state`: colonna `game_state JSON` su `GameSession`
+- ✅ Addon 98 (Acceptance Criteria): flusso interattivo completo — scelta licenze vs 2 carte
+- ✅ Addon 76 (Rollup Summary): bonus ELO per boss sconfitti integrato in `_apply_elo`
+- ✅ Addon 102 (Custom Permission): verificato, `game.turn_number` corretto
 - ✅ **TODO count nel backend: 0**
 
 ### ⬜ Da fare
 
-- [ ] **Addon 98 (Acceptance Criteria)** — implementato in versione semplificata (sempre 2 carte, niente scelta asincrona). Se serve la scelta interattiva, richiede refactor del boss defeat flow.
-- [ ] **Addon 102 custom_permission_used_turn** — il campo usa `game.turn_number`; verificare coerenza con altri "once per turn" check.
-- [ ] **Addon 76 (Rollup Summary)** — contatore `rollup_boss_defeats` in combat_state pronto; mancante integrazione ELO finale.
 - [ ] **Rate limiting WS** — protezione contro spam di messaggi WebSocket.
 
 ---
@@ -560,9 +560,7 @@ Con `docker compose up --build` il server parte correttamente:
 
 ### Priorità media
 
-- **Addon 98 (Acceptance Criteria)** — versione semplificata attiva; scelta interattiva richiede refactor del boss defeat flow.
-- **Addon 76 (Rollup Summary)** — contatore pronto, manca integrazione ELO finale.
-- **Addon 102 (Custom Permission)** — verificare coerenza `custom_permission_used_turn` con `game.turn_number`.
+_Nessun TODO aperto._
 
 ### Priorità bassa (post-MVP)
 

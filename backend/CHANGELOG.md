@@ -5,7 +5,16 @@
 
 ---
 
-## Sessione corrente — Chiusura tutti i TODO + sistema ruoli/seniority
+## Sessione corrente — Chiusura addon 98/76/102
+
+### Addon rimasti
+- **Addon 98 (Acceptance Criteria)**: rimosso flusso semplificato, implementato flusso interattivo completo — revoca le licenze boss reward, salva `acceptance_criteria_pending_reward` in combat_state, invia `acceptance_criteria_choice_required` al giocatore; routing `acceptance_criteria_choose` già esistente gestisce la risposta
+- **Addon 76 (Rollup Summary)**: integrato in `_apply_elo` in `game_helpers.py` — ogni boss sconfitto aggiunge +1 al rating ELO finale del giocatore (bonus ranking only, non vittoria)
+- **Addon 102 (Custom Permission)**: verificato — `game.turn_number` esiste su `GameSession`, logica `custom_permission_used_turn` corretta, nessuna modifica necessaria
+
+---
+
+## Sessione precedente — Chiusura tutti i TODO + sistema ruoli/seniority
 
 ### Sistema ruoli passivi (`engine_role.py`)
 - **Nuovo file `app/game/engine_role.py`**: 25 costanti ruolo, `ROLE_PASSIVE_TYPE`, funzioni hook per tutte le abilità passive automatiche
