@@ -3,7 +3,7 @@ Turn phase handlers package.
 Re-exports the public handler functions.
 """
 from app.websocket.handlers.turn.draw import _handle_draw_card
-from app.websocket.handlers.turn.play import _handle_play_card, _handle_card_choice
+from app.websocket.handlers.turn.play import _handle_play_card, _handle_card_choice  # package
 from app.websocket.handlers.turn.addons import (
     _handle_buy_addon, _handle_use_addon,
     _handle_appexchange_pick, _handle_chatter_feed_respond,
