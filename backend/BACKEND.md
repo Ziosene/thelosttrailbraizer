@@ -71,6 +71,15 @@ docker compose up --build
 Il server sarà disponibile su `http://localhost:8000`.
 Le migrazioni Alembic e il seed delle carte vengono eseguiti automaticamente al primo avvio.
 
+### Workflow sviluppo quotidiano
+
+| Situazione | Comando |
+|-----------|---------|
+| Modifica codice Python | Niente — hot reload automatico (volume `./backend:/app`) |
+| Nuova dipendenza in `requirements.txt` | `docker compose up --build` (solo il layer cambiato) |
+| Nuova migration Alembic | `docker compose restart backend` |
+| Qualcosa è rotto / vuoi liberare spazio | Vedi sezione pulizia sotto |
+
 ### Pulizia Docker (prima di una rebuild pulita)
 
 ```bash
