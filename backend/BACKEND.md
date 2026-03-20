@@ -120,6 +120,22 @@ docker compose up --build
 
 > Se vuoi **conservare i dati** del database (utenti registrati, partite), usa `docker compose down` senza `-v`.
 
+### Comandi DB utili (via psql nel container)
+
+```bash
+# Cancella tutte le partite e i giocatori collegati
+docker compose exec postgres psql -U trailbraizer -d trailbraizer -c "DELETE FROM game_players; DELETE FROM game_sessions;"
+
+# Cancella solo le partite non finite (e i giocatori collegati)
+docker compose exec postgres psql -U trailbraizer -d trailbraizer -c "DELETE FROM game_players WHERE game_id IN (SELECT id FROM game_sessions WHERE status != 'finished'); DELETE FROM game_sessions WHERE status != 'finished';"
+
+# Resetta tutti gli utenti (mantiene le carte)
+docker compose exec postgres psql -U trailbraizer -d trailbraizer -c "DELETE FROM users;"
+
+# Apri una shell psql interattiva
+docker compose exec postgres psql -U trailbraizer -d trailbraizer
+```
+
 ### Variabili d'ambiente (`.env`)
 
 ```

@@ -13,7 +13,6 @@ class ConnectionManager:
         self.rooms: dict[str, dict[int, WebSocket]] = {}
 
     async def connect(self, websocket: WebSocket, game_code: str, user_id: int):
-        await websocket.accept()
         if game_code not in self.rooms:
             self.rooms[game_code] = {}
         self.rooms[game_code][user_id] = websocket

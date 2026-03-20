@@ -19,13 +19,13 @@ export function LobbyPage({ gameCode, onGameStart }: Props) {
   const [isHost, setIsHost] = useState(false)
   const [connected, setConnected] = useState(false)
 
-  const myPlayer = players.find((p) => p.user_id === user?.id)
+  const myPlayer = players?.find((p) => p.user_id === user?.id)
   const allReady = players.length >= 2 && players.every((p) => p.seniority && p.role)
 
   const handleGameState = useCallback((msg: unknown) => {
-    const state = msg as GameState
-    setPlayers(state.players)
-    setMaxPlayers(state.players.length > 0 ? (state as GameState & { max_players?: number }).max_players ?? 4 : 4)
+    const state = (msg as { game: GameState }).game
+    setPlayers(state.players ?? [])
+    setMaxPlayers(state.max_players ?? 4)
     if (state.status === 'in_progress') onGameStart()
   }, [onGameStart])
 

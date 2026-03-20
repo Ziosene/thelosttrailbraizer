@@ -3,6 +3,7 @@ import { useAuthStore } from './store/authStore'
 import { LoginPage } from './pages/LoginPage'
 import { HomePage } from './pages/HomePage'
 import { LobbyPage } from './pages/LobbyPage'
+import { GamePagePreview } from './pages/GamePagePreview'
 
 type Screen = { name: 'login' } | { name: 'home' } | { name: 'lobby'; code: string } | { name: 'game'; code: string }
 
@@ -34,11 +35,7 @@ export default function App() {
     />
   )
 
-  if (screen.name === 'game') return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400">
-      Schermata di gioco — prossimo step ({screen.code})
-    </div>
-  )
+  if (screen.name === 'game') return <GamePagePreview />
 
   return null
 }

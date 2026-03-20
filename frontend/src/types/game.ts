@@ -71,6 +71,7 @@ export interface GameInfo {
 export interface GameState {
   code: string
   status: string
+  max_players: number
   current_player_id: number | null
   players: PlayerState[]
   boss_market_1: BossInfo[]

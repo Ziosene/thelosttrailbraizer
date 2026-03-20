@@ -36,6 +36,8 @@ async def websocket_endpoint(
     token: str,
     db: Session = Depends(get_db),
 ):
+    await websocket.accept()
+
     # Authenticate via query param ?token=...
     try:
         from jose import jwt, JWTError
@@ -50,7 +52,7 @@ async def websocket_endpoint(
         await websocket.close(code=4001)
         return
 
-    await manager.connect(game_code, user_id, websocket)
+    await manager.connect(websocket, game_code, user_id)
     try:
         while True:
             raw = await websocket.receive_text()
