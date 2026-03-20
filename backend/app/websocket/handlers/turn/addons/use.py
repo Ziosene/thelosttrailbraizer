@@ -12,10 +12,12 @@ from app.models.game import GameSession, GameStatus, TurnPhase
 from app.models.card import AddonCard, BossCard
 from app.game import engine
 from app.game.engine_addons import has_addon as _has_addon_addon
-from app.websocket.handlers.turn.addons.effects_1_50 import handle_effects_1_50
-from app.websocket.handlers.turn.addons.effects_51_100 import handle_effects_51_100
-from app.websocket.handlers.turn.addons.effects_101_150 import handle_effects_101_150
-from app.websocket.handlers.turn.addons.effects_151_200 import handle_effects_151_200
+from app.websocket.handlers.turn.addons.combat import handle_combat_effects
+from app.websocket.handlers.turn.addons.hand import handle_hand_effects
+from app.websocket.handlers.turn.addons.market import handle_market_effects
+from app.websocket.handlers.turn.addons.social import handle_social_effects
+from app.websocket.handlers.turn.addons.economy import handle_economy_effects
+from app.websocket.handlers.turn.addons.role import handle_role_effects
 
 
 async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Session):
@@ -108,18 +110,22 @@ async def _handle_use_addon(game: GameSession, user_id: int, data: dict, db: Ses
         if heal > 0 and boss_for_addon:
             player.current_boss_hp = min(boss_for_addon.hp, (player.current_boss_hp or 0) + heal)
 
-    # Dispatch to the appropriate effects handler.
+    # Dispatch to the appropriate category effects handler.
     # Return values:
     #   "done" = addon handled its own db.commit() + broadcast; do NOT do final broadcast
     #   True   = addon modified state but needs the final db.commit() + ADDON_USED broadcast
-    #   False  = addon number not in this range; try next handler
-    handled = await handle_effects_1_50(addon.number, game, user_id, data, player, pa, db)
+    #   False  = addon number not in this category; try next handler
+    handled = await handle_combat_effects(addon.number, game, user_id, data, player, pa, db)
     if not handled:
-        handled = await handle_effects_51_100(addon.number, game, user_id, data, player, pa, db)
+        handled = await handle_hand_effects(addon.number, game, user_id, data, player, pa, db)
     if not handled:
-        handled = await handle_effects_101_150(addon.number, game, user_id, data, player, pa, db)
+        handled = await handle_market_effects(addon.number, game, user_id, data, player, pa, db)
     if not handled:
-        handled = await handle_effects_151_200(addon.number, game, user_id, data, player, pa, db)
+        handled = await handle_social_effects(addon.number, game, user_id, data, player, pa, db)
+    if not handled:
+        handled = await handle_economy_effects(addon.number, game, user_id, data, player, pa, db)
+    if not handled:
+        handled = await handle_role_effects(addon.number, game, user_id, data, player, pa, db)
 
     # If the handler returned "done", it already committed and broadcast; we're done.
     if handled == "done":

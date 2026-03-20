@@ -1,5 +1,6 @@
 """
 Addons package: buy, use, and callback handlers.
+Effects are organized by game category in: combat, hand, market, social, economy, role.
 """
 from app.websocket.handlers.turn.addons.buy import _handle_buy_addon
 from app.websocket.handlers.turn.addons.use import _handle_use_addon
