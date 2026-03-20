@@ -69,7 +69,28 @@ docker compose up --build
 ```
 
 Il server sarà disponibile su `http://localhost:8000`.
-Le migrazioni Alembic e il seed delle carte vengono eseguiti automaticamente al primo avvio.
+
+Al primo avvio (o dopo una pulizia con `-v`) vengono eseguiti automaticamente:
+1. `alembic upgrade head` — applica tutte le migration in ordine
+2. `seed_cards.py` — inserisce 300 carte azione, 100 boss, 200 addon (idempotente)
+
+Output atteso a avvio corretto:
+```
+Postgres is up.
+Running migrations...
+INFO  [alembic.runtime.migration] Running upgrade  -> 0001, initial schema
+...
+INFO  [alembic.runtime.migration] Running upgrade 0005 -> 0006_game_state, add game_state column
+Seeding cards...
+Action cards: 300 inserted, 0 skipped
+Boss cards:   100 inserted, 0 updated, 0 skipped
+Addon cards:  200 inserted, 0 skipped
+Done. Total inserted: 600
+Starting server...
+INFO:     Application startup complete.
+```
+
+Frontend disponibile su `http://localhost:5173` (avviare separatamente con `cd frontend && npm run dev`).
 
 ### Workflow sviluppo quotidiano
 
