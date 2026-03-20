@@ -8,7 +8,7 @@ from alembic import op
 import sqlalchemy as sa
 
 revision = "0006_game_state"
-down_revision = "0005_combat_state"
+down_revision = "0005"
 branch_labels = None
 depends_on = None
 
