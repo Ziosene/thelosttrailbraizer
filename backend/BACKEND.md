@@ -71,6 +71,24 @@ docker compose up --build
 Il server sarà disponibile su `http://localhost:8000`.
 Le migrazioni Alembic e il seed delle carte vengono eseguiti automaticamente al primo avvio.
 
+### Pulizia Docker (prima di una rebuild pulita)
+
+```bash
+# Rimuovi container e volumi (database incluso — dati persi, seed rieseguito automaticamente)
+docker compose down -v
+
+# Rimuovi l'immagine vecchia del backend
+docker rmi thelosttrailbraizer-backend
+
+# Pulisci la cache di build
+docker builder prune -f
+
+# Riavvia da zero
+docker compose up --build
+```
+
+> Se vuoi **conservare i dati** del database (utenti registrati, partite), usa `docker compose down` senza `-v`.
+
 ### Variabili d'ambiente (`.env`)
 
 ```
