@@ -1,0 +1,180 @@
+# Frontend — The Lost Trailbraizer
+
+> Documentazione tecnica del frontend. Aggiornata ad ogni modifica.
+
+---
+
+## 1. Stack
+
+| Tecnologia | Versione | Scopo |
+|------------|----------|-------|
+| React | 19 | UI component framework |
+| TypeScript | 5 | Type safety |
+| Vite | 6 | Dev server + build |
+| Tailwind CSS | 4 | Styling utility-first |
+| Zustand | 5 | State management globale |
+| mitt | 3 | Event bus WebSocket |
+
+---
+
+## 2. Avvio
+
+```bash
+cd frontend
+npm install
+npm run dev        # dev server su http://localhost:5173
+npm run build      # build produzione in dist/
+npm run preview    # preview build produzione
+```
+
+Il backend deve girare su `localhost:8000` (via `docker compose up --build`).
+Il proxy Vite gestisce automaticamente CORS:
+- `/api/*` → `http://localhost:8000/*`
+- `/ws/*` → `ws://localhost:8000/*`
+
+---
+
+## 3. Struttura cartelle
+
+```
+frontend/
+├── public/                  asset statici (favicon, icons.svg)
+├── src/
+│   ├── api/
+│   │   ├── http.ts          client HTTP (fetch wrapper + endpoint REST)
+│   │   └── socket.ts        WebSocket singleton + event bus mitt
+│   ├── store/
+│   │   └── authStore.ts     stato autenticazione (Zustand): user, token, login, logout
+│   ├── types/
+│   │   └── game.ts          tipi TypeScript: PlayerState, GameState, BossInfo, AddonInfo, Seniority, Role
+│   ├── components/
+│   │   ├── ui/
+│   │   │   ├── Button.tsx   bottone con varianti (primary, secondary, danger) e stato loading
+│   │   │   └── Input.tsx    input con label, placeholder, stato error
+│   │   └── lobby/
+│   │       ├── CharacterSelect.tsx  selezione seniority (con HP) + ruolo (dropdown)
+│   │       └── PlayerList.tsx       lista giocatori in lobby con stato ready/non-ready
+│   ├── pages/
+│   │   ├── LoginPage.tsx    login + registrazione (tab switch)
+│   │   ├── HomePage.tsx     crea partita, unisciti con codice, lista partite aperte
+│   │   └── LobbyPage.tsx    lobby pre-partita: selezione personaggio + lista giocatori + avvia
+│   ├── App.tsx              router basato su stato (Screen union type, no libreria router)
+│   ├── index.css            reset base + import Tailwind
+│   └── main.tsx             entry point React
+├── vite.config.ts           config Vite + proxy backend
+├── tsconfig.app.json
+└── package.json
+```
+
+---
+
+## 4. Navigazione
+
+Nessuna libreria di routing — navigazione gestita con uno stato `Screen` in `App.tsx`:
+
+```ts
+type Screen =
+  | { name: 'login' }
+  | { name: 'home' }
+  | { name: 'lobby'; code: string }
+  | { name: 'game'; code: string }
+```
+
+Transizioni automatiche:
+- Token presente → `home` (al mount, via `loadMe()`)
+- Login riuscito → `home`
+- Logout → `login`
+- Crea/entra partita → `lobby`
+- `game_started` WS event → `game`
+
+---
+
+## 5. Autenticazione
+
+- JWT salvato in `localStorage` con chiave `token`
+- `authStore.ts` (Zustand) espone: `user`, `token`, `login()`, `register()`, `logout()`, `loadMe()`
+- `http.ts` legge automaticamente il token da localStorage e lo aggiunge all'header `Authorization: Bearer`
+- Al mount di `App.tsx`, se c'è un token salvato viene chiamato `loadMe()` per ripristinare la sessione
+
+---
+
+## 6. WebSocket
+
+`socket.ts` gestisce un singolo WebSocket attivo alla volta:
+
+```ts
+connectSocket(gameCode)   // apre WS, invia token come query param
+sendAction(action, data)  // invia messaggio al server
+disconnectSocket()        // chiude WS
+bus                       // mitt EventEmitter — emette ogni messaggio ricevuto per type
+```
+
+Il backend invia ~70 tipi di evento. I componenti si sottoscrivono con:
+```ts
+bus.on('game_state', handler)
+bus.on('card_choice_required', handler)
+// ...
+```
+
+Sempre fare `bus.off(...)` nel cleanup `useEffect`.
+
+---
+
+## 7. API REST
+
+Tutti gli endpoint passano per `api` in `http.ts`:
+
+| Metodo | Path | Scopo |
+|--------|------|-------|
+| POST | `/auth/register` | Registrazione |
+| POST | `/auth/login` | Login → JWT |
+| GET | `/auth/me` | Profilo utente corrente |
+| GET | `/games` | Lista partite in attesa |
+| POST | `/games` | Crea nuova partita |
+
+---
+
+## 8. Tipi principali (`types/game.ts`)
+
+| Tipo | Descrizione |
+|------|-------------|
+| `Seniority` | `'Junior' \| 'Experienced' \| 'Senior' \| 'Evangelist'` |
+| `SENIORITY_HP` | Map seniority → HP (J=1, E=2, S=3, Ev=4) |
+| `ROLES` | Array readonly dei 25 ruoli disponibili |
+| `PlayerState` | Stato di un giocatore (id, hp, licenze, cert, hand_count, addons…) |
+| `GameState` | Stato completo partita (players, mercati, current_player_id…) |
+| `AddonInfo` | Addon con numero, nome, is_tapped, type |
+| `BossInfo` | Boss con hp, dice_threshold, has_certification, reward_licenze |
+
+---
+
+## 9. Schermate implementate
+
+### LoginPage
+- Tab login / registrazione
+- Campi nickname + password
+- Errori inline
+- Redirect automatico a home se già autenticati
+
+### HomePage
+- Selezione numero giocatori (2/3/4)
+- Creazione partita → redirect a lobby
+- Join per codice partita (input + bottone)
+- Lista partite aperte in tempo reale (polling al mount)
+
+### LobbyPage
+- Connessione WebSocket al mount (`join_game`)
+- `CharacterSelect`: scelta seniority (4 pulsanti con HP) + ruolo (select con 25 opzioni) → invia `select_character`
+- `PlayerList`: slot giocatori con indicatore ready (verde/grigio), highlight "tu"
+- Pulsante "Avvia partita" visibile solo all'host, abilitato solo se tutti pronti e ≥2 giocatori
+- Redirect automatico a `game` su evento `game_started`
+
+---
+
+## 10. Da fare
+
+- [ ] **GamePage** — schermata di gioco principale (board, mercati, mano, combattimento)
+- [ ] **gameStore** — stato partita in Zustand (game_state, hand privata)
+- [ ] **Abilità passiva ruolo** — mostrare descrizione ruolo nella lobby in CharacterSelect
+- [ ] **Toast / notifiche** — feedback visivo per eventi WS (boss sconfitto, carta giocata, ecc.)
+- [ ] **Modal interattivi** — choice, reaction, boss interattivi
