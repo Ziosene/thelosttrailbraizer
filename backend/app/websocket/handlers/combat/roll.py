@@ -465,18 +465,19 @@ async def _boss_defeat_sequence(player, game, db, boss) -> bool:
             if _terr126 == player.id:
                 _p126.licenze += 1
 
-    # Addon 98 (Acceptance Criteria): simplified — always give 2 cards and skip licenze reward.
-    # NOTE: A full async-choice flow would require deferring the entire defeat sequence, which
-    # is not cleanly possible here. Simplified implementation per spec note.
+    # Addon 98 (Acceptance Criteria): player chooses — licenze reward OR 2 action cards.
+    # Revoke the licenze already granted, store pending reward, send choice event.
     if has_addon(player, 98):
-        # Revoke the licenze reward just granted and give 2 action cards instead
-        player.licenze = max(0, player.licenze - boss.reward_licenze)
-        from app.models.game import PlayerHandCard as _PHC98r
-        for _ in range(2):
-            if game.action_deck_1:
-                db.add(_PHC98r(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
-            elif game.action_deck_2:
-                db.add(_PHC98r(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+        _pending98 = boss.reward_licenze
+        player.licenze = max(0, player.licenze - _pending98)
+        _cs98 = dict(player.combat_state or {})
+        _cs98["acceptance_criteria_pending_reward"] = _pending98
+        player.combat_state = _cs98
+        await manager.send_to_player(player.user_id, {
+            "type": "acceptance_criteria_choice_required",
+            "licenze_option": _pending98,
+            "cards_option": 2,
+        })
 
     # Addon 105 (Epic Feature): every 3 consecutive boss defeats without dying → +1 cert
     if has_addon(player, 105):

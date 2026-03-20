@@ -142,6 +142,7 @@ async def _send_hand_state(game_code: str, player: GamePlayer, db: Session):
 
 def _apply_elo(game: GameSession, winner_player_id: int, db: Session) -> None:
     """Update ELO ratings and game stats for all players at game end."""
+    from app.game.engine_addons import has_addon as _has_addon
     players = game.players
     users = [db.get(User, gp.user_id) for gp in players]
     ratings = [u.elo_rating for u in users if u]
@@ -154,7 +155,11 @@ def _apply_elo(game: GameSession, winner_player_id: int, db: Session) -> None:
     for i, (gp, user) in enumerate(zip(players, users)):
         if user is None:
             continue
-        user.elo_rating = new_ratings[i]
+        final_rating = new_ratings[i]
+        # Addon 76 (Rollup Summary): +1 ELO per boss defeated (ranking bonus, not victory)
+        if _has_addon(gp, 76):
+            final_rating += (gp.combat_state or {}).get("rollup_boss_defeats", 0)
+        user.elo_rating = max(100, final_rating)
         user.games_played += 1
         if gp.id == winner_player_id:
             user.games_won += 1
