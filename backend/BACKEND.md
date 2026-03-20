@@ -77,8 +77,9 @@ Le migrazioni Alembic e il seed delle carte vengono eseguiti automaticamente al 
 # Rimuovi container e volumi (database incluso — dati persi, seed rieseguito automaticamente)
 docker compose down -v
 
-# Rimuovi l'immagine vecchia del backend
+# Rimuovi le immagini vecchie
 docker rmi thelosttrailbraizer-backend
+docker rmi postgres:16-alpine
 
 # Pulisci la cache di build
 docker builder prune -f
