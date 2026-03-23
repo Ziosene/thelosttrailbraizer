@@ -1,22 +1,10 @@
 """
 Unit tests for the pure game engine functions.
 Run with: pytest tests/test_engine.py -v
+
+DATABASE_URL e SECRET_KEY sono settati in tests/conftest.py (caricato prima di questo file).
 """
 import pytest
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# Minimal stub so engine.py can be imported without a real DB
-import types
-mock_game = types.ModuleType("app.models.game")
-mock_game.SENIORITY_HP = {"Junior": 1, "Experienced": 2, "Senior": 3, "Evangelist": 4}
-mock_game.Seniority = type("Seniority", (), {
-    "junior": "Junior", "experienced": "Experienced",
-    "senior": "Senior", "evangelist": "Evangelist",
-})
-sys.modules.setdefault("app", types.ModuleType("app"))
-sys.modules.setdefault("app.models", types.ModuleType("app.models"))
-sys.modules["app.models.game"] = mock_game
 
 from app.game.engine import (
     roll_d10,
