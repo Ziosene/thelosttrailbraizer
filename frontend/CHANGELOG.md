@@ -36,3 +36,23 @@
 ### Routing
 - `App.tsx`: router a stato con `Screen` union type — nessuna libreria di routing
 - Transizioni automatiche basate su stato auth e eventi WS
+
+---
+
+## Sessione 2 — Fix WebSocket + GamePagePreview
+
+### Fix WebSocket e LobbyPage
+- `main.py`: `await websocket.accept()` spostato prima dell'auth check (fix ECONNABORTED)
+- `manager.py`: rimosso doppio `accept()` dal metodo `connect`
+- `LobbyPage.tsx`: fix parsing `game_state` (`msg.game` non `msg`), optional chaining su `players?.find`, `max_players` aggiunto a `GameState`
+
+### GamePagePreview (`src/pages/GamePagePreview.tsx`)
+- Bozza layout completa schermata di gioco
+- Layout griglia 2/3/4 giocatori: quadranti uguali (flex-1) senza addon, si allungano e scrollano con addon
+- Addon con CSS float attorno alla card giocatore (wrapping naturale, no spazi vuoti)
+- Sidebar sinistra fissa: addon mercato, mazzi azioni (viola/blu), mazzi addon (verde/teal) — grafica carte impilate con pulsante Pesca
+- Sidebar destra fissa: boss attivi con HP/threshold, mazzi boss (arancione/rosso) — stessa grafica
+- Overlay carta al click (qualsiasi carta: addon, boss, mano, mercato)
+- Mano in strip fissa in fondo
+- Log panel toggle a destra
+- JWT ridotto da 7 giorni a 1 giorno (`access_token_expire_minutes = 1440`)

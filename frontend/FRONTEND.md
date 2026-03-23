@@ -169,11 +169,21 @@ Tutti gli endpoint passano per `api` in `http.ts`:
 - Pulsante "Avvia partita" visibile solo all'host, abilitato solo se tutti pronti e ≥2 giocatori
 - Redirect automatico a `game` su evento `game_started`
 
+### GamePagePreview (bozza layout)
+- Layout responsivo 2/3/4 giocatori con griglia uguale per quadrante
+- **Sidebar sinistra** (fissa, `w-48`): addon mercato (2 carte acquistabili), mazzo azioni (Mazzo 1/2 con grafica carte impilate + pulsante Pesca), mazzo addon (Mazzo 1/2 stessa grafica)
+- **Sidebar destra** (fissa, `w-48`): boss attivi (2 carte boss con HP/threshold/Affronta), mazzo boss (Mazzo 1/2 con grafica carte impilate + pulsante Pesca)
+- **Griglia giocatori**: quadranti uguali quando pochi addon (`flex-1`), si allungano e scrollano quando gli addon crescono
+- **Addon**: flow con CSS `float` attorno alla card giocatore (wrapping naturale), direzione per giocatore (L→R: Mario/Luca, R→L: Sara/Tu)
+- **Overlay carta**: click su qualsiasi carta (addon, boss, mano, mercato) apre overlay grande al centro
+- **Mano**: strip in fondo con carte giocabili
+- **Log**: pannello toggle a destra
+
 ---
 
 ## 10. Da fare
 
-- [ ] **GamePage** — schermata di gioco principale (board, mercati, mano, combattimento)
+- [ ] **GamePage** — implementazione reale con dati WS (gameStore, hand, combat, modal interattivi)
 - [ ] **gameStore** — stato partita in Zustand (game_state, hand privata)
 - [ ] **Abilità passiva ruolo** — mostrare descrizione ruolo nella lobby in CharacterSelect
 - [ ] **Toast / notifiche** — feedback visivo per eventi WS (boss sconfitto, carta giocata, ecc.)

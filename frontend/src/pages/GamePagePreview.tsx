@@ -334,6 +334,37 @@ function BossSidebar({ onCardClick }: { onCardClick: (c: CardInfo) => void }) {
           ))}
         </div>
       </div>
+
+      {/* Mazzi boss */}
+      <div>
+        <div className="text-slate-500 text-[10px] uppercase tracking-wider mb-2">Mazzo boss</div>
+        <div className="flex flex-col gap-2">
+          {[
+            { label: 'Mazzo 1', count: 18, color: 'border-orange-700/60 bg-orange-950/30' },
+            { label: 'Mazzo 2', count: 12, color: 'border-red-700/60 bg-red-950/30' },
+          ].map(deck => (
+            <div key={deck.label} className={`flex items-center justify-between rounded-xl border ${deck.color} px-3 py-2`}>
+              <div className="flex items-center gap-2">
+                {/* Carte impilate visivamente */}
+                <div className="relative w-8 h-10">
+                  <div className="absolute inset-0 rounded-md bg-slate-700 border border-slate-600" style={{ transform: 'rotate(-4deg)' }} />
+                  <div className="absolute inset-0 rounded-md bg-slate-600 border border-slate-500" style={{ transform: 'rotate(-2deg)' }} />
+                  <div className="absolute inset-0 rounded-md bg-slate-800 border border-slate-600 flex items-center justify-center">
+                    <span className="text-slate-400 text-[14px]">👾</span>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-slate-300 text-[11px] font-semibold">{deck.label}</div>
+                  <div className="text-slate-500 text-[10px]">{deck.count} carte</div>
+                </div>
+              </div>
+              <button className="text-[10px] bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg px-2 py-1 text-slate-200 transition-colors font-semibold">
+                Pesca
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
@@ -361,19 +392,61 @@ function LeftSidebar({ onCardClick }: { onCardClick: (c: CardInfo) => void }) {
         </div>
       </div>
 
-      {/* Mazzi */}
+      {/* Mazzi azioni */}
       <div>
-        <div className="text-slate-500 text-[10px] uppercase tracking-wider mb-2">Mazzi</div>
+        <div className="text-slate-500 text-[10px] uppercase tracking-wider mb-2">Mazzo azioni</div>
         <div className="flex flex-col gap-2">
           {[
-            { label: 'Azioni mazzo 1', count: 42 },
-            { label: 'Azioni mazzo 2', count: 38 },
-            { label: 'Addon mazzo 1',  count: 17 },
-            { label: 'Addon mazzo 2',  count: 19 },
-          ].map((d, i) => (
-            <div key={i} className="bg-slate-800/60 border border-slate-700/50 rounded-xl p-2 flex justify-between items-center">
-              <span className="text-slate-400 text-[10px]">{d.label}</span>
-              <span className="text-slate-300 text-xs font-bold">{d.count}</span>
+            { label: 'Mazzo 1', count: 42, color: 'border-violet-700/60 bg-violet-950/30', icon: '⚡' },
+            { label: 'Mazzo 2', count: 38, color: 'border-blue-700/60 bg-blue-950/30',   icon: '⚡' },
+          ].map(deck => (
+            <div key={deck.label} className={`flex items-center justify-between rounded-xl border ${deck.color} px-3 py-2`}>
+              <div className="flex items-center gap-2">
+                <div className="relative w-8 h-10">
+                  <div className="absolute inset-0 rounded-md bg-slate-700 border border-slate-600" style={{ transform: 'rotate(-4deg)' }} />
+                  <div className="absolute inset-0 rounded-md bg-slate-600 border border-slate-500" style={{ transform: 'rotate(-2deg)' }} />
+                  <div className="absolute inset-0 rounded-md bg-slate-800 border border-slate-600 flex items-center justify-center">
+                    <span className="text-slate-400 text-[14px]">{deck.icon}</span>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-slate-300 text-[11px] font-semibold">{deck.label}</div>
+                  <div className="text-slate-500 text-[10px]">{deck.count} carte</div>
+                </div>
+              </div>
+              <button className="text-[10px] bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg px-2 py-1 text-slate-200 transition-colors font-semibold">
+                Pesca
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Mazzi addon */}
+      <div>
+        <div className="text-slate-500 text-[10px] uppercase tracking-wider mb-2">Mazzo addon</div>
+        <div className="flex flex-col gap-2">
+          {[
+            { label: 'Mazzo 1', count: 17, color: 'border-emerald-700/60 bg-emerald-950/30', icon: '🔧' },
+            { label: 'Mazzo 2', count: 19, color: 'border-teal-700/60 bg-teal-950/30',       icon: '🔧' },
+          ].map(deck => (
+            <div key={deck.label} className={`flex items-center justify-between rounded-xl border ${deck.color} px-3 py-2`}>
+              <div className="flex items-center gap-2">
+                <div className="relative w-8 h-10">
+                  <div className="absolute inset-0 rounded-md bg-slate-700 border border-slate-600" style={{ transform: 'rotate(-4deg)' }} />
+                  <div className="absolute inset-0 rounded-md bg-slate-600 border border-slate-500" style={{ transform: 'rotate(-2deg)' }} />
+                  <div className="absolute inset-0 rounded-md bg-slate-800 border border-slate-600 flex items-center justify-center">
+                    <span className="text-slate-400 text-[14px]">{deck.icon}</span>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-slate-300 text-[11px] font-semibold">{deck.label}</div>
+                  <div className="text-slate-500 text-[10px]">{deck.count} carte</div>
+                </div>
+              </div>
+              <button className="text-[10px] bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg px-2 py-1 text-slate-200 transition-colors font-semibold">
+                Pesca
+              </button>
             </div>
           ))}
         </div>
