@@ -64,19 +64,6 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
         await _error(game.code, user_id, "Card limit reached this turn")
         return
 
-    # Valida il timing della carta (campo "Quando")
-    if card:
-        _when = (card.when or "").strip().lower()
-        if _when in ("durante combattimento", "durante il combattimento"):
-            if not player.is_in_combat:
-                await _error(game.code, user_id, f"Carta '{card.name}' può essere giocata solo durante il combattimento")
-                return
-        elif _when in ("fuori dal combattimento", "fuori dal combat"):
-            if player.is_in_combat:
-                await _error(game.code, user_id, f"Carta '{card.name}' può essere giocata solo fuori dal combattimento")
-                return
-        # "In qualsiasi momento" e "Automatica" sono sempre valide
-
     if player.is_in_combat and player.current_boss_id:
         current_round_pc = (player.combat_round or 0) + 1
 
@@ -204,6 +191,19 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
         return
 
     card = db.get(ActionCard, hc.action_card_id)
+
+    # Valida il timing della carta (campo "Quando")
+    if card:
+        _when = (card.when or "").strip().lower()
+        if _when in ("durante combattimento", "durante il combattimento"):
+            if not player.is_in_combat:
+                await _error(game.code, user_id, f"Carta '{card.name}' può essere giocata solo durante il combattimento")
+                return
+        elif _when in ("fuori dal combattimento", "fuori dal combat"):
+            if player.is_in_combat:
+                await _error(game.code, user_id, f"Carta '{card.name}' può essere giocata solo fuori dal combattimento")
+                return
+        # "In qualsiasi momento" e "Automatica" sono sempre valide
 
     # Card 183 (Code Review): blocked cards cannot be played until next turn
     if card and card.id in list((player.combat_state or {}).get("code_review_blocked_card_ids") or []):
