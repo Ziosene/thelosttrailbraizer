@@ -36,6 +36,13 @@ export interface LogEntry {
   color: string
 }
 
+export interface Toast {
+  id: number
+  message: string
+}
+
+let _toastSeq = 0
+
 let _logSeq = 0
 function mkEntry(text: string, color = 'text-slate-400'): LogEntry {
   const now = new Date()
@@ -54,10 +61,12 @@ interface GameStore {
   reactionWindow: ReactionWindow | null
   complyOrRefuse: ComplyOrRefuse | null
   log: LogEntry[]
+  toasts: Toast[]
   connect: (gameCode: string, userId: number) => void
   disconnect: () => void
   send: (action: string, data?: Record<string, unknown>) => void
   clearPendingChoice: () => void
+  removeToast: (id: number) => void
 }
 
 export const useGameStore = create<GameStore>((set, get) => {
@@ -71,6 +80,10 @@ export const useGameStore = create<GameStore>((set, get) => {
     set(s => ({ log: [mkEntry(text, color), ...s.log].slice(0, 200) }))
   }
 
+  const addToast = (message: string) => {
+    set(s => ({ toasts: [...s.toasts, { id: _toastSeq++, message }] }))
+  }
+
   return {
     gameCode: null,
     myUserId: null,
@@ -82,6 +95,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     reactionWindow: null,
     complyOrRefuse: null,
     log: [],
+    toasts: [],
 
     connect(gameCode, userId) {
       set({ gameCode, myUserId: userId })
@@ -158,6 +172,7 @@ export const useGameStore = create<GameStore>((set, get) => {
       })
       bus.on('error', (msg: any) => {
         addLog(`⚠ ${msg.message}`, 'text-red-400')
+        addToast(msg.message)
       })
       bus.on('roles_swapped', (msg: any) => {
         addLog(
@@ -194,7 +209,7 @@ export const useGameStore = create<GameStore>((set, get) => {
       disconnectSocket()
       set({
         gameCode: null, gameState: null, hand: [], myAddons: [],
-        combatActive: false, pendingChoice: null, reactionWindow: null, complyOrRefuse: null, log: [],
+        combatActive: false, pendingChoice: null, reactionWindow: null, complyOrRefuse: null, log: [], toasts: [],
       })
     },
 
@@ -204,6 +219,10 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     clearPendingChoice() {
       set({ pendingChoice: null })
+    },
+
+    removeToast(id) {
+      set(s => ({ toasts: s.toasts.filter(t => t.id !== id) }))
     },
   }
 })

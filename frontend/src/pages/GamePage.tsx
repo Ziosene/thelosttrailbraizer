@@ -9,6 +9,7 @@ import type { Corner } from '../components/game/PlayerCell'
 import { HandPanel } from '../components/game/HandPanel'
 import { LogPanel } from '../components/game/LogPanel'
 import { ReactionWindowModal, CardChoiceModal, ComplyOrRefuseModal } from '../components/game/GameModals'
+import { ToastLayer } from '../components/game/ToastLayer'
 
 interface GamePageProps {
   gameCode: string
@@ -154,6 +155,7 @@ export function GamePage({ gameCode }: GamePageProps) {
 
       {logOpen && <LogPanel entries={log} onClose={() => setLogOpen(false)} />}
       {selectedCard && <CardOverlay card={selectedCard} onClose={() => setSelectedCard(null)} />}
+      <ToastLayer />
 
       {reactionWindow && (
         <ReactionWindowModal
