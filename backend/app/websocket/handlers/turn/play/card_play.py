@@ -653,6 +653,20 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
                 player.licenze += _cost115c
                 card_effect_result = {"applied": True, "target_player_id": _rt_target_id, "licenze_transferred": _cost115c}
 
+    # ── applied:False → errore visibile al giocatore ─────────────────────────
+    if isinstance(card_effect_result, dict) and card_effect_result.get("applied") is False:
+        _reason_map = {
+            "no_target": "Nessun bersaglio disponibile",
+            "target_has_no_addons": "Il bersaglio non ha addon",
+            "in_combat": "Non puoi giocare questa carta durante il combattimento",
+            "not_in_combat": "Puoi giocare questa carta solo durante il combattimento",
+            "no_boss": "Nessun boss disponibile",
+            "no_cards": "Nessuna carta disponibile",
+        }
+        _raw_reason = card_effect_result.get("reason", "")
+        _msg = _reason_map.get(_raw_reason) or card_effect_result.get("blocked_by") or "La carta non ha avuto effetto"
+        await _error(game.code, user_id, _msg)
+
     # ── Pending choice: the engine function needs player input before completing ──
     if isinstance(card_effect_result, dict) and card_effect_result.get("status") == "pending_choice":
         _cs_pending = dict(player.combat_state or {})

@@ -608,7 +608,7 @@ def _card_194(player, game, db, *, target_player_id=None) -> dict:
         return {"applied": False, "reason": "target_required"}
     from app.game.engine_cards.helpers import get_target
     import math
-    target = get_target(game, target_player_id)
+    target = get_target(game, player, target_player_id)
     if not target:
         return {"applied": False, "reason": "target_not_found"}
     total = player.licenze + target.licenze

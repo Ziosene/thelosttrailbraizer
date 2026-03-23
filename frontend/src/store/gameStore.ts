@@ -2,6 +2,12 @@ import { create } from 'zustand'
 import { bus, connectSocket, disconnectSocket, sendAction } from '../api/socket'
 import type { GameState, HandCard, HandAddon } from '../types/game'
 
+export interface TargetAddonOption {
+  player_addon_id: number
+  addon_id: number
+  name: string
+}
+
 export interface PendingChoice {
   choice_type: string
   card_number: number
@@ -13,6 +19,8 @@ export interface PendingChoice {
   action_card_ids?: number[]
   max_keep?: number
   licenze_gained?: number
+  target_player_id?: number
+  target_addon_options?: TargetAddonOption[]
 }
 
 export interface ReactionWindow {

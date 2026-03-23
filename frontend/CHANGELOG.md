@@ -206,3 +206,45 @@
 
 ### Pagina: `src/pages/GamePage.tsx`
 - Aggiunto `<ToastLayer />` al render root
+
+## Sessione 8 — Debug Mode addon, carta 189 scelta addon, smoke test carte, fix bug
+
+### Backend: `app/game/engine_cards/interferenza.py`
+- Carta 189 (Delete Records): restituisce `pending_choice` con `choice_type: "delete_target_addon"` + lista `target_addon_options`; se target senza addon → `applied=False` con reason `target_has_no_addons`
+- Fix carte 222 (Block Kit), 229 (SLA Tier), 237 (Dataflow): `get_target()` ora passa `player` come secondo argomento (era omesso → TypeError)
+
+### Backend: `app/game/engine_cards/offensiva.py`
+- Fix carta 194 (Assignment Element): `get_target()` ora passa `player` come secondo argomento
+
+### Backend: `app/game/engine_cards/utilita.py`
+- Fix carta 215 (B2B Analytics), 270 (Success Community): `get_target()` ora passa `player`
+- Fix carta 196 (Get Records): `game.boss_deck` → `game.boss_deck_1 or boss_deck_2`
+- Fix carta 248 (Pipeline Promotion): `game.boss_deck` → `game.boss_deck_1 or boss_deck_2`
+- Fix carta 266 (Salesforce Ben): `game.boss_deck` → `game.boss_deck_1 or boss_deck_2`
+
+### Backend: `app/websocket/handlers/turn/play/card_play.py`
+- `applied=False` → invia toast di errore al giocatore con messaggio in italiano (mappatura reason)
+
+### Backend: `app/websocket/handlers/turn/play/choices.py`
+- Aggiunto resolver `delete_target_addon`: valida `player_addon_id`, rimuove addon dal target, aggiunge a `addon_graveyard`
+
+### Backend: `app/websocket/handlers/turn/addons/combat.py` + `callbacks.py`
+- Addon 9 (Debug Mode): flusso peek boss dal mazzo → evento `debug_mode_peek` → scelta fight/send_back
+
+### Store: `src/store/gameStore.ts`
+- Aggiunto `DebugModePeek` interface e stato `debugModePeek`
+- Aggiunto `TargetAddonOption` interface
+- `PendingChoice` esteso con `target_addon_options?: TargetAddonOption[]`
+- `bus.on('debug_mode_peek')` → setta `debugModePeek`
+
+### Componente: `src/components/game/GameModals.tsx`
+- `DebugModeModal` (nuovo): mostra statistiche boss + abilità, pulsanti ⚔️ Combatti / ↩ Rimanda
+- `CardChoiceModal` esteso: gestisce `choice_type: "delete_target_addon"` con lista addon selezionabile
+
+### Pagina: `src/pages/GamePage.tsx`
+- Aggiunto `<DebugModeModal>` al render root
+
+### Test: `backend/tests/engine_cards/test_all_cards_smoke.py` (nuovo)
+- Smoke test parametrizzato su tutte le 300 carte (3 varianti: happy-path, no-target, target-senza-addon)
+- Risultato: **597 passed, 303 skipped, 0 failed**
+- `KNOWN_SKIP`: 101 carte (solo in combattimento, target in combattimento, reazione, discard_empty, condizioni speciali)

@@ -273,7 +273,9 @@ backend/
         ├── conftest.py           ✅ factory game/player + fixture game2/game3
         ├── test_helpers.py       ✅ 5 test per get_target (auto-select, explicit, self, invalid)
         ├── test_interferenza.py  ✅ card 115/116 + smoke test no-crash carte 113–120
-        └── test_utilita.py       ✅ card 68 (draw 4 + pending_choice) + smoke test no-crash
+        ├── test_utilita.py       ✅ card 68 (draw 4 + pending_choice) + smoke test no-crash
+        └── test_all_cards_smoke.py ✅ smoke test parametrizzato su tutte le 300 carte
+                                       (597 pass, 303 skip, 0 fail)
 ```
 
 **Legenda:** ✅ = fatto | ⬜ = da fare | 🔧 = fatto ma da rivedere
@@ -667,6 +669,13 @@ MORTE DEL GIOCATORE
 - ✅ Addon 102 (Custom Permission): verificato, `game.turn_number` corretto
 - ✅ **TODO count nel backend: 0**
 - ✅ `_build_game_state` espone scarti/graveyard top-card per sezione mazzi frontend
+- ✅ **Smoke test tutte le 300 carte** — `test_all_cards_smoke.py` (597 pass, 303 skip, 0 fail)
+  - 3 varianti: happy-path, no-target, target-senza-addon
+  - 101 carte in `KNOWN_SKIP` (solo in combattimento, reazione, discard_empty, ecc.)
+  - Bug risolti: `get_target()` senza `player` arg (carte 194/215/222/229/237/270), `game.boss_deck` → `boss_deck_1/2` (carte 196/248/266)
+- ✅ Carta 189 (Delete Records): flusso `pending_choice` con `delete_target_addon` per scelta addon target
+- ✅ `applied=False` in `card_play.py` → toast di errore con testo in italiano (mappatura reason)
+- ✅ Carta 235 (Anypoint Exchange): semplificata → +2L + pesca 1 carta azione
 
 ### ⬜ Da fare
 

@@ -696,7 +696,7 @@ def _card_196(player, game, db, *, target_player_id=None) -> dict:
     elif game.action_deck_2:
         db.add(_PHC196(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
         drew = True
-    peeked = (game.boss_deck or [])[:2]
+    peeked = (game.boss_deck_1 or game.boss_deck_2 or [])[:2]
     return {"applied": True, "drew_card": drew, "boss_deck_top2": peeked}
 
 
@@ -799,7 +799,7 @@ def _card_215(player, game, db, *, target_player_id=None) -> dict:
     if not target_player_id:
         return {"applied": False, "reason": "target_required"}
     from app.game.engine_cards.helpers import get_target
-    target = get_target(game, target_player_id)
+    target = get_target(game, player, target_player_id)
     if not target:
         return {"applied": False, "reason": "target_not_found"}
     cs = dict(player.combat_state or {})
@@ -1004,9 +1004,10 @@ def _card_248(player, game, db, *, target_player_id=None) -> dict:
     """Pipeline Promotion — Sposta la top card del mazzo boss in fondo (eviti il prossimo boss)."""
     if player.is_in_combat:
         return {"applied": False, "reason": "in_combat"}
-    if game.boss_deck and len(game.boss_deck) > 1:
-        top = game.boss_deck.pop(0)
-        game.boss_deck = list(game.boss_deck) + [top]
+    deck = game.boss_deck_1 if game.boss_deck_1 else game.boss_deck_2
+    if deck and len(deck) > 1:
+        top = deck.pop(0)
+        deck.append(top)
         return {"applied": True, "deferred_boss_id": top}
     return {"applied": False, "reason": "boss_deck_too_small"}
 
@@ -1121,7 +1122,7 @@ def _card_266(player, game, db, *, target_player_id=None) -> dict:
         elif game.action_deck_2:
             db.add(_PHC266(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
             drew += 1
-    boss_peek = (game.boss_deck or [])[:1]
+    boss_peek = (game.boss_deck_1 or game.boss_deck_2 or [])[:1]
     return {"applied": True, "drew_cards": drew, "boss_deck_top1": boss_peek}
 
 
@@ -1158,7 +1159,7 @@ def _card_270(player, game, db, *, target_player_id=None) -> dict:
         return {"applied": False, "reason": "target_required"}
     from app.game.engine_cards.helpers import get_target
     from app.models.game import PlayerHandCard as _PHC270
-    target = get_target(game, target_player_id)
+    target = get_target(game, player, target_player_id)
     if not target:
         return {"applied": False, "reason": "target_not_found"}
     hand = list(target.hand)

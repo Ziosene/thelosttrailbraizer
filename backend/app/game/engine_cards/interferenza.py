@@ -560,24 +560,29 @@ def _card_188(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_189(player, game, db, *, target_player_id=None) -> dict:
-    """Delete Records — Elimina 1 AddOn avversario: torna nel mazzo addon.
-
-    Removes the first addon from target's inventory and returns it to addon_deck_1.
-    No purchase restriction applied.
-    """
+    """Delete Records — Il giocatore sceglie quale addon del target eliminare."""
+    from app.models.card import AddonCard as _ADC189
     target = get_target(game, player, target_player_id)
     if not target:
         return {"applied": False, "reason": "no_target"}
     addons = list(target.addons)
     if not addons:
         return {"applied": False, "reason": "target_has_no_addons"}
-    removed = addons[0]
-    removed_addon_id = removed.addon_id
-    db.delete(removed)
-    deck = list(game.addon_deck_1 or [])
-    deck.append(removed_addon_id)
-    game.addon_deck_1 = deck
-    return {"applied": True, "target_id": target.id, "removed_addon_id": removed_addon_id}
+    options = [
+        {
+            "player_addon_id": pa.id,
+            "addon_id": pa.addon_id,
+            "name": (a := db.get(_ADC189, pa.addon_id)) and a.name or "?",
+        }
+        for pa in addons
+    ]
+    return {
+        "status": "pending_choice",
+        "choice_type": "delete_target_addon",
+        "card_number": 189,
+        "target_player_id": target.id,
+        "target_addon_options": options,
+    }
 
 
 def _card_190(player, game, db, *, target_player_id=None) -> dict:
@@ -608,7 +613,7 @@ def _card_222(player, game, db, *, target_player_id=None) -> dict:
     if not target_player_id:
         return {"applied": False, "reason": "target_required"}
     from app.game.engine_cards.helpers import get_target
-    target = get_target(game, target_player_id)
+    target = get_target(game, player, target_player_id)
     if not target:
         return {"applied": False, "reason": "target_not_found"}
     cs = dict(target.combat_state or {})
@@ -649,7 +654,7 @@ def _card_229(player, game, db, *, target_player_id=None) -> dict:
     if not target_player_id:
         return {"applied": False, "reason": "target_required"}
     from app.game.engine_cards.helpers import get_target
-    target = get_target(game, target_player_id)
+    target = get_target(game, player, target_player_id)
     if not target:
         return {"applied": False, "reason": "target_not_found"}
     untapped = [pa for pa in target.addons if not pa.is_tapped]
@@ -677,7 +682,7 @@ def _card_237(player, game, db, *, target_player_id=None) -> dict:
         return {"applied": False, "reason": "target_required"}
     from app.game.engine_cards.helpers import get_target
     from app.models.game import PlayerHandCard as _PHC237
-    target = get_target(game, target_player_id)
+    target = get_target(game, player, target_player_id)
     if not target:
         return {"applied": False, "reason": "target_not_found"}
     hand = list(target.hand)

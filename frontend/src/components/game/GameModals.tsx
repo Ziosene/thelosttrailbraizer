@@ -151,7 +151,7 @@ export function CardChoiceModal({
   myAddons: HandAddon[]
   onSubmit: (data: Record<string, unknown>) => void
 }) {
-  const { choice_type, count = 1, max_keep = 1, drawn_card_ids, options, action_card_ids, boss_card_ids } = choice
+  const { choice_type, count = 1, max_keep = 1, drawn_card_ids, options, action_card_ids, boss_card_ids, target_addon_options } = choice
 
   // ── Selezione multi-carta dalla mano (hand_card_id) ──────────────────────
   const [selectedHcIds, setSelectedHcIds] = useState<Set<number>>(new Set())
@@ -194,6 +194,7 @@ export function CardChoiceModal({
     choose_cards_to_keep: `Scegli fino a ${max_keep} carte da tenere`,
     recover_from_discard: `Scegli ${count} carte dal mazzo degli scarti`,
     choose_addon_to_return: 'Scegli un addon da restituire',
+    delete_target_addon: 'Scegli quale addon eliminare',
     reorder_action_deck: 'Riordina le carte azione in cima al mazzo',
     reorder_boss_deck: 'Riordina i boss in cima al mazzo',
   }
@@ -228,6 +229,10 @@ export function CardChoiceModal({
         if (selectedAddonId === null) return
         onSubmit({ player_addon_id: selectedAddonId })
         break
+      case 'delete_target_addon':
+        if (selectedAddonId === null) return
+        onSubmit({ player_addon_id: selectedAddonId })
+        break
       case 'reorder_action_deck':
         onSubmit({ action_card_ids: orderedList.map(i => i.id) })
         break
@@ -246,7 +251,8 @@ export function CardChoiceModal({
       case 'keep_one_from_drawn': return selectedAcId !== null
       case 'choose_cards_to_keep': return true
       case 'recover_from_discard': return selectedAcIds.size === count
-      case 'choose_addon_to_return': return selectedAddonId !== null
+      case 'choose_addon_to_return':
+      case 'delete_target_addon': return selectedAddonId !== null
       case 'reorder_action_deck':
       case 'reorder_boss_deck': return true
       default: return true
@@ -345,6 +351,24 @@ export function CardChoiceModal({
                 />
               ))}
               {(!options || options.length === 0) && <p className="text-slate-600 text-xs italic">Nessuna carta nel discard.</p>}
+            </div>
+          )}
+
+          {/* delete_target_addon: scegli addon del bersaglio da eliminare */}
+          {choice_type === 'delete_target_addon' && (
+            <div className="flex flex-wrap gap-2">
+              {(target_addon_options ?? []).map(a => (
+                <SelectableCard
+                  key={a.player_addon_id}
+                  name={a.name}
+                  sub="addon bersaglio"
+                  selected={selectedAddonId === a.player_addon_id}
+                  onClick={() => setSelectedAddonId(a.player_addon_id)}
+                />
+              ))}
+              {(!target_addon_options || target_addon_options.length === 0) && (
+                <p className="text-slate-600 text-xs italic">Il bersaglio non ha addon.</p>
+              )}
             </div>
           )}
 

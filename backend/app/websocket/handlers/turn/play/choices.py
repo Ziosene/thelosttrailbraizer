@@ -45,6 +45,8 @@ async def _handle_card_choice(game: GameSession, user_id: int, data: dict, db):
         await _resolve_choose_cards_to_keep(game, player, user_id, data, db, pending)
     elif choice_type == "choose_addon_to_return":
         await _resolve_choose_addon_to_return(game, player, user_id, data, db, pending)
+    elif choice_type == "delete_target_addon":
+        await _resolve_delete_target_addon(game, player, user_id, data, db, pending)
     else:
         await _error(game.code, user_id, f"Unknown choice_type: {choice_type}")
         return
@@ -206,3 +208,27 @@ async def _resolve_choose_addon_to_return(game, player, user_id, data, db, pendi
     game.addon_deck_1 = [pa.addon_id] + (game.addon_deck_1 or [])
     db.delete(pa)
     player.licenze += licenze_gained
+    db.commit()
+    db.refresh(game)
+    await _broadcast_state(game, db)
+    await _send_hand_state(game.code, player, db)
+
+
+async def _resolve_delete_target_addon(game, player, user_id, data, db, pending):
+    """Resolver for choice_type=delete_target_addon (card 189 Delete Records).
+    Client sends: {"player_addon_id": id} — the PlayerAddon.id of the target's addon to delete.
+    """
+    chosen_pa_id = data.get("player_addon_id")
+    target_player_id = pending.get("target_player_id")
+    from app.models.game import PlayerAddon as _PA189
+    pa = db.get(_PA189, chosen_pa_id)
+    if not pa or pa.player_id != target_player_id:
+        await _error(game.code, user_id, "Addon non valido o non appartiene al target")
+        return
+    game.addon_deck_1 = (game.addon_deck_1 or []) + [pa.addon_id]
+    game.addon_graveyard = (game.addon_graveyard or []) + [pa.addon_id]
+    db.delete(pa)
+    db.commit()
+    db.refresh(game)
+    await _broadcast_state(game, db)
+    await _send_hand_state(game.code, player, db)
