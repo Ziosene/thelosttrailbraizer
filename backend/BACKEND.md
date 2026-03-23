@@ -144,6 +144,38 @@ SECRET_KEY=<random 32+ char string>
 ACCESS_TOKEN_EXPIRE_MINUTES=10080   # 7 giorni
 ```
 
+### Comandi test (pytest)
+
+I test usano SQLite in-memory e si auto-seedano con le carte reali dai file `.md`.
+**Devono girare dentro il container Docker** (dove le carte sono montate in `/cards`).
+
+```bash
+# Tutti i test
+docker compose exec backend python -m pytest tests/ -v
+
+# Solo engine_cards (più veloce durante lo sviluppo)
+docker compose exec backend python -m pytest tests/engine_cards/ -v
+
+# Solo una carta specifica
+docker compose exec backend python -m pytest tests/engine_cards/test_interferenza.py::TestCard115HttpConnector -v
+
+# Output compatto (senza -v)
+docker compose exec backend python -m pytest tests/
+```
+
+**Pattern per aggiungere un test su una nuova carta:**
+```python
+# in tests/engine_cards/test_interferenza.py (o test_utilita.py)
+class TestCardNNN:
+    def test_effetto_base(self, db, game2):
+        game, caster, target = game2
+        card = db.query(ActionCard).filter_by(number=NNN).first()
+        result = apply_action_card_effect(card, caster, game, db)
+        assert result["applied"] is True
+        # oppure
+        assert result["status"] == "pending_choice"
+```
+
 ---
 
 ## 2. Struttura del progetto
@@ -234,7 +266,14 @@ backend/
 │   └── seed_cards.py             ✅ parser .md → insert DB (idempotente, safe re-run)
 └── tests/
     ├── __init__.py               ✅
-    └── test_engine.py            ✅ 20+ unit test per tutte le funzioni di engine.py
+    ├── conftest.py               ✅ SQLite in-memory + auto-seed carte reali + fixture db
+    ├── test_engine.py            ✅ 20+ unit test per engine.py (roll, combat, deck, ELO)
+    └── engine_cards/
+        ├── __init__.py           ✅
+        ├── conftest.py           ✅ factory game/player + fixture game2/game3
+        ├── test_helpers.py       ✅ 5 test per get_target (auto-select, explicit, self, invalid)
+        ├── test_interferenza.py  ✅ card 115/116 + smoke test no-crash carte 113–120
+        └── test_utilita.py       ✅ card 68 (draw 4 + pending_choice) + smoke test no-crash
 ```
 
 **Legenda:** ✅ = fatto | ⬜ = da fare | 🔧 = fatto ma da rivedere
