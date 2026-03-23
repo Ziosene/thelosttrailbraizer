@@ -5,7 +5,7 @@
  */
 import { useEffect, useState } from 'react'
 import type { HandCard, HandAddon } from '../../types/game'
-import type { PendingChoice, ReactionWindow, ComplyOrRefuse } from '../../store/gameStore'
+import type { PendingChoice, ReactionWindow, ComplyOrRefuse, DebugModePeek } from '../../store/gameStore'
 
 // ─── Mini card per la selezione ───────────────────────────────────────────────
 
@@ -423,6 +423,52 @@ export function ComplyOrRefuseModal({
               text-red-200 font-semibold text-sm transition-colors"
           >
             ✗ Rifiuta — perdi {cor.refuse_cost}L
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+// ─── DebugModeModal ───────────────────────────────────────────────────────────
+
+export function DebugModeModal({ peek, onFight, onSendBack }: {
+  peek: DebugModePeek
+  onFight: () => void
+  onSendBack: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="bg-slate-900 border-2 border-cyan-700/70 rounded-2xl p-5 shadow-2xl w-full max-w-sm flex flex-col gap-4">
+        <div className="text-cyan-400 font-bold text-sm">🔍 Debug Mode — Boss in cima al mazzo</div>
+        <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-4 flex flex-col gap-2">
+          <div className="text-white font-bold text-base">{peek.boss_name}</div>
+          <div className="flex gap-3 text-xs">
+            <span className="text-red-300">❤️ {peek.boss_hp} HP</span>
+            <span className="text-slate-300">🎲 {peek.boss_threshold}+</span>
+            <span className="text-slate-500">{peek.boss_difficulty}</span>
+          </div>
+          {peek.boss_ability && (
+            <p className="text-slate-300 text-xs leading-relaxed border-t border-slate-700 pt-2">
+              {peek.boss_ability}
+            </p>
+          )}
+        </div>
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={onFight}
+            className="w-full bg-orange-800 hover:bg-orange-700 border border-orange-600 rounded-xl py-2.5
+              text-white font-semibold text-sm transition-colors"
+          >
+            ⚔️ Combatti
+          </button>
+          <button
+            onClick={onSendBack}
+            className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl py-2.5
+              text-slate-300 font-semibold text-sm transition-colors"
+          >
+            ↩ Rimanda in fondo al mazzo
           </button>
         </div>
       </div>

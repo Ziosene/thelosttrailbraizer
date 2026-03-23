@@ -24,33 +24,51 @@ async def handle_combat_effects(addon_number, game, user_id, data, player, pa, d
         _cs3["einstein_prediction_pre_reroll"] = True
         player.combat_state = _cs3
 
-    # Addon 9 (Debug Mode): once per game, send boss back to bottom of deck
+    # Addon 9 (Debug Mode): once per turn — peek top boss from deck, decide to fight or send to bottom
     elif addon_number == 9:
-        _cs9 = player.combat_state or {}
-        if _cs9.get("debug_mode_used"):
-            await _error(game.code, user_id, "Debug Mode already used this game")
+        if player.is_in_combat:
+            await _error(game.code, user_id, "Debug Mode cannot be used while in combat")
             pa.is_tapped = False
             return "done"
-        if not player.is_in_combat or not player.current_boss_id:
-            await _error(game.code, user_id, "Debug Mode can only be used when in combat (right after drawing a boss)")
-            pa.is_tapped = False
-            return "done"
-        boss_id_9 = player.current_boss_id
-        source_9 = player.current_boss_source
-        if source_9 in ("deck_1", "market_1"):
-            game.boss_deck_1 = (game.boss_deck_1 or []) + [boss_id_9]
-        else:
-            game.boss_deck_2 = (game.boss_deck_2 or []) + [boss_id_9]
-        player.is_in_combat = False
-        player.current_boss_id = None
-        player.current_boss_hp = None
-        player.current_boss_source = None
-        player.combat_round = None
         from app.models.game import TurnPhase as _TP9
-        game.current_phase = _TP9.action
-        cs9_new = dict(_cs9)
-        cs9_new["debug_mode_used"] = True
-        player.combat_state = cs9_new
+        if game.current_phase != _TP9.action:
+            await _error(game.code, user_id, "Debug Mode can only be used during the action phase")
+            pa.is_tapped = False
+            return "done"
+        # Pop top boss from deck 1, fallback deck 2
+        _deck1_9 = list(game.boss_deck_1 or [])
+        _deck2_9 = list(game.boss_deck_2 or [])
+        if _deck1_9:
+            _boss_id_9 = _deck1_9[0]
+            _source_9 = "deck_1"
+            game.boss_deck_1 = _deck1_9[1:]
+        elif _deck2_9:
+            _boss_id_9 = _deck2_9[0]
+            _source_9 = "deck_2"
+            game.boss_deck_2 = _deck2_9[1:]
+        else:
+            await _error(game.code, user_id, "No boss available in any deck")
+            pa.is_tapped = False
+            return "done"
+        _boss9 = db.get(BossCard, _boss_id_9)
+        _cs9_new = dict(player.combat_state or {})
+        _cs9_new["debug_mode_peek_boss_id"] = _boss_id_9
+        _cs9_new["debug_mode_peek_source"] = _source_9
+        player.combat_state = _cs9_new
+        db.commit()
+        db.refresh(game)
+        await manager.send_to_player(game.code, player.user_id, {
+            "type": "debug_mode_peek",
+            "boss_id": _boss_id_9,
+            "boss_name": _boss9.name if _boss9 else "?",
+            "boss_hp": _boss9.hp if _boss9 else 0,
+            "boss_threshold": _boss9.dice_threshold if _boss9 else 0,
+            "boss_ability": _boss9.ability if _boss9 else "",
+            "boss_difficulty": _boss9.difficulty if _boss9 else "",
+            "source": _source_9,
+        })
+        await _broadcast_state(game, db)
+        return "done"
 
     # Addon 24 (Einstein Next Best Action): once per combat, skip a round — neutral
     elif addon_number == 24:

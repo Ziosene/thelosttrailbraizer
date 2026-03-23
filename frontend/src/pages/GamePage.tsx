@@ -8,7 +8,7 @@ import type { CellData } from '../components/game/PlayArea'
 import type { Corner } from '../components/game/PlayerCell'
 import { HandPanel } from '../components/game/HandPanel'
 import { LogPanel } from '../components/game/LogPanel'
-import { ReactionWindowModal, CardChoiceModal, ComplyOrRefuseModal } from '../components/game/GameModals'
+import { ReactionWindowModal, CardChoiceModal, ComplyOrRefuseModal, DebugModeModal } from '../components/game/GameModals'
 import { ToastLayer } from '../components/game/ToastLayer'
 
 interface GamePageProps {
@@ -18,7 +18,7 @@ interface GamePageProps {
 export function GamePage({ gameCode }: GamePageProps) {
   const { user } = useAuthStore()
   const {
-    gameState, hand, myAddons, pendingChoice, reactionWindow, complyOrRefuse, log,
+    gameState, hand, myAddons, pendingChoice, reactionWindow, complyOrRefuse, debugModePeek, log,
     connect, disconnect, send, clearPendingChoice,
   } = useGameStore()
   const [logOpen, setLogOpen] = useState(false)
@@ -174,6 +174,20 @@ export function GamePage({ gameCode }: GamePageProps) {
           onSubmit={(data) => {
             send('card_choice', { choice_type: pendingChoice.choice_type, ...data })
             clearPendingChoice()
+          }}
+        />
+      )}
+
+      {debugModePeek && (
+        <DebugModeModal
+          peek={debugModePeek}
+          onFight={() => {
+            send('debug_mode_choice', { decision: 'fight' })
+            useGameStore.setState({ debugModePeek: null })
+          }}
+          onSendBack={() => {
+            send('debug_mode_choice', { decision: 'send_back' })
+            useGameStore.setState({ debugModePeek: null })
           }}
         />
       )}

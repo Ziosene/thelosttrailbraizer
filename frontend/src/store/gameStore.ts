@@ -41,6 +41,16 @@ export interface Toast {
   message: string
 }
 
+export interface DebugModePeek {
+  boss_id: number
+  boss_name: string
+  boss_hp: number
+  boss_threshold: number
+  boss_ability: string
+  boss_difficulty: string
+  source: string
+}
+
 let _toastSeq = 0
 
 let _logSeq = 0
@@ -62,6 +72,7 @@ interface GameStore {
   complyOrRefuse: ComplyOrRefuse | null
   log: LogEntry[]
   toasts: Toast[]
+  debugModePeek: DebugModePeek | null
   connect: (gameCode: string, userId: number) => void
   disconnect: () => void
   send: (action: string, data?: Record<string, unknown>) => void
@@ -96,6 +107,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     complyOrRefuse: null,
     log: [],
     toasts: [],
+    debugModePeek: null,
 
     connect(gameCode, userId) {
       set({ gameCode, myUserId: userId })
@@ -170,6 +182,12 @@ export const useGameStore = create<GameStore>((set, get) => {
       bus.on('player_left', (msg: any) => {
         addLog(`Giocatore #${msg.user_id} lascia la partita`, 'text-slate-500')
       })
+      bus.on('debug_mode_peek', (msg: any) => {
+        const { type: _t, ...rest } = msg
+        set({ debugModePeek: rest as DebugModePeek })
+        addLog(`🔍 Debug Mode: guardi "${msg.boss_name}" — scegli se combatterlo o rimandarlo`, 'text-cyan-400')
+      })
+
       bus.on('error', (msg: any) => {
         addLog(`⚠ ${msg.message}`, 'text-red-400')
         addToast(msg.message)
@@ -209,7 +227,7 @@ export const useGameStore = create<GameStore>((set, get) => {
       disconnectSocket()
       set({
         gameCode: null, gameState: null, hand: [], myAddons: [],
-        combatActive: false, pendingChoice: null, reactionWindow: null, complyOrRefuse: null, log: [], toasts: [],
+        combatActive: false, pendingChoice: null, reactionWindow: null, complyOrRefuse: null, log: [], toasts: [], debugModePeek: null,
       })
     },
 

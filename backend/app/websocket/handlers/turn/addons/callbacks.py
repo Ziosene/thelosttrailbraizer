@@ -126,6 +126,43 @@ async def _handle_metadata_api_reorder(game, user_id: int, data: dict, db):
     await _broadcast_state(game, db)
 
 
+async def _handle_debug_mode_choice(game, user_id: int, data: dict, db):
+    """Handle Addon 9 (Debug Mode): player decides to fight or send peeked boss to bottom of deck."""
+    from app.websocket.handlers.combat.start import _handle_start_combat
+    player = _get_player(game, user_id)
+    if not player:
+        return
+    cs = player.combat_state or {}
+    _peek_boss = cs.get("debug_mode_peek_boss_id")
+    _peek_source = cs.get("debug_mode_peek_source")
+    if not _peek_boss or not _peek_source:
+        await _error(game.code, user_id, "No Debug Mode peek active")
+        return
+    decision = data.get("decision")  # "fight" or "send_back"
+    cs_new = dict(cs)
+    cs_new.pop("debug_mode_peek_boss_id", None)
+    cs_new.pop("debug_mode_peek_source", None)
+    player.combat_state = cs_new
+    if decision == "fight":
+        # Boss is NOT in deck anymore (we popped it) — put it back at top then let start_combat pop it
+        if _peek_source == "deck_1":
+            game.boss_deck_1 = [_peek_boss] + list(game.boss_deck_1 or [])
+        else:
+            game.boss_deck_2 = [_peek_boss] + list(game.boss_deck_2 or [])
+        db.commit()
+        db.refresh(game)
+        await _handle_start_combat(game, user_id, {"source": _peek_source}, db)
+    else:
+        # send_back: push boss to BOTTOM of its deck
+        if _peek_source == "deck_1":
+            game.boss_deck_1 = list(game.boss_deck_1 or []) + [_peek_boss]
+        else:
+            game.boss_deck_2 = list(game.boss_deck_2 or []) + [_peek_boss]
+        db.commit()
+        db.refresh(game)
+        await _broadcast_state(game, db)
+
+
 async def _handle_release_notes_confirm(game, user_id: int, data: dict, db):
     """Handle Addon 60 (Release Notes): player decides to fight or skip the peeked boss."""
     from app.websocket.handlers.combat.start import _handle_start_combat

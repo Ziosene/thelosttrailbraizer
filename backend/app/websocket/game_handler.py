@@ -15,7 +15,7 @@ from app.websocket.handlers.turn import (
     _handle_beta_feature_reject, _handle_beta_feature_keep,
     _handle_pilot_program_pick, _handle_acceptance_criteria_choose,
     _handle_external_object_pick, _handle_batch_schedule_card, _handle_territory_set,
-    _handle_fomo_buy_addon, _handle_card_choice,
+    _handle_fomo_buy_addon, _handle_card_choice, _handle_debug_mode_choice,
 )
 from app.websocket.handlers.combat import (
     _handle_start_combat, _handle_roll_dice, _handle_retreat,
@@ -98,6 +98,8 @@ async def handle_message(
         await _handle_batch_schedule_card(game, user_id, data, db)
     elif action == "territory_set":
         await _handle_territory_set(game, user_id, data, db)
+    elif action == "debug_mode_choice":
+        await _handle_debug_mode_choice(game, user_id, data, db)
     elif action == "fomo_buy_addon":
         await _handle_fomo_buy_addon(game, user_id, data, db)
     elif action == "card_choice":

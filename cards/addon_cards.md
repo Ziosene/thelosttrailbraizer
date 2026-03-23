@@ -90,7 +90,7 @@
 
 ### 9. Debug Mode
 - **Tipo**: Attivo
-- **Effetto**: Una volta per partita, puoi vedere l'abilità del boss DOPO averlo pescato e scegliere di rimandarlo in fondo al mazzo (senza combattere)
+- **Effetto**: Una volta per turno, pesca il boss in cima a uno dei mazzi boss, vedine le statistiche e l'abilità, e scegli se combatterlo o rimandarlo in fondo al mazzo.
 - **Rarità**: Raro
 - **Image prompt**: `A 2D hand-drawn magnifying glass revealing a glowing bug in the art style of The Binding of Isaac. A cracked magnifying glass with a cartoonish bug trapped inside, X eyes and error symbols surrounding it. Thick black outlines, flat shading, investigative mood. Rich golden background with ornate gold-leaf border. Indie game item card art.`
 

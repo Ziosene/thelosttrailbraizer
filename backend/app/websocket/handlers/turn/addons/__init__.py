@@ -5,6 +5,7 @@ Effects are organized by game category in: combat, hand, market, social, economy
 from app.websocket.handlers.turn.addons.buy import _handle_buy_addon
 from app.websocket.handlers.turn.addons.use import _handle_use_addon
 from app.websocket.handlers.turn.addons.callbacks import (
+    _handle_debug_mode_choice,
     _handle_fomo_buy_addon,
     _handle_appexchange_pick,
     _handle_chatter_feed_respond,
@@ -22,6 +23,7 @@ from app.websocket.handlers.turn.addons.callbacks import (
 
 __all__ = [
     "_handle_buy_addon",
+    "_handle_debug_mode_choice",
     "_handle_use_addon",
     "_handle_fomo_buy_addon",
     "_handle_appexchange_pick",
