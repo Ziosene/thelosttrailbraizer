@@ -88,6 +88,13 @@ export function GamePage({ gameCode }: GamePageProps) {
     ? '→ Tu'
     : currentPlayer ? `→ ${currentPlayer.nickname}` : ''
 
+  const PHASE_LABELS: Record<string, string> = {
+    draw:   '🃏 Pesca',
+    action: '⚡ Azione',
+    combat: '⚔️ Combattimento',
+    end:    '✓ Fine turno',
+  }
+
   return (
     <div className="h-screen bg-slate-950 flex flex-col text-slate-200 text-sm overflow-hidden select-none">
 
@@ -99,8 +106,11 @@ export function GamePage({ gameCode }: GamePageProps) {
           Turno <span className="text-white font-semibold">{gameState.turn_number}</span>
         </span>
         {gameState.current_phase && (
-          <span className="bg-amber-800/70 text-amber-200 px-2 py-0.5 rounded-full font-semibold uppercase">
-            {gameState.current_phase}
+          <span className={`px-2 py-0.5 rounded-full font-semibold text-[10px]
+            ${isMyTurn && gameState.current_phase === 'draw'
+              ? 'bg-amber-500/80 text-amber-100 animate-pulse'
+              : 'bg-slate-700/80 text-slate-300'}`}>
+            {PHASE_LABELS[gameState.current_phase] ?? gameState.current_phase}
           </span>
         )}
         {turnLabel && (
@@ -136,6 +146,7 @@ export function GamePage({ gameCode }: GamePageProps) {
       <HandPanel
         hand={hand}
         gameState={gameState}
+        isMyTurn={isMyTurn}
         onCardClick={setSelectedCard}
         onPlayCard={(id) => send('play_card', { hand_card_id: id })}
         onDrawCard={(deck) => send('draw_card', { deck })}
