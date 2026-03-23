@@ -306,6 +306,7 @@ Client (React)
 - **handlers/turn.py**: draw_card, play_card, buy_addon, use_addon, end_turn.
 - **handlers/combat.py**: start_combat, roll_dice, retreat, declare_card, declare_card_type.
 - **game_helpers.py**: helper condivisi (`_build_game_state`, `_error`, `_broadcast_state`, `_apply_elo`, `_send_hand_state`, …).
+  - `_build_game_state` espone ora anche: `action_discard_count`, `action_discard_top` (ultimo ActionCard scartato), `boss_graveyard_count`, `boss_graveyard_top` (ultimo BossCard), `addon_graveyard_count`, `addon_graveyard_top` (ultimo AddonCard). I campi `*_top` sono oggetti parziali (`{id, name, card_type/difficulty/rarity}`) o `null` se la pila è vuota.
 - **manager.py** tiene in memoria le connessioni WS attive raggruppate per `game_code`.
 
 ---
@@ -665,6 +666,7 @@ MORTE DEL GIOCATORE
 - ✅ Addon 76 (Rollup Summary): bonus ELO per boss sconfitti integrato in `_apply_elo`
 - ✅ Addon 102 (Custom Permission): verificato, `game.turn_number` corretto
 - ✅ **TODO count nel backend: 0**
+- ✅ `_build_game_state` espone scarti/graveyard top-card per sezione mazzi frontend
 
 ### ⬜ Da fare
 

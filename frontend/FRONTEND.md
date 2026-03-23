@@ -45,7 +45,7 @@ frontend/
 │   │   └── socket.ts        WebSocket singleton + event bus mitt
 │   ├── store/
 │   │   ├── authStore.ts     stato autenticazione (Zustand): user, token, login, logout
-│   │   └── gameStore.ts     stato partita (Zustand): gameState, hand, myAddons, connect, disconnect, send
+│   │   └── gameStore.ts     stato partita (Zustand): gameState, hand, myAddons, log, toasts, connect, disconnect, send
 │   ├── types/
 │   │   └── game.ts          tipi TypeScript: PlayerState, GameState, HandCard, HandAddon, PublicAddon, BossMarketInfo, AddonMarketInfo, Seniority, Role
 │   ├── components/
@@ -59,9 +59,11 @@ frontend/
 │   │       ├── CardVisual.tsx   CardInfo type, CardVisual, CardOverlay, DeckCard, HandCardVisual
 │   │       ├── PlayerCell.tsx   HP, Certs, Corner type, PlayerCell
 │   │       ├── PlayArea.tsx     LeftSidebar, BossSidebar, PlayArea, CellData type
-│   │       ├── HandPanel.tsx    mano + gruppi mazzi (HandPanel)
+│   │       ├── HandPanel.tsx    mano + 3 pulsanti mazzi (Azioni/Addon/Boss) → DeckModal
+│   │       ├── DeckModal.tsx    modale mazzi: Mazzo 1, Mazzo 2, Scarti (ultima carta visibile)
 │   │       ├── LogPanel.tsx     pannello log partita (LogPanel)
-│   │       └── GameModals.tsx   ReactionWindowModal, CardChoiceModal
+│   │       ├── ToastLayer.tsx   toast errori backend (fixed top-right, auto-dismiss 4s)
+│   │       └── GameModals.tsx   ReactionWindowModal, CardChoiceModal, ComplyOrRefuseModal
 │   ├── pages/
 │   │   ├── LoginPage.tsx        login + registrazione (tab switch)
 │   │   ├── HomePage.tsx         crea partita, unisciti con codice, lista partite aperte
@@ -152,7 +154,10 @@ Tutti gli endpoint passano per `api` in `http.ts`:
 | `SENIORITY_HP` | Map seniority → HP (J=1, E=2, S=3, Ev=4) |
 | `ROLES` | Array readonly dei 25 ruoli disponibili |
 | `PlayerState` | Stato di un giocatore (id, hp, licenze, cert, hand_count, addons…) |
-| `GameState` | Stato completo partita (players, mercati, current_player_id…) |
+| `GameState` | Stato completo partita (players, mercati, current_player_id, deck counts, discard/graveyard top…) |
+| `DiscardTopAction` | `{id, name, card_type, rarity}` — ultima carta azione scartata |
+| `DiscardTopBoss` | `{id, name, difficulty}` — ultimo boss nel graveyard |
+| `DiscardTopAddon` | `{id, name, rarity}` — ultimo addon nel graveyard |
 | `HandCard` | Carta in mano: `hand_card_id`, `card_id`, `name`, `card_type`, `effect`, `rarity` |
 | `HandAddon` | Addon in mano: `player_addon_id`, `addon_id`, `name`, `addon_type`, `effect`, `is_tapped` |
 | `PublicAddon` | Addon visibile a tutti: `player_addon_id`, `addon_id`, `name`, `effect`, `is_tapped` |
@@ -203,7 +208,8 @@ Tutti gli endpoint passano per `api` in `http.ts`:
 - [x] **Log partita** — panel toggle con tutti gli eventi WS in tempo reale
 - [x] **CardOverlay** — overlay ingrandita con descrizione effetto + pulsante azione
 - [x] **GamePage refactor** — suddivisa in componenti: CardVisual, PlayerCell, PlayArea, HandPanel, LogPanel
+- [x] **Sezione mazzi** — 3 pulsanti (Azioni/Addon/Boss) + DeckModal con Mazzo 1/2 + Scarti
+- [x] **Toast errori** — ToastLayer: errori backend come toast rosso top-right, auto-dismiss 4s
 - [ ] **Abilità passiva ruolo** — mostrare descrizione ruolo nella lobby in CharacterSelect
-- [ ] **Toast / notifiche** — feedback visivo per eventi WS (boss sconfitto, carta giocata, ecc.)
 - [ ] **Modal combattimento** — tiro dado, dichiarazione carta per boss 33/86
 - [ ] **Game over screen** — schermata finale con vincitore + statistiche

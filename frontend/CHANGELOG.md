@@ -164,3 +164,45 @@
 - Ridotta a ~140 righe di pura orchestrazione
 - Tutta la logica UI estratta nei componenti `game/`
 - Header semplificato: rimosso `phaseLabel` intermedio, turnLabel reso inline
+
+---
+
+## Sessione 7 — Sezione mazzi con modale + Toast errori
+
+### Backend: `app/websocket/game_helpers.py`
+- `_build_game_state` ora espone per ogni tipo di pila scarti:
+  - `action_discard_count`, `action_discard_top` (`{id, name, card_type, rarity}`)
+  - `boss_graveyard_count`, `boss_graveyard_top` (`{id, name, difficulty}`)
+  - `addon_graveyard_count`, `addon_graveyard_top` (`{id, name, rarity}`)
+  - I campi `*_top` sono `null` se la pila è vuota
+
+### Tipi: `src/types/game.ts`
+- Aggiunti: `DiscardTopAction`, `DiscardTopBoss`, `DiscardTopAddon`
+- `GameState` aggiornato con i 6 nuovi campi discard/graveyard
+
+### Componente: `src/components/game/DeckModal.tsx` (nuovo)
+- Modale centrata aperta da HandPanel (uno per tipo: action/addon/boss)
+- Mostra Mazzo 1 e Mazzo 2 (cliccabili per pesca solo Azioni in fase draw)
+- Mostra Scarti: ultima carta con nome + sottotitolo, oppure `∅ vuoto`
+- Pulsante Azioni pulsa amber se è il turno del giocatore in fase draw
+
+### Componente: `src/components/game/HandPanel.tsx` (refactor sezione mazzi)
+- Sostituiti 6 `DeckCard` con 3 pulsanti: `⚡ Azioni`, `🔧 Addon`, `👾 Boss`
+- Ogni pulsante mostra totale carte nei due mazzi
+- Click → apre `DeckModal` per quel tipo
+- Pulsante Azioni pulsa amber in fase draw
+
+### Store: `src/store/gameStore.ts`
+- Aggiunto tipo `Toast` (esportato): `{ id, message }`
+- Aggiunto stato `toasts: Toast[]`
+- Aggiunta azione `removeToast(id)`
+- `bus.on('error')` ora chiama sia `addLog` che `addToast`
+
+### Componente: `src/components/game/ToastLayer.tsx` (nuovo)
+- Renders stack toast fixed top-right (z-index 100)
+- Auto-dismiss dopo 4 secondi via `useEffect` + `setTimeout`
+- Chiudibile manualmente con `×`
+- Sfondo `red-950`, bordo `red-700/60`
+
+### Pagina: `src/pages/GamePage.tsx`
+- Aggiunto `<ToastLayer />` al render root
