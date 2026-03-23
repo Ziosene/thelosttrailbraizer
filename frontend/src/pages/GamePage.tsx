@@ -8,7 +8,7 @@ import type { CellData } from '../components/game/PlayArea'
 import type { Corner } from '../components/game/PlayerCell'
 import { HandPanel } from '../components/game/HandPanel'
 import { LogPanel } from '../components/game/LogPanel'
-import { ReactionWindowModal, CardChoiceModal } from '../components/game/GameModals'
+import { ReactionWindowModal, CardChoiceModal, ComplyOrRefuseModal } from '../components/game/GameModals'
 
 interface GamePageProps {
   gameCode: string
@@ -17,7 +17,7 @@ interface GamePageProps {
 export function GamePage({ gameCode }: GamePageProps) {
   const { user } = useAuthStore()
   const {
-    gameState, hand, myAddons, pendingChoice, reactionWindow, log,
+    gameState, hand, myAddons, pendingChoice, reactionWindow, complyOrRefuse, log,
     connect, disconnect, send, clearPendingChoice,
   } = useGameStore()
   const [logOpen, setLogOpen] = useState(false)
@@ -161,6 +161,20 @@ export function GamePage({ gameCode }: GamePageProps) {
           onSubmit={(data) => {
             send('card_choice', { choice_type: pendingChoice.choice_type, ...data })
             clearPendingChoice()
+          }}
+        />
+      )}
+
+      {complyOrRefuse && (
+        <ComplyOrRefuseModal
+          cor={complyOrRefuse}
+          onComply={() => {
+            send('pass_reaction')
+            useGameStore.setState({ complyOrRefuse: null })
+          }}
+          onRefuse={() => {
+            send('card115_refuse')
+            useGameStore.setState({ complyOrRefuse: null })
           }}
         />
       )}

@@ -21,7 +21,7 @@ from app.websocket.handlers.combat import (
     _handle_start_combat, _handle_roll_dice, _handle_retreat,
     _handle_declare_card, _handle_declare_card_type,
 )
-from app.websocket.handlers.reaction import _handle_play_reaction, _handle_pass_reaction
+from app.websocket.handlers.reaction import _handle_play_reaction, _handle_pass_reaction, _handle_card115_refuse
 
 
 async def handle_message(
@@ -72,6 +72,8 @@ async def handle_message(
         await _handle_play_reaction(game, user_id, data, db)
     elif action == ClientAction.PASS_REACTION:
         await _handle_pass_reaction(game, user_id, data, db)
+    elif action == "card115_refuse":
+        await _handle_card115_refuse(game, user_id, data, db)
     elif action == "appexchange_pick":
         await _handle_appexchange_pick(game, user_id, data, db)
     elif action == "chatter_feed_respond":

@@ -44,3 +44,17 @@ async def _handle_pass_reaction(game: GameSession, user_id: int, data: dict, db:
         return
 
     resolve_reaction(game.code, player.id, {"action": "pass"})
+
+
+async def _handle_card115_refuse(game: GameSession, user_id: int, data: dict, db: Session):
+    """Card 115 (HTTP Connector): target sceglie di rifiutare (perde 2L invece di 1L)."""
+    player = _get_player(game, user_id)
+    if not player:
+        await _error(game.code, user_id, "Player not found")
+        return
+
+    if not has_pending_reaction(game.code, player.id):
+        await _error(game.code, user_id, "No reaction window open for you")
+        return
+
+    resolve_reaction(game.code, player.id, {"action": "refuse"})

@@ -22,6 +22,13 @@ export interface ReactionWindow {
   opened_at: number
 }
 
+export interface ComplyOrRefuse {
+  caster_player_id: number
+  comply_cost: number
+  refuse_cost: number
+  opened_at: number
+}
+
 export interface LogEntry {
   id: number
   time: string
@@ -45,6 +52,7 @@ interface GameStore {
   combatActive: boolean
   pendingChoice: PendingChoice | null
   reactionWindow: ReactionWindow | null
+  complyOrRefuse: ComplyOrRefuse | null
   log: LogEntry[]
   connect: (gameCode: string, userId: number) => void
   disconnect: () => void
@@ -72,6 +80,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     combatActive: false,
     pendingChoice: null,
     reactionWindow: null,
+    complyOrRefuse: null,
     log: [],
 
     connect(gameCode, userId) {
@@ -171,6 +180,13 @@ export const useGameStore = create<GameStore>((set, get) => {
         set({ reactionWindow: { ...msg, opened_at: Date.now() } })
       })
       bus.on('reaction_window_closed', () => set({ reactionWindow: null }))
+      bus.on('card115_comply_or_refuse', (msg: any) => {
+        set({ complyOrRefuse: { ...msg, opened_at: Date.now() } })
+        addLog(
+          `🔔 Richiesta licenza da ${pName(msg.caster_player_id)}: paga ${msg.comply_cost}L o rifiuta (${msg.refuse_cost}L)`,
+          'text-amber-400',
+        )
+      })
     },
 
     disconnect() {
@@ -178,7 +194,7 @@ export const useGameStore = create<GameStore>((set, get) => {
       disconnectSocket()
       set({
         gameCode: null, gameState: null, hand: [], myAddons: [],
-        combatActive: false, pendingChoice: null, reactionWindow: null, log: [],
+        combatActive: false, pendingChoice: null, reactionWindow: null, complyOrRefuse: null, log: [],
       })
     },
 

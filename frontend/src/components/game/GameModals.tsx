@@ -5,7 +5,7 @@
  */
 import { useEffect, useState } from 'react'
 import type { HandCard, HandAddon } from '../../types/game'
-import type { PendingChoice, ReactionWindow } from '../../store/gameStore'
+import type { PendingChoice, ReactionWindow, ComplyOrRefuse } from '../../store/gameStore'
 
 // ─── Mini card per la selezione ───────────────────────────────────────────────
 
@@ -383,6 +383,46 @@ export function CardChoiceModal({
               font-semibold text-sm transition-colors"
           >
             Conferma scelta
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Comply Or Refuse Modal (carta 115 — HTTP Connector) ─────────────────────
+
+export function ComplyOrRefuseModal({
+  cor,
+  onComply,
+  onRefuse,
+}: {
+  cor: ComplyOrRefuse
+  onComply: () => void
+  onRefuse: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="bg-slate-900 border-2 border-amber-500/70 rounded-2xl p-5 shadow-2xl w-full max-w-sm flex flex-col gap-4">
+        <div className="text-amber-400 font-bold text-sm">🔔 HTTP Connector — Richiesta licenza</div>
+        <p className="text-slate-300 text-sm leading-relaxed">
+          Un avversario ti chiede <span className="text-yellow-300 font-bold">{cor.comply_cost}L</span>.
+          Se rifiuti, perdi <span className="text-red-400 font-bold">{cor.refuse_cost}L</span>.
+        </p>
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={onComply}
+            className="w-full bg-emerald-700 hover:bg-emerald-600 border border-emerald-500 rounded-xl py-2.5
+              text-white font-semibold text-sm transition-colors"
+          >
+            ✓ Accetta — paga {cor.comply_cost}L
+          </button>
+          <button
+            onClick={onRefuse}
+            className="w-full bg-red-900/60 hover:bg-red-800/80 border border-red-700 rounded-xl py-2.5
+              text-red-200 font-semibold text-sm transition-colors"
+          >
+            ✗ Rifiuta — perdi {cor.refuse_cost}L
           </button>
         </div>
       </div>
