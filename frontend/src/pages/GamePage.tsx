@@ -594,19 +594,17 @@ export function GamePage({ gameCode }: GamePageProps) {
             <span className="text-slate-500 text-[9px] uppercase tracking-wider">Azioni</span>
             <div className="flex gap-1.5">
               <DeckCard icon="⚡" label="Mazzo 1" count={gameState.action_deck_1_count} accent="border-violet-600/70"
-                onDraw={() => send('draw_action', { deck: 1 })} />
+                onDraw={() => send('draw_card', { deck: 1 })} />
               <DeckCard icon="⚡" label="Mazzo 2" count={gameState.action_deck_2_count} accent="border-blue-600/70"
-                onDraw={() => send('draw_action', { deck: 2 })} />
+                onDraw={() => send('draw_card', { deck: 2 })} />
             </div>
           </div>
           <div className="w-px bg-slate-800 self-stretch" />
           <div className="flex flex-col items-center gap-1">
             <span className="text-slate-500 text-[9px] uppercase tracking-wider">Addon</span>
             <div className="flex gap-1.5">
-              <DeckCard icon="🔧" label="Mazzo 1" count={gameState.addon_deck_1_count} accent="border-emerald-600/70"
-                onDraw={() => send('draw_addon', { deck: 1 })} />
-              <DeckCard icon="🔧" label="Mazzo 2" count={gameState.addon_deck_2_count} accent="border-teal-600/70"
-                onDraw={() => send('draw_addon', { deck: 2 })} />
+              <DeckCard icon="🔧" label="Mazzo 1" count={gameState.addon_deck_1_count} accent="border-emerald-600/70" />
+              <DeckCard icon="🔧" label="Mazzo 2" count={gameState.addon_deck_2_count} accent="border-teal-600/70" />
             </div>
           </div>
           <div className="w-px bg-slate-800 self-stretch" />
