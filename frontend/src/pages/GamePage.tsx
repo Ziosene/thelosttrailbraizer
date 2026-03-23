@@ -153,43 +153,32 @@ function CardOverlay({ card, onClose }: { card: CardInfo; onClose: () => void })
   )
 }
 
-// ─── Deck stack visual ────────────────────────────────────────────────────────
+// ─── Deck card visual ─────────────────────────────────────────────────────────
 
-interface DeckProps {
-  label: string
-  count: number
-  color: string
-  icon: string
-  onDraw?: () => void
-}
-
-function DeckRow({ label, count, color, icon, onDraw }: DeckProps) {
+function DeckCard({ icon, label, count, accent, onDraw }: {
+  icon: string; label: string; count: number; accent: string; onDraw?: () => void
+}) {
+  const W = 62
+  const H = Math.round(W * 1.45)
   return (
-    <div className={`flex items-center justify-between rounded-xl border ${color} px-3 py-2`}>
-      <div className="flex items-center gap-2">
-        <div className="relative w-8 h-10">
-          <div className="absolute inset-0 rounded-md bg-slate-700 border border-slate-600" style={{ transform: 'rotate(-4deg)' }} />
-          <div className="absolute inset-0 rounded-md bg-slate-600 border border-slate-500" style={{ transform: 'rotate(-2deg)' }} />
-          <div className="absolute inset-0 rounded-md bg-slate-800 border border-slate-600 flex items-center justify-center">
-            <span className="text-slate-400 text-[14px]">{icon}</span>
-          </div>
-        </div>
-        <div>
-          <div className="text-slate-300 text-[11px] font-semibold">{label}</div>
-          <div className="text-slate-500 text-[10px]">{count > 0 ? `${count} carte` : 'vuoto'}</div>
+    <button
+      title={`Pesca da ${label}`}
+      onClick={onDraw}
+      className="relative group shrink-0 flex-none"
+      style={{ width: W, height: H }}
+    >
+      <div className={`absolute inset-0 rounded-xl border ${accent} bg-slate-800`}
+        style={{ transform: 'rotate(-4deg) translate(2px, 2px)' }} />
+      <div className={`absolute inset-0 rounded-xl border ${accent} bg-slate-800`}
+        style={{ transform: 'rotate(-2deg) translate(1px, 1px)' }} />
+      <div className={`absolute inset-0 rounded-xl border-2 ${accent} bg-slate-900 overflow-hidden flex flex-col group-hover:brightness-125 transition-all`}>
+        <div className="px-1.5 pt-1.5 pb-0.5 text-[8px] font-bold text-slate-300 leading-tight truncate">{label}</div>
+        <div className="flex-1 flex items-center justify-center text-2xl">{icon}</div>
+        <div className="px-1.5 py-1 text-[8px] font-bold text-slate-300 border-t border-slate-700/50">
+          {count} <span className="text-slate-600 font-normal">carte</span>
         </div>
       </div>
-      {count > 0 && onDraw ? (
-        <button
-          onClick={onDraw}
-          className="text-[10px] bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg px-2 py-1 text-slate-200 transition-colors font-semibold"
-        >
-          Pesca
-        </button>
-      ) : (
-        <span className="text-slate-600 text-[10px]">—</span>
-      )}
-    </div>
+    </button>
   )
 }
 
@@ -198,28 +187,11 @@ function DeckRow({ label, count, color, icon, onDraw }: DeckProps) {
 interface LeftSidebarProps {
   addonMarket1: AddonMarketInfo | null
   addonMarket2: AddonMarketInfo | null
-  actionDeck1Count: number
-  actionDeck2Count: number
-  addonDeck1Count: number
-  addonDeck2Count: number
   onCardClick: (c: CardInfo) => void
   onBuyAddon: (slot: 1 | 2) => void
-  onDrawAction: (deck: 1 | 2) => void
-  onDrawAddon: (deck: 1 | 2) => void
 }
 
-function LeftSidebar({
-  addonMarket1,
-  addonMarket2,
-  actionDeck1Count,
-  actionDeck2Count,
-  addonDeck1Count,
-  addonDeck2Count,
-  onCardClick,
-  onBuyAddon,
-  onDrawAction,
-  onDrawAddon,
-}: LeftSidebarProps) {
+function LeftSidebar({ addonMarket1, addonMarket2, onCardClick, onBuyAddon }: LeftSidebarProps) {
   const addonSlots = [
     { slot: 1 as const, info: addonMarket1 },
     { slot: 2 as const, info: addonMarket2 },
@@ -251,48 +223,6 @@ function LeftSidebar({
           )}
         </div>
       </div>
-
-      {/* Mazzi azioni */}
-      <div>
-        <div className="text-slate-500 text-[10px] uppercase tracking-wider mb-2">Mazzo azioni</div>
-        <div className="flex flex-col gap-2">
-          <DeckRow
-            label="Mazzo 1"
-            count={actionDeck1Count}
-            color="border-violet-700/60 bg-violet-950/30"
-            icon="⚡"
-            onDraw={() => onDrawAction(1)}
-          />
-          <DeckRow
-            label="Mazzo 2"
-            count={actionDeck2Count}
-            color="border-blue-700/60 bg-blue-950/30"
-            icon="⚡"
-            onDraw={() => onDrawAction(2)}
-          />
-        </div>
-      </div>
-
-      {/* Mazzi addon */}
-      <div>
-        <div className="text-slate-500 text-[10px] uppercase tracking-wider mb-2">Mazzo addon</div>
-        <div className="flex flex-col gap-2">
-          <DeckRow
-            label="Mazzo 1"
-            count={addonDeck1Count}
-            color="border-emerald-700/60 bg-emerald-950/30"
-            icon="🔧"
-            onDraw={() => onDrawAddon(1)}
-          />
-          <DeckRow
-            label="Mazzo 2"
-            count={addonDeck2Count}
-            color="border-teal-700/60 bg-teal-950/30"
-            icon="🔧"
-            onDraw={() => onDrawAddon(2)}
-          />
-        </div>
-      </div>
     </div>
   )
 }
@@ -302,20 +232,11 @@ function LeftSidebar({
 interface BossSidebarProps {
   bossMarket1: BossMarketInfo | null
   bossMarket2: BossMarketInfo | null
-  bossDeck1Count: number
-  bossDeck2Count: number
   onCardClick: (c: CardInfo) => void
   onStartCombat: (slot: 1 | 2) => void
 }
 
-function BossSidebar({
-  bossMarket1,
-  bossMarket2,
-  bossDeck1Count,
-  bossDeck2Count,
-  onCardClick,
-  onStartCombat,
-}: BossSidebarProps) {
+function BossSidebar({ bossMarket1, bossMarket2, onCardClick, onStartCombat }: BossSidebarProps) {
   const bossSlots = [
     { slot: 1 as const, info: bossMarket1 },
     { slot: 2 as const, info: bossMarket2 },
@@ -346,25 +267,6 @@ function BossSidebar({
               </div>
             )
           )}
-        </div>
-      </div>
-
-      {/* Mazzi boss */}
-      <div>
-        <div className="text-slate-500 text-[10px] uppercase tracking-wider mb-2">Mazzo boss</div>
-        <div className="flex flex-col gap-2">
-          <DeckRow
-            label="Mazzo 1"
-            count={bossDeck1Count}
-            color="border-orange-700/60 bg-orange-950/30"
-            icon="👾"
-          />
-          <DeckRow
-            label="Mazzo 2"
-            count={bossDeck2Count}
-            color="border-red-700/60 bg-red-950/30"
-            icon="👾"
-          />
         </div>
       </div>
     </div>
@@ -403,6 +305,7 @@ function PlayerCell({ p, isMe, corner, onCardClick, onEndTurn }: PlayerCellProps
           <span className="text-yellow-400 text-[10px] font-semibold">💰{p.licenze}L</span>
         </div>
         <Certs count={p.certificazioni} />
+        <div className="text-slate-400 text-[10px]">🃏 {p.hand_count} in mano</div>
         {p.is_in_combat && (
           <span className="text-red-400 text-[10px] font-semibold">⚔️ In combattimento</span>
         )}
@@ -452,18 +355,10 @@ interface PlayAreaProps {
   rows: CellData[][]
   addonMarket1: AddonMarketInfo | null
   addonMarket2: AddonMarketInfo | null
-  actionDeck1Count: number
-  actionDeck2Count: number
-  addonDeck1Count: number
-  addonDeck2Count: number
   bossMarket1: BossMarketInfo | null
   bossMarket2: BossMarketInfo | null
-  bossDeck1Count: number
-  bossDeck2Count: number
   onCardClick: (c: CardInfo) => void
   onBuyAddon: (slot: 1 | 2) => void
-  onDrawAction: (deck: 1 | 2) => void
-  onDrawAddon: (deck: 1 | 2) => void
   onStartCombat: (slot: 1 | 2) => void
   onEndTurn: () => void
   myUserId: number | null
@@ -472,11 +367,8 @@ interface PlayAreaProps {
 function PlayArea({
   rows,
   addonMarket1, addonMarket2,
-  actionDeck1Count, actionDeck2Count,
-  addonDeck1Count, addonDeck2Count,
   bossMarket1, bossMarket2,
-  bossDeck1Count, bossDeck2Count,
-  onCardClick, onBuyAddon, onDrawAction, onDrawAddon, onStartCombat, onEndTurn,
+  onCardClick, onBuyAddon, onStartCombat, onEndTurn,
   myUserId,
 }: PlayAreaProps) {
   return (
@@ -484,14 +376,8 @@ function PlayArea({
       <LeftSidebar
         addonMarket1={addonMarket1}
         addonMarket2={addonMarket2}
-        actionDeck1Count={actionDeck1Count}
-        actionDeck2Count={actionDeck2Count}
-        addonDeck1Count={addonDeck1Count}
-        addonDeck2Count={addonDeck2Count}
         onCardClick={onCardClick}
         onBuyAddon={onBuyAddon}
-        onDrawAction={onDrawAction}
-        onDrawAddon={onDrawAddon}
       />
       <div className="flex-1 overflow-y-auto overflow-x-hidden">
         <div className="flex flex-col divide-y divide-slate-800 h-full">
@@ -515,8 +401,6 @@ function PlayArea({
       <BossSidebar
         bossMarket1={bossMarket1}
         bossMarket2={bossMarket2}
-        bossDeck1Count={bossDeck1Count}
-        bossDeck2Count={bossDeck2Count}
         onCardClick={onCardClick}
         onStartCombat={onStartCombat}
       />
@@ -665,44 +549,73 @@ export function GamePage({ gameCode }: GamePageProps) {
         rows={rows}
         addonMarket1={gameState.addon_market_1}
         addonMarket2={gameState.addon_market_2}
-        actionDeck1Count={gameState.action_deck_1_count}
-        actionDeck2Count={gameState.action_deck_2_count}
-        addonDeck1Count={gameState.addon_deck_1_count}
-        addonDeck2Count={gameState.addon_deck_2_count}
         bossMarket1={gameState.boss_market_1}
         bossMarket2={gameState.boss_market_2}
-        bossDeck1Count={gameState.boss_deck_1_count}
-        bossDeck2Count={gameState.boss_deck_2_count}
         onCardClick={setSelectedCard}
         onBuyAddon={(slot) => send('buy_addon', { market_slot: slot })}
-        onDrawAction={(deck) => send('draw_action', { deck })}
-        onDrawAddon={(deck) => send('draw_addon', { deck })}
         onStartCombat={(slot) => send('start_combat', { market_slot: slot })}
         onEndTurn={() => send('end_turn')}
         myUserId={myUserId}
       />
 
-      {/* Mano */}
-      <div className="bg-slate-900/90 border-t border-slate-800 px-4 pt-3 pb-2 shrink-0">
-        <div className="text-slate-600 text-xs uppercase tracking-wider mb-2">
-          La tua mano ({hand.length})
+      {/* Mano + Mazzi */}
+      <div className="bg-slate-900/90 border-t border-slate-800 px-4 pt-3 pb-2 shrink-0 flex gap-4 min-h-0">
+        {/* Carte mano */}
+        <div className="flex flex-col flex-1 min-w-0">
+          <div className="text-slate-600 text-xs uppercase tracking-wider mb-2">
+            La tua mano ({hand.length})
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-1">
+            {hand.length === 0 && (
+              <span className="text-slate-700 text-xs italic">Nessuna carta in mano</span>
+            )}
+            {hand.map((c) => (
+              <div key={c.hand_card_id} className="shrink-0">
+                <CardVisual
+                  type="action"
+                  name={c.name}
+                  subtitle={`#${c.card_id} · ${c.card_type}`}
+                  actionLabel="Gioca"
+                  width={90}
+                  onClick={() => setSelectedCard({ type: 'action', name: c.name, subtitle: `#${c.card_id} · ${c.card_type}` })}
+                  onAction={() => send('play_card', { hand_card_id: c.hand_card_id })}
+                />
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="flex gap-3 overflow-x-auto pb-1">
-          {hand.length === 0 && (
-            <span className="text-slate-700 text-xs italic">Nessuna carta in mano</span>
-          )}
-          {hand.map((c) => (
-            <CardVisual
-              key={c.hand_card_id}
-              type="addon"
-              name={c.name}
-              subtitle={`#${c.card_id} · ${c.card_type}`}
-              actionLabel="Gioca"
-              width={90}
-              onClick={() => setSelectedCard({ type: 'addon', name: c.name, subtitle: `#${c.card_id} · ${c.card_type}` })}
-              onAction={() => send('play_card', { hand_card_id: c.hand_card_id })}
-            />
-          ))}
+
+        <div className="w-px bg-slate-800 self-stretch shrink-0" />
+
+        {/* Mazzi */}
+        <div className="shrink-0 flex items-center gap-3">
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-slate-500 text-[9px] uppercase tracking-wider">Azioni</span>
+            <div className="flex gap-1.5">
+              <DeckCard icon="⚡" label="Mazzo 1" count={gameState.action_deck_1_count} accent="border-violet-600/70"
+                onDraw={() => send('draw_action', { deck: 1 })} />
+              <DeckCard icon="⚡" label="Mazzo 2" count={gameState.action_deck_2_count} accent="border-blue-600/70"
+                onDraw={() => send('draw_action', { deck: 2 })} />
+            </div>
+          </div>
+          <div className="w-px bg-slate-800 self-stretch" />
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-slate-500 text-[9px] uppercase tracking-wider">Addon</span>
+            <div className="flex gap-1.5">
+              <DeckCard icon="🔧" label="Mazzo 1" count={gameState.addon_deck_1_count} accent="border-emerald-600/70"
+                onDraw={() => send('draw_addon', { deck: 1 })} />
+              <DeckCard icon="🔧" label="Mazzo 2" count={gameState.addon_deck_2_count} accent="border-teal-600/70"
+                onDraw={() => send('draw_addon', { deck: 2 })} />
+            </div>
+          </div>
+          <div className="w-px bg-slate-800 self-stretch" />
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-slate-500 text-[9px] uppercase tracking-wider">Boss</span>
+            <div className="flex gap-1.5">
+              <DeckCard icon="👾" label="Mazzo 1" count={gameState.boss_deck_1_count} accent="border-orange-600/70" />
+              <DeckCard icon="👾" label="Mazzo 2" count={gameState.boss_deck_2_count} accent="border-red-600/70" />
+            </div>
+          </div>
         </div>
       </div>
 

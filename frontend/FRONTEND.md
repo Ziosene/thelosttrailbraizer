@@ -186,8 +186,8 @@ Tutti gli endpoint passano per `api` in `http.ts`:
 
 ## 10. Da fare
 
-- [ ] **GamePage** — implementazione reale con dati WS (gameStore, hand, combat, modal interattivi)
-- [ ] **gameStore** — stato partita in Zustand (game_state, hand privata)
+- [x] **GamePage** — implementazione reale con dati WS (gameStore, hand, combat)
+- [x] **gameStore** — stato partita in Zustand (game_state, hand privata)
 - [ ] **Abilità passiva ruolo** — mostrare descrizione ruolo nella lobby in CharacterSelect
 - [ ] **Toast / notifiche** — feedback visivo per eventi WS (boss sconfitto, carta giocata, ecc.)
 - [ ] **Modal interattivi** — choice, reaction, boss interattivi

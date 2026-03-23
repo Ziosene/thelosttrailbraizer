@@ -24,7 +24,8 @@ export const useGameStore = create<GameStore>((set) => ({
 
   connect(gameCode, userId) {
     set({ gameCode, myUserId: userId })
-    connectSocket(gameCode)
+    const ws = connectSocket(gameCode)
+    ws.onopen = () => sendAction('join_game', { game_code: gameCode })
 
     bus.on('game_state', (msg: any) => set({ gameState: msg.game }))
     bus.on('hand_state', (msg: any) => {

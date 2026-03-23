@@ -91,3 +91,19 @@
 
 ### Routing: `src/App.tsx`
 - `screen.name === 'game'` ora renderizza `<GamePage gameCode={screen.code} />` invece di `GamePagePreview`
+
+---
+
+## Sessione 4 — GamePage layout aggiornato (sync con GamePagePreview)
+
+### Pagina: `src/pages/GamePage.tsx` (refactor layout)
+- `DeckRow` sostituito con `DeckCard`: stessa grafica carte impilate proporzionali (W=62, H=90) usata in preview
+- `LeftSidebar`: rimossi mazzi azioni/addon — ora contiene solo "Addon mercato"
+- `BossSidebar`: rimosso mazzo boss — ora contiene solo "Boss attivi"
+- Sezione mano in fondo: refactoring con layout flex orizzontale
+  - Sinistra flex-1: carte in mano scrollabili orizzontalmente
+  - Divisore verticale
+  - Destra shrink-0: 3 gruppi di DeckCard (Azioni/Addon/Boss) con titoli categoria
+  - Boss deck senza onDraw (pesca boss non implementata lato server)
+- `PlayerCell`: aggiunto `🃏 N in mano` nella info card del giocatore (usa `p.hand_count`)
+- `PlayArea` e `GamePage`: rimossi tutti i deck props non più necessari (`actionDeck1Count`, `addonDeck1Count`, `bossDeck1Count`, ecc.)

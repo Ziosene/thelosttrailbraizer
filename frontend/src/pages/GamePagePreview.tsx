@@ -69,8 +69,8 @@ const ADDON_POOL = [
   'Validation Script (tappato)',
 ]
 
-function makePlayer(nickname: string, seniority: string, role: string, hp: number, max_hp: number, licenze: number, certs: number, addonCount: number) {
-  return { nickname, seniority, role, hp, max_hp, licenze, certificazioni: certs, addons: ADDON_POOL.slice(0, addonCount) }
+function makePlayer(nickname: string, seniority: string, role: string, hp: number, max_hp: number, licenze: number, certs: number, addonCount: number, handCount = 4) {
+  return { nickname, seniority, role, hp, max_hp, licenze, certificazioni: certs, addons: ADDON_POOL.slice(0, addonCount), hand_count: handCount }
 }
 
 const ADDON_VARIANTS: Record<string, ReturnType<typeof makePlayer>[]> = {
@@ -126,18 +126,35 @@ const ADDON_VARIANTS: Record<string, ReturnType<typeof makePlayer>[]> = {
 
 const BOSSES   = [{ name: 'The Eternal Backlog', hp: 5, threshold: 7 }, { name: 'Apex Governor Limits', hp: 3, threshold: 5 }]
 const ADDONS_M = [{ name: 'Einstein Insights', cost: 10, rarity: 'Raro' }, { name: 'FOMO Trigger', cost: 8, rarity: 'Non comune' }]
-const HAND     = [
-  { id: 1,  number: 12,  name: 'Data Migration',     type: 'Economica' },
-  { id: 2,  number: 47,  name: 'Apex Trigger',        type: 'Offensiva' },
-  { id: 3,  number: 88,  name: 'Shield Protocol',     type: 'Difensiva' },
-  { id: 4,  number: 134, name: 'Role Hijack',          type: 'Interferenza' },
-  { id: 5,  number: 22,  name: 'Bulk Upsert',          type: 'Economica' },
-  { id: 6,  number: 61,  name: 'Governor Bypass',      type: 'Offensiva' },
-  { id: 7,  number: 99,  name: 'Rollback Script',      type: 'Difensiva' },
-  { id: 8,  number: 145, name: 'Phishing Deploy',      type: 'Interferenza' },
-  { id: 9,  number: 37,  name: 'License Farming',      type: 'Economica' },
-  { id: 10, number: 78,  name: 'Critical Patch',       type: 'Offensiva' },
+const HAND_POOL = [
+  { id: 1,  number: 12,  name: 'Data Migration',      type: 'Economica' },
+  { id: 2,  number: 47,  name: 'Apex Trigger',         type: 'Offensiva' },
+  { id: 3,  number: 88,  name: 'Shield Protocol',      type: 'Difensiva' },
+  { id: 4,  number: 134, name: 'Role Hijack',           type: 'Interferenza' },
+  { id: 5,  number: 22,  name: 'Bulk Upsert',           type: 'Economica' },
+  { id: 6,  number: 61,  name: 'Governor Bypass',       type: 'Offensiva' },
+  { id: 7,  number: 99,  name: 'Rollback Script',       type: 'Difensiva' },
+  { id: 8,  number: 145, name: 'Phishing Deploy',       type: 'Interferenza' },
+  { id: 9,  number: 37,  name: 'License Farming',       type: 'Economica' },
+  { id: 10, number: 78,  name: 'Critical Patch',        type: 'Offensiva' },
+  { id: 11, number: 55,  name: 'Schema Inspector',      type: 'Economica' },
+  { id: 12, number: 103, name: 'Flow Override',         type: 'Interferenza' },
+  { id: 13, number: 19,  name: 'Sandbox Wipe',          type: 'Offensiva' },
+  { id: 14, number: 167, name: 'Cert Harvest',          type: 'Economica' },
+  { id: 15, number: 42,  name: 'Debug Injection',       type: 'Interferenza' },
+  { id: 16, number: 91,  name: 'Incident Response',     type: 'Difensiva' },
+  { id: 17, number: 28,  name: 'Org Migration',         type: 'Economica' },
+  { id: 18, number: 113, name: 'Permission Escalation', type: 'Offensiva' },
+  { id: 19, number: 76,  name: 'Backup Restore',        type: 'Difensiva' },
+  { id: 20, number: 200, name: 'Zero Day Exploit',      type: 'Interferenza' },
 ]
+
+const HAND_VARIANTS: Record<string, typeof HAND_POOL> = {
+  '4':  HAND_POOL.slice(0, 4),
+  '10': HAND_POOL.slice(0, 10),
+  '15': HAND_POOL.slice(0, 15),
+  '20': HAND_POOL,
+}
 
 // ─── Atomi ────────────────────────────────────────────────────────────────────
 
@@ -169,6 +186,7 @@ type Corner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'botto
 interface Player {
   nickname: string; seniority: string; role: string
   hp: number; max_hp: number; licenze: number; certificazioni: number; addons: string[]
+  hand_count?: number
 }
 
 function PlayerCell({ p, isMe, corner, onCardClick }: { p: Player; isMe?: boolean; corner: Corner; onCardClick: (c: CardInfo) => void }) {
@@ -191,6 +209,9 @@ function PlayerCell({ p, isMe, corner, onCardClick }: { p: Player; isMe?: boolea
           <span className="text-yellow-400 text-[10px] font-semibold">💰{p.licenze}L</span>
         </div>
         <Certs count={p.certificazioni} />
+        {p.hand_count !== undefined && (
+          <div className="text-slate-400 text-[10px]">🃏 {p.hand_count} in mano</div>
+        )}
         {isMe && (
           <button className="mt-1 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg py-1 px-3 text-xs font-semibold transition-colors">
             Fine turno
@@ -335,36 +356,6 @@ function BossSidebar({ onCardClick }: { onCardClick: (c: CardInfo) => void }) {
         </div>
       </div>
 
-      {/* Mazzi boss */}
-      <div>
-        <div className="text-slate-500 text-[10px] uppercase tracking-wider mb-2">Mazzo boss</div>
-        <div className="flex flex-col gap-2">
-          {[
-            { label: 'Mazzo 1', count: 18, color: 'border-orange-700/60 bg-orange-950/30' },
-            { label: 'Mazzo 2', count: 12, color: 'border-red-700/60 bg-red-950/30' },
-          ].map(deck => (
-            <div key={deck.label} className={`flex items-center justify-between rounded-xl border ${deck.color} px-3 py-2`}>
-              <div className="flex items-center gap-2">
-                {/* Carte impilate visivamente */}
-                <div className="relative w-8 h-10">
-                  <div className="absolute inset-0 rounded-md bg-slate-700 border border-slate-600" style={{ transform: 'rotate(-4deg)' }} />
-                  <div className="absolute inset-0 rounded-md bg-slate-600 border border-slate-500" style={{ transform: 'rotate(-2deg)' }} />
-                  <div className="absolute inset-0 rounded-md bg-slate-800 border border-slate-600 flex items-center justify-center">
-                    <span className="text-slate-400 text-[14px]">👾</span>
-                  </div>
-                </div>
-                <div>
-                  <div className="text-slate-300 text-[11px] font-semibold">{deck.label}</div>
-                  <div className="text-slate-500 text-[10px]">{deck.count} carte</div>
-                </div>
-              </div>
-              <button className="text-[10px] bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg px-2 py-1 text-slate-200 transition-colors font-semibold">
-                Pesca
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   )
 }
@@ -392,65 +383,6 @@ function LeftSidebar({ onCardClick }: { onCardClick: (c: CardInfo) => void }) {
         </div>
       </div>
 
-      {/* Mazzi azioni */}
-      <div>
-        <div className="text-slate-500 text-[10px] uppercase tracking-wider mb-2">Mazzo azioni</div>
-        <div className="flex flex-col gap-2">
-          {[
-            { label: 'Mazzo 1', count: 42, color: 'border-violet-700/60 bg-violet-950/30', icon: '⚡' },
-            { label: 'Mazzo 2', count: 38, color: 'border-blue-700/60 bg-blue-950/30',   icon: '⚡' },
-          ].map(deck => (
-            <div key={deck.label} className={`flex items-center justify-between rounded-xl border ${deck.color} px-3 py-2`}>
-              <div className="flex items-center gap-2">
-                <div className="relative w-8 h-10">
-                  <div className="absolute inset-0 rounded-md bg-slate-700 border border-slate-600" style={{ transform: 'rotate(-4deg)' }} />
-                  <div className="absolute inset-0 rounded-md bg-slate-600 border border-slate-500" style={{ transform: 'rotate(-2deg)' }} />
-                  <div className="absolute inset-0 rounded-md bg-slate-800 border border-slate-600 flex items-center justify-center">
-                    <span className="text-slate-400 text-[14px]">{deck.icon}</span>
-                  </div>
-                </div>
-                <div>
-                  <div className="text-slate-300 text-[11px] font-semibold">{deck.label}</div>
-                  <div className="text-slate-500 text-[10px]">{deck.count} carte</div>
-                </div>
-              </div>
-              <button className="text-[10px] bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg px-2 py-1 text-slate-200 transition-colors font-semibold">
-                Pesca
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Mazzi addon */}
-      <div>
-        <div className="text-slate-500 text-[10px] uppercase tracking-wider mb-2">Mazzo addon</div>
-        <div className="flex flex-col gap-2">
-          {[
-            { label: 'Mazzo 1', count: 17, color: 'border-emerald-700/60 bg-emerald-950/30', icon: '🔧' },
-            { label: 'Mazzo 2', count: 19, color: 'border-teal-700/60 bg-teal-950/30',       icon: '🔧' },
-          ].map(deck => (
-            <div key={deck.label} className={`flex items-center justify-between rounded-xl border ${deck.color} px-3 py-2`}>
-              <div className="flex items-center gap-2">
-                <div className="relative w-8 h-10">
-                  <div className="absolute inset-0 rounded-md bg-slate-700 border border-slate-600" style={{ transform: 'rotate(-4deg)' }} />
-                  <div className="absolute inset-0 rounded-md bg-slate-600 border border-slate-500" style={{ transform: 'rotate(-2deg)' }} />
-                  <div className="absolute inset-0 rounded-md bg-slate-800 border border-slate-600 flex items-center justify-center">
-                    <span className="text-slate-400 text-[14px]">{deck.icon}</span>
-                  </div>
-                </div>
-                <div>
-                  <div className="text-slate-300 text-[11px] font-semibold">{deck.label}</div>
-                  <div className="text-slate-500 text-[10px]">{deck.count} carte</div>
-                </div>
-              </div>
-              <button className="text-[10px] bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg px-2 py-1 text-slate-200 transition-colors font-semibold">
-                Pesca
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   )
 }
@@ -539,9 +471,11 @@ function LogPanel({ onClose }: { onClose: () => void }) {
 export function GamePagePreview() {
   const [nPlayers, setNPlayers] = useState<2 | 3 | 4>(4)
   const [addonVariant, setAddonVariant] = useState('3')
+  const [handVariant, setHandVariant] = useState('4')
   const [logOpen, setLogOpen] = useState(false)
   const [selectedCard, setSelectedCard] = useState<CardInfo | null>(null)
 
+  const HAND = HAND_VARIANTS[handVariant]
   const players = ADDON_VARIANTS[addonVariant]
   const [opp1, opp2, opp3, me] = players
 
@@ -559,6 +493,31 @@ export function GamePagePreview() {
   ]
 
   const rows = nPlayers === 2 ? rows2 : nPlayers === 3 ? rows3 : rows4
+
+  // ─── DeckCard — carta faccia in giù cliccabile ──────────────────────────────
+  function DeckCard({ icon, label, count, accent }: { icon: string; label: string; count: number; accent: string }) {
+    const W = 62
+    const H = Math.round(W * 1.45) // stesso aspect ratio di CardVisual
+    return (
+      <button title={`Pesca da ${label}`} className="relative group shrink-0 flex-none"
+        style={{ width: W, height: H }}>
+        {/* Effetto pila */}
+        <div className={`absolute inset-0 rounded-xl border ${accent} bg-slate-800`}
+          style={{ transform: 'rotate(-4deg) translate(2px, 2px)' }} />
+        <div className={`absolute inset-0 rounded-xl border ${accent} bg-slate-800`}
+          style={{ transform: 'rotate(-2deg) translate(1px, 1px)' }} />
+        {/* Carta principale — stesso stile di CardVisual */}
+        <div className={`absolute inset-0 rounded-xl border-2 ${accent} bg-slate-900 overflow-hidden
+          flex flex-col group-hover:brightness-125 transition-all`}>
+          <div className="px-1.5 pt-1.5 pb-0.5 text-[8px] font-bold text-slate-300 leading-tight truncate">{label}</div>
+          <div className="flex-1 flex items-center justify-center text-2xl">{icon}</div>
+          <div className="px-1.5 py-1 text-[8px] font-bold text-slate-300 border-t border-slate-700/50">
+            {count} <span className="text-slate-600 font-normal">carte</span>
+          </div>
+        </div>
+      </button>
+    )
+  }
 
   return (
     <div className="h-screen bg-slate-950 flex flex-col text-slate-200 text-sm overflow-hidden select-none">
@@ -593,6 +552,20 @@ export function GamePagePreview() {
           ))}
         </div>
 
+        {/* Switcher mano */}
+        <div className="flex items-center gap-1">
+          <span className="text-slate-600 text-[10px]">mano:</span>
+          <div className="flex gap-1 bg-slate-800 rounded-full p-0.5">
+            {Object.keys(HAND_VARIANTS).map(v => (
+              <button key={v} onClick={() => setHandVariant(v)}
+                className={`px-3 py-0.5 rounded-full text-xs font-semibold transition-colors
+                  ${handVariant === v ? 'bg-amber-700 text-white' : 'text-slate-400 hover:text-slate-200'}`}>
+                {v}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="ml-auto">
           <button onClick={() => setLogOpen(v => !v)}
             className="bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg px-3 py-1 text-slate-300 transition-colors">
@@ -604,21 +577,55 @@ export function GamePagePreview() {
       {/* Griglia + market */}
       <PlayArea rows={rows} onCardClick={setSelectedCard} />
 
-      {/* Mano */}
-      <div className="bg-slate-900/90 border-t border-slate-800 px-4 pt-3 pb-2 shrink-0">
-        <div className="text-slate-600 text-xs uppercase tracking-wider mb-2">La tua mano ({HAND.length})</div>
-        <div className="flex gap-3 overflow-x-auto pb-1">
-          {HAND.map((c) => (
-            <CardVisual
-              key={c.id}
-              type="action"
-              name={c.name}
-              subtitle={`#${c.number} · ${c.type}`}
-              actionLabel="Gioca"
-              width={90}
-              onClick={() => setSelectedCard({ type: 'action', name: c.name, subtitle: `#${c.number} · ${c.type}` })}
-            />
-          ))}
+      {/* Mano + Mazzi */}
+      <div className="bg-slate-900/90 border-t border-slate-800 px-4 pt-3 pb-2 shrink-0 flex gap-4 min-h-0">
+        {/* Carte mano — occupa tutto lo spazio disponibile, scroll orizzontale se servono più di quelle visibili */}
+        <div className="flex flex-col flex-1 min-w-0">
+          <div className="text-slate-600 text-xs uppercase tracking-wider mb-2">La tua mano ({HAND.length})</div>
+          <div className="flex gap-3 overflow-x-auto pb-1">
+            {HAND.map((c) => (
+              <div key={c.id} className="shrink-0">
+                <CardVisual
+                  type="action"
+                  name={c.name}
+                  subtitle={`#${c.number} · ${c.type}`}
+                  actionLabel="Gioca"
+                  width={90}
+                  onClick={() => setSelectedCard({ type: 'action', name: c.name, subtitle: `#${c.number} · ${c.type}` })}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="w-px bg-slate-800 self-stretch shrink-0" />
+
+        {/* Mazzi — carte proporzionate affiancate con titolo categoria */}
+        <div className="shrink-0 flex items-center gap-3">
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-slate-500 text-[9px] uppercase tracking-wider">Azioni</span>
+            <div className="flex gap-1.5">
+              <DeckCard icon="⚡" label="Mazzo 1" count={42} accent="border-violet-600/70" />
+              <DeckCard icon="⚡" label="Mazzo 2" count={38} accent="border-blue-600/70" />
+            </div>
+          </div>
+          <div className="w-px bg-slate-800 self-stretch" />
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-slate-500 text-[9px] uppercase tracking-wider">Addon</span>
+            <div className="flex gap-1.5">
+              <DeckCard icon="🔧" label="Mazzo 1" count={17} accent="border-emerald-600/70" />
+              <DeckCard icon="🔧" label="Mazzo 2" count={19} accent="border-teal-600/70" />
+            </div>
+          </div>
+          <div className="w-px bg-slate-800 self-stretch" />
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-slate-500 text-[9px] uppercase tracking-wider">Boss</span>
+            <div className="flex gap-1.5">
+              <DeckCard icon="👾" label="Mazzo 1" count={18} accent="border-orange-600/70" />
+              <DeckCard icon="👾" label="Mazzo 2" count={12} accent="border-red-600/70" />
+            </div>
+          </div>
         </div>
       </div>
 

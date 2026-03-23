@@ -12,6 +12,8 @@ export default function App() {
   const { user, token, loadMe } = useAuthStore()
   const [screen, setScreen] = useState<Screen>({ name: 'login' })
 
+  if (window.location.hash === '#preview') return <GamePagePreview />
+
   // Al mount, recupera l'utente se c'è un token salvato
   useEffect(() => {
     if (token && !user) loadMe()
