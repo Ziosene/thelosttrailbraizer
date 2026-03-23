@@ -63,6 +63,28 @@ def _build_game_state(game: GameSession, db: Session) -> dict:
         a = db.get(AddonCard, addon_id)
         return {"id": a.id, "name": a.name, "cost": a.cost, "effect": a.effect, "rarity": a.rarity} if a else None
 
+    def _action_top(card_id: int | None) -> dict | None:
+        if card_id is None:
+            return None
+        c = db.get(ActionCard, card_id)
+        return {"id": c.id, "name": c.name, "card_type": c.card_type, "rarity": c.rarity} if c else None
+
+    def _boss_top(card_id: int | None) -> dict | None:
+        if card_id is None:
+            return None
+        b = db.get(BossCard, card_id)
+        return {"id": b.id, "name": b.name, "difficulty": b.difficulty} if b else None
+
+    def _addon_top(card_id: int | None) -> dict | None:
+        if card_id is None:
+            return None
+        a = db.get(AddonCard, card_id)
+        return {"id": a.id, "name": a.name, "rarity": a.rarity} if a else None
+
+    action_discard = game.action_discard or []
+    boss_graveyard = game.boss_graveyard or []
+    addon_graveyard = game.addon_graveyard or []
+
     return {
         "type": ServerEvent.GAME_STATE,
         "game": {
@@ -74,12 +96,18 @@ def _build_game_state(game: GameSession, db: Session) -> dict:
             "current_player_id": current_player_id,
             "action_deck_1_count": len(game.action_deck_1 or []),
             "action_deck_2_count": len(game.action_deck_2 or []),
+            "action_discard_count": len(action_discard),
+            "action_discard_top": _action_top(action_discard[-1] if action_discard else None),
             "boss_deck_1_count": len(game.boss_deck_1 or []),
             "boss_deck_2_count": len(game.boss_deck_2 or []),
+            "boss_graveyard_count": len(boss_graveyard),
+            "boss_graveyard_top": _boss_top(boss_graveyard[-1] if boss_graveyard else None),
             "boss_market_1": _boss_info(game.boss_market_1),
             "boss_market_2": _boss_info(game.boss_market_2),
             "addon_deck_1_count": len(game.addon_deck_1 or []),
             "addon_deck_2_count": len(game.addon_deck_2 or []),
+            "addon_graveyard_count": len(addon_graveyard),
+            "addon_graveyard_top": _addon_top(addon_graveyard[-1] if addon_graveyard else None),
             "addon_market_1": _addon_info(game.addon_market_1),
             "addon_market_2": _addon_info(game.addon_market_2),
             "players": players,

@@ -99,6 +99,25 @@ export interface AddonMarketInfo {
   rarity: string
 }
 
+export interface DiscardTopAction {
+  id: number
+  name: string
+  card_type: string
+  rarity: string
+}
+
+export interface DiscardTopBoss {
+  id: number
+  name: string
+  difficulty: string
+}
+
+export interface DiscardTopAddon {
+  id: number
+  name: string
+  rarity: string
+}
+
 export interface GameState {
   id: number
   code: string
@@ -109,10 +128,16 @@ export interface GameState {
   max_players?: number
   action_deck_1_count: number
   action_deck_2_count: number
+  action_discard_count: number
+  action_discard_top: DiscardTopAction | null
   boss_deck_1_count: number
   boss_deck_2_count: number
+  boss_graveyard_count: number
+  boss_graveyard_top: DiscardTopBoss | null
   addon_deck_1_count: number
   addon_deck_2_count: number
+  addon_graveyard_count: number
+  addon_graveyard_top: DiscardTopAddon | null
   boss_market_1: BossMarketInfo | null
   boss_market_2: BossMarketInfo | null
   addon_market_1: AddonMarketInfo | null
