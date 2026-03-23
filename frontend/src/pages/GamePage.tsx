@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { useAuthStore } from '../store/authStore'
 import type { PlayerState, PublicAddon, AddonMarketInfo, BossMarketInfo } from '../types/game'
+import { ReactionWindowModal, CardChoiceModal } from '../components/game/GameModals'
 
 // ─── Tipi locali ──────────────────────────────────────────────────────────────
 
@@ -432,7 +433,7 @@ interface GamePageProps {
 
 export function GamePage({ gameCode }: GamePageProps) {
   const { user } = useAuthStore()
-  const { gameState, hand, connect, disconnect, send } = useGameStore()
+  const { gameState, hand, myAddons, pendingChoice, reactionWindow, connect, disconnect, send, clearPendingChoice } = useGameStore()
   const [logOpen, setLogOpen] = useState(false)
   const [selectedCard, setSelectedCard] = useState<CardInfo | null>(null)
 
@@ -621,6 +622,27 @@ export function GamePage({ gameCode }: GamePageProps) {
 
       {logOpen && <LogPanel onClose={() => setLogOpen(false)} />}
       {selectedCard && <CardOverlay card={selectedCard} onClose={() => setSelectedCard(null)} />}
+
+      {reactionWindow && (
+        <ReactionWindowModal
+          rw={reactionWindow}
+          hand={hand}
+          onPlay={(hcId) => send('play_reaction', { hand_card_id: hcId })}
+          onPass={() => send('pass_reaction')}
+        />
+      )}
+
+      {pendingChoice && (
+        <CardChoiceModal
+          choice={pendingChoice}
+          hand={hand}
+          myAddons={myAddons}
+          onSubmit={(data) => {
+            send('card_choice', { choice_type: pendingChoice.choice_type, ...data })
+            clearPendingChoice()
+          }}
+        />
+      )}
     </div>
   )
 }

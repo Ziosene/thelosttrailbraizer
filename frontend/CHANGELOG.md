@@ -107,3 +107,28 @@
   - Boss deck senza onDraw (pesca boss non implementata lato server)
 - `PlayerCell`: aggiunto `🃏 N in mano` nella info card del giocatore (usa `p.hand_count`)
 - `PlayArea` e `GamePage`: rimossi tutti i deck props non più necessari (`actionDeck1Count`, `addonDeck1Count`, `bossDeck1Count`, ecc.)
+
+---
+
+## Sessione 5 — Modal interattivi (reazione + scelta carta)
+
+### Store: `src/store/gameStore.ts`
+- Aggiunti tipi: `PendingChoice`, `ReactionWindow` (esportati)
+- Aggiunto stato: `pendingChoice`, `reactionWindow`
+- Nuove azioni `connect()`: sottoscrive `card_choice_required`, `reaction_window_open`, `reaction_window_closed`
+- Aggiunta azione `clearPendingChoice()` per resettare dopo submit
+
+### Componenti: `src/components/game/GameModals.tsx` (nuovo)
+- **`ReactionWindowModal`**: overlay bottom con countdown (8s), lista carte in mano cliccabili → `play_reaction`, pulsante Passa → `pass_reaction`; countdown diventa rosso/animato negli ultimi 3 secondi
+- **`CardChoiceModal`**: gestisce tutti e 8 i `choice_type`:
+  - `discard_specific_cards`: selezione multipla di N carte dalla mano (hand_card_id)
+  - `return_card_to_deck_top`: selezione singola dalla mano (hand_card_id)
+  - `keep_one_from_drawn`: selezione singola tra le carte pescate (action_card_id)
+  - `choose_cards_to_keep`: selezione multipla fino a max_keep (hand_card_id)
+  - `recover_from_discard`: selezione multipla dal discard pile (action_card_id, nomi "Carta #ID")
+  - `choose_addon_to_return`: selezione singola tra myAddons (player_addon_id)
+  - `reorder_action_deck` / `reorder_boss_deck`: lista riordinabile con frecce su/giù
+
+### Pagina: `src/pages/GamePage.tsx`
+- Importati e renderizzati `ReactionWindowModal` e `CardChoiceModal`
+- `send('card_choice', ...)` + `clearPendingChoice()` al submit del modal
