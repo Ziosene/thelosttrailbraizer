@@ -2290,7 +2290,7 @@
 ### 235. Anypoint Exchange
 - **Tipo**: Economica / Utilità
 - **Quando**: Fuori dal combattimento
-- **Effetto**: Marketplace MuleSoft — guadagna 2 Licenze e scambia 1 carta dalla tua mano con 1 dal mazzo azione
+- **Effetto**: Marketplace MuleSoft — guadagna 2 Licenze e pesca 1 carta azione casuale dal mazzo
 - **Rarità**: Non comune
 - **Image prompt**: `A 2D hand-drawn marketplace swap in the art style of The Binding of Isaac. A trading stall where the player hands in a card and picks a new one from the deck stock while two coins land in the till simultaneously. Thick black outlines, flat shading, marketplace mood. Plain off-white parchment background. Indie game card art.`
 
