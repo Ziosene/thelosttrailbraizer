@@ -32,6 +32,15 @@ def _build_game_state(game: GameSession, db: Session) -> dict:
             "certificazioni": gp.certificazioni,
             "hand_count": len(gp.hand),
             "addon_count": len(gp.addons),
+            "addons": [
+                {
+                    "player_addon_id": pa.id,
+                    "addon_id": pa.addon_id,
+                    "name": (db.get(AddonCard, pa.addon_id).name if db.get(AddonCard, pa.addon_id) else "?"),
+                    "is_tapped": pa.is_tapped,
+                }
+                for pa in gp.addons
+            ],
             "is_in_combat": gp.is_in_combat,
             "bosses_defeated": gp.bosses_defeated,
             "trophies": gp.trophies or [],  # list of BossCard.id — visible to all players

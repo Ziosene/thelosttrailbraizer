@@ -56,3 +56,38 @@
 - Mano in strip fissa in fondo
 - Log panel toggle a destra
 - JWT ridotto da 7 giorni a 1 giorno (`access_token_expire_minutes = 1440`)
+
+---
+
+## Sessione 3 — GamePage reale + gameStore
+
+### Backend: `game_helpers.py`
+- `_build_game_state`: aggiunta lista pubblica `addons` per ogni giocatore (`player_addon_id`, `addon_id`, `name`, `is_tapped`)
+
+### Tipi: `src/types/game.ts` (refactor completo)
+- Aggiunti: `HandCard`, `HandAddon`, `PublicAddon`, `BossMarketInfo`, `AddonMarketInfo`
+- `PlayerState` aggiornato: `addon_count`, `is_in_combat`, `bosses_defeated`, `trophies`, `addons: PublicAddon[]`
+- `GameState` aggiornato: tutti i campi reali backend (`turn_number`, `current_phase`, deck counts, mercati come oggetti)
+- Rimosso `AddonInfo` (sostituito da `PublicAddon` e `HandAddon`)
+- Mantenuti `GameInfo` e `BossInfo` per compatibilità LobbyPage
+
+### Store: `src/store/gameStore.ts` (nuovo)
+- Zustand store per la partita: `gameState`, `hand`, `myAddons`, `combatActive`
+- `connect(gameCode, userId)`: apre WS, sottoscrive `game_state`, `hand_state`, `combat_started`, `combat_ended`
+- `disconnect()`: chiude WS, svuota bus, resetta stato
+- `send(action, data)`: wrapper su `sendAction`
+
+### Pagina: `src/pages/GamePage.tsx` (nuovo)
+- Layout identico a `GamePagePreview` con dati reali
+- `LeftSidebar`: addon mercato (2 slot con pulsante Acquista), mazzi azioni (Pesca 1/2), mazzi addon (Pesca 1/2)
+- `BossSidebar`: boss attivi (2 slot con pulsante Affronta), mazzi boss (count reale, no pulsante Pesca boss)
+- `PlayerCell`: dati reali `PlayerState`, addons pubblici da `player.addons` (PublicAddon[]), tappati = opacity-35 grayscale
+- `PlayArea`: layout 2P/3P/4P con rotazione automatica giocatori (io sempre in basso)
+- Header: turno numero reale, fase corrente, indicatore "Tu" vs nickname corrente
+- Mano: strip carte reali da `hand` (HandCard[]), pulsante Gioca → `play_card`
+- Azioni: `end_turn`, `play_card`, `buy_addon`, `start_combat`, `draw_action`, `draw_addon`
+- Loading state: spinner animato se `gameState === null`
+- `CardOverlay`: click su qualsiasi carta → ingrandita al centro
+
+### Routing: `src/App.tsx`
+- `screen.name === 'game'` ora renderizza `<GamePage gameCode={screen.code} />` invece di `GamePagePreview`

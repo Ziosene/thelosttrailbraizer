@@ -44,9 +44,10 @@ frontend/
 │   │   ├── http.ts          client HTTP (fetch wrapper + endpoint REST)
 │   │   └── socket.ts        WebSocket singleton + event bus mitt
 │   ├── store/
-│   │   └── authStore.ts     stato autenticazione (Zustand): user, token, login, logout
+│   │   ├── authStore.ts     stato autenticazione (Zustand): user, token, login, logout
+│   │   └── gameStore.ts     stato partita (Zustand): gameState, hand, myAddons, connect, disconnect, send
 │   ├── types/
-│   │   └── game.ts          tipi TypeScript: PlayerState, GameState, BossInfo, AddonInfo, Seniority, Role
+│   │   └── game.ts          tipi TypeScript: PlayerState, GameState, HandCard, HandAddon, PublicAddon, BossMarketInfo, AddonMarketInfo, Seniority, Role
 │   ├── components/
 │   │   ├── ui/
 │   │   │   ├── Button.tsx   bottone con varianti (primary, secondary, danger) e stato loading
@@ -55,9 +56,11 @@ frontend/
 │   │       ├── CharacterSelect.tsx  selezione seniority (con HP) + ruolo (dropdown)
 │   │       └── PlayerList.tsx       lista giocatori in lobby con stato ready/non-ready
 │   ├── pages/
-│   │   ├── LoginPage.tsx    login + registrazione (tab switch)
-│   │   ├── HomePage.tsx     crea partita, unisciti con codice, lista partite aperte
-│   │   └── LobbyPage.tsx    lobby pre-partita: selezione personaggio + lista giocatori + avvia
+│   │   ├── LoginPage.tsx        login + registrazione (tab switch)
+│   │   ├── HomePage.tsx         crea partita, unisciti con codice, lista partite aperte
+│   │   ├── LobbyPage.tsx        lobby pre-partita: selezione personaggio + lista giocatori + avvia
+│   │   ├── GamePage.tsx         schermata di gioco reale (usa gameStore + WS live)
+│   │   └── GamePagePreview.tsx  bozza layout con dati mock (da eliminare dopo validazione)
 │   ├── App.tsx              router basato su stato (Screen union type, no libreria router)
 │   ├── index.css            reset base + import Tailwind
 │   └── main.tsx             entry point React

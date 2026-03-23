@@ -442,7 +442,7 @@ Tutti i messaggi sono JSON. Il server autentica via JWT al momento della conness
 
 | `type` | Payload principale | Trigger |
 |---|---|---|
-| `game_state` | snapshot completo incl. `boss_market_1/2`, `addon_market_1/2`, conteggi mazzi | join, reconnect, dopo ogni azione |
+| `game_state` | snapshot completo incl. `boss_market_1/2`, `addon_market_1/2`, conteggi mazzi, `players[].addons` (lista pubblica addon con `is_tapped`) | join, reconnect, dopo ogni azione |
 | `player_joined` | `{user_id, nickname}` | nuovo giocatore in lobby |
 | `player_left` | `{user_id}` | disconnessione |
 | `game_started` | — | partita avviata |

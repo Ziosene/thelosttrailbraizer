@@ -37,6 +37,31 @@ export const ROLES = [
 
 export type Role = typeof ROLES[number]
 
+export interface HandCard {
+  hand_card_id: number
+  card_id: number
+  name: string
+  card_type: string
+  effect: string
+  rarity: string
+}
+
+export interface HandAddon {
+  player_addon_id: number
+  addon_id: number
+  name: string
+  addon_type: string
+  effect: string
+  is_tapped: boolean
+}
+
+export interface PublicAddon {
+  player_addon_id: number
+  addon_id: number
+  name: string
+  is_tapped: boolean
+}
+
 export interface PlayerState {
   id: number
   user_id: number
@@ -48,36 +73,56 @@ export interface PlayerState {
   licenze: number
   certificazioni: number
   hand_count: number
+  addon_count: number
   is_in_combat: boolean
-  addons: AddonInfo[]
+  bosses_defeated: number
+  trophies: number[]
+  addons: PublicAddon[]
 }
 
-export interface AddonInfo {
-  addon_id: number
-  number: number
+export interface BossMarketInfo {
+  id: number
   name: string
-  is_tapped: boolean
-  type: string
+  hp: number
+  threshold: number
 }
 
+export interface AddonMarketInfo {
+  id: number
+  name: string
+  cost: number
+  effect: string
+  rarity: string
+}
+
+export interface GameState {
+  id: number
+  code: string
+  status: string
+  current_phase: string | null
+  turn_number: number
+  current_player_id: number | null
+  max_players?: number
+  action_deck_1_count: number
+  action_deck_2_count: number
+  boss_deck_1_count: number
+  boss_deck_2_count: number
+  addon_deck_1_count: number
+  addon_deck_2_count: number
+  boss_market_1: BossMarketInfo | null
+  boss_market_2: BossMarketInfo | null
+  addon_market_1: AddonMarketInfo | null
+  addon_market_2: AddonMarketInfo | null
+  players: PlayerState[]
+}
+
+// Mantieni GameInfo e BossInfo per compatibilità con LobbyPage
 export interface GameInfo {
   id: number
   code: string
   status: 'waiting' | 'in_progress' | 'finished'
   max_players: number
   player_count: number
-}
-
-export interface GameState {
-  code: string
-  status: string
-  max_players: number
-  current_player_id: number | null
-  players: PlayerState[]
-  boss_market_1: BossInfo[]
-  boss_market_2: BossInfo[]
-  addon_market_1: AddonInfo[]
-  addon_market_2: AddonInfo[]
 }
 
 export interface BossInfo {

@@ -4,6 +4,7 @@ import { LoginPage } from './pages/LoginPage'
 import { HomePage } from './pages/HomePage'
 import { LobbyPage } from './pages/LobbyPage'
 import { GamePagePreview } from './pages/GamePagePreview'
+import { GamePage } from './pages/GamePage'
 
 type Screen = { name: 'login' } | { name: 'home' } | { name: 'lobby'; code: string } | { name: 'game'; code: string }
 
@@ -35,7 +36,7 @@ export default function App() {
     />
   )
 
-  if (screen.name === 'game') return <GamePagePreview />
+  if (screen.name === 'game') return <GamePage gameCode={screen.code} />
 
   return null
 }
