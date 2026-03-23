@@ -14,6 +14,9 @@ type CardInfo = {
   statLeft?: string
   statRight?: string
   reward?: string
+  effect?: string
+  actionLabel?: string
+  onAction?: () => void
 }
 
 type Corner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'bottom-full' | 'top-full'
@@ -137,10 +140,13 @@ function CardVisual({ name, subtitle, statLeft, statRight, reward, type, onClick
 function CardOverlay({ card, onClose }: { card: CardInfo; onClose: () => void }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-6"
       onClick={onClose}
     >
-      <div onClick={e => e.stopPropagation()}>
+      <div
+        onClick={e => e.stopPropagation()}
+        className="flex flex-col items-center gap-3 max-w-xs w-full"
+      >
         <CardVisual
           type={card.type}
           name={card.name}
@@ -148,8 +154,31 @@ function CardOverlay({ card, onClose }: { card: CardInfo; onClose: () => void })
           statLeft={card.statLeft}
           statRight={card.statRight}
           reward={card.reward}
-          width={280}
+          width={260}
         />
+
+        {card.effect && (
+          <div className="w-full bg-slate-900/95 border border-slate-700 rounded-xl px-4 py-3 text-slate-300 text-sm leading-relaxed">
+            {card.effect}
+          </div>
+        )}
+
+        {card.actionLabel && card.onAction && (
+          <button
+            onClick={() => { card.onAction!(); onClose() }}
+            className="w-full bg-violet-700 hover:bg-violet-600 border border-violet-500 rounded-xl py-2.5
+              text-white font-semibold text-sm transition-colors"
+          >
+            {card.actionLabel}
+          </button>
+        )}
+
+        <button
+          onClick={onClose}
+          className="text-slate-500 hover:text-slate-300 text-xs transition-colors"
+        >
+          Chiudi
+        </button>
       </div>
     </div>
   )
@@ -214,7 +243,10 @@ function LeftSidebar({ addonMarket1, addonMarket2, onCardClick, onBuyAddon }: Le
                 subtitle={`${info.cost}L · ${info.rarity}`}
                 actionLabel="+ Acquista"
                 width={SIDEBAR_CARD_W}
-                onClick={() => onCardClick({ type: 'addon', name: info.name, subtitle: `${info.cost}L · ${info.rarity}` })}
+                onClick={() => onCardClick({
+                  type: 'addon', name: info.name, subtitle: `${info.cost}L · ${info.rarity}`,
+                  effect: info.effect, actionLabel: '+ Acquista', onAction: () => onBuyAddon(slot),
+                })}
                 onAction={() => onBuyAddon(slot)}
               />
             ) : (
@@ -260,7 +292,13 @@ function BossSidebar({ bossMarket1, bossMarket2, onCardClick, onStartCombat }: B
                 statRight={String(info.threshold)}
                 actionLabel="⚔️ Affronta"
                 width={SIDEBAR_CARD_W}
-                onClick={() => onCardClick({ type: 'boss', name: info.name, statLeft: String(info.hp), statRight: String(info.threshold) })}
+                onClick={() => onCardClick({
+                  type: 'boss', name: info.name,
+                  statLeft: String(info.hp), statRight: String(info.threshold),
+                  subtitle: `${info.difficulty} · +${info.reward_licenze}L`,
+                  effect: info.ability,
+                  actionLabel: '⚔️ Affronta', onAction: () => onStartCombat(slot),
+                })}
                 onAction={() => onStartCombat(slot)}
               />
             ) : (
@@ -336,7 +374,7 @@ function PlayerCell({ p, isMe, corner, onCardClick, onEndTurn }: PlayerCellProps
               type="addon"
               name={a.name}
               width={70}
-              onClick={() => onCardClick({ type: 'addon', name: a.name })}
+              onClick={() => onCardClick({ type: 'addon', name: a.name, effect: a.effect })}
             />
           </div>
         ))}
@@ -595,7 +633,12 @@ export function GamePage({ gameCode }: GamePageProps) {
                   subtitle={`#${c.card_id} · ${c.card_type}`}
                   actionLabel="Gioca"
                   width={90}
-                  onClick={() => setSelectedCard({ type: 'action', name: c.name, subtitle: `#${c.card_id} · ${c.card_type}` })}
+                  onClick={() => setSelectedCard({
+                    type: 'action', name: c.name, subtitle: `#${c.card_id} · ${c.card_type}`,
+                    effect: c.effect,
+                    actionLabel: 'Gioca',
+                    onAction: () => send('play_card', { hand_card_id: c.hand_card_id }),
+                  })}
                   onAction={() => send('play_card', { hand_card_id: c.hand_card_id })}
                 />
               </div>

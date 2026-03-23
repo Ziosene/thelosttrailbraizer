@@ -59,6 +59,7 @@ export interface PublicAddon {
   player_addon_id: number
   addon_id: number
   name: string
+  effect: string
   is_tapped: boolean
 }
 
@@ -85,6 +86,9 @@ export interface BossMarketInfo {
   name: string
   hp: number
   threshold: number
+  ability: string
+  reward_licenze: number
+  difficulty: string
 }
 
 export interface AddonMarketInfo {

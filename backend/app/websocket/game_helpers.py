@@ -36,7 +36,8 @@ def _build_game_state(game: GameSession, db: Session) -> dict:
                 {
                     "player_addon_id": pa.id,
                     "addon_id": pa.addon_id,
-                    "name": (db.get(AddonCard, pa.addon_id).name if db.get(AddonCard, pa.addon_id) else "?"),
+                    "name": (_ac := db.get(AddonCard, pa.addon_id)) and _ac.name or "?",
+                    "effect": (_ac2 := db.get(AddonCard, pa.addon_id)) and _ac2.effect or "",
                     "is_tapped": pa.is_tapped,
                 }
                 for pa in gp.addons
@@ -51,7 +52,10 @@ def _build_game_state(game: GameSession, db: Session) -> dict:
         if boss_id is None:
             return None
         b = db.get(BossCard, boss_id)
-        return {"id": b.id, "name": b.name, "hp": b.hp, "threshold": b.dice_threshold} if b else None
+        return {
+            "id": b.id, "name": b.name, "hp": b.hp, "threshold": b.dice_threshold,
+            "ability": b.ability, "reward_licenze": b.reward_licenze, "difficulty": b.difficulty,
+        } if b else None
 
     def _addon_info(addon_id: int | None) -> dict | None:
         if addon_id is None:
