@@ -300,6 +300,7 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
         else:
             player.cards_played_this_turn += 1
     card_approved = True  # may be set to False by boss 69 below
+    card_effect_result = None
 
     if player.is_in_combat and player.current_boss_id and card:
         current_round_post = (player.combat_round or 0) + 1
@@ -664,10 +665,13 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
         player.combat_state = _cs_pending
         db.commit()
         db.refresh(game)
+        # Send updated hand first so client has the drawn cards before the modal opens
+        await _send_hand_state(game.code, player, db)
         await manager.send_to_player(game.code, player.user_id, {
             "type": "card_choice_required",
             "choice_type": card_effect_result["choice_type"],
             "card_number": card_effect_result["card_number"],
+            "card_name": card.name if card else None,
             "options": card_effect_result.get("options", []),
             **{k: v for k, v in card_effect_result.items() if k not in ("status", "choice_type", "card_number", "options")},
         })

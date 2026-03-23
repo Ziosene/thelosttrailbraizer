@@ -5,6 +5,7 @@ import type { GameState, HandCard, HandAddon } from '../types/game'
 export interface PendingChoice {
   choice_type: string
   card_number: number
+  card_name?: string
   options?: number[]
   count?: number
   drawn_card_ids?: number[]

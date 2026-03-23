@@ -257,7 +257,9 @@ export function CardChoiceModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
       <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5 shadow-2xl w-full max-w-xl max-h-[80vh] flex flex-col">
         <div className="mb-1">
-          <span className="text-violet-400 font-bold text-sm">🃏 Scelta carta #{choice.card_number}</span>
+          <span className="text-violet-400 font-bold text-sm">
+            🃏 #{choice.card_number}{choice.card_name ? ` — ${choice.card_name}` : ''}
+          </span>
         </div>
         <h2 className="text-white font-semibold text-base mb-4">
           {titles[choice_type] ?? choice_type}

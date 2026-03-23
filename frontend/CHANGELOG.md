@@ -132,3 +132,35 @@
 ### Pagina: `src/pages/GamePage.tsx`
 - Importati e renderizzati `ReactionWindowModal` e `CardChoiceModal`
 - `send('card_choice', ...)` + `clearPendingChoice()` al submit del modal
+
+---
+
+## Sessione 6 — Log live, fix card play, refactor GamePage in componenti
+
+### Store: `src/store/gameStore.ts`
+- Aggiunto tipo `LogEntry` (esportato): `{ id, time, text, color }`
+- Aggiunto stato `log: LogEntry[]` (max 200 entry, newest-first)
+- `connect()` ora sottoscrive ~20 eventi WS e aggiunge entry al log con colori per tipo
+- Aggiunto `card_name?: string` in `PendingChoice` (nome carta che ha generato la scelta)
+
+### Tipi: `src/types/game.ts`
+- `PublicAddon`: aggiunto campo `effect: string`
+- `BossMarketInfo`: aggiunti campi `ability: string`, `reward_licenze: number`, `difficulty: string`
+
+### Backend fix: `card_play.py` (via sessione precedente)
+- Fix `UnboundLocalError: card` — spostato blocco validazione `when` dopo assegnazione `card`
+- Fix `UnboundLocalError: card_effect_result` — aggiunto `card_effect_result = None` prima dei blocchi condizionali
+- Fix pending_choice: aggiunto `await _send_hand_state(...)` PRIMA di `card_choice_required` — così il client ha le carte pescate prima che il modal si apra
+- Aggiunto `card_name` nell'evento `card_choice_required`
+
+### Componenti game (nuovi file da refactor GamePage):
+- **`CardVisual.tsx`**: `CardInfo` type, `CardVisual`, `CardOverlay`, `DeckCard`, `HandCardVisual`
+- **`PlayerCell.tsx`**: `HP`, `Certs`, `Corner` type, `PlayerCell`
+- **`PlayArea.tsx`**: `LeftSidebar`, `BossSidebar`, `PlayArea`, `CellData` type
+- **`HandPanel.tsx`**: `HandPanel` — mano giocatore + 3 gruppi DeckCard (Azioni/Addon/Boss)
+- **`LogPanel.tsx`**: `LogPanel` — pannello log toggle
+
+### Pagina: `src/pages/GamePage.tsx` (refactor)
+- Ridotta a ~140 righe di pura orchestrazione
+- Tutta la logica UI estratta nei componenti `game/`
+- Header semplificato: rimosso `phaseLabel` intermedio, turnLabel reso inline

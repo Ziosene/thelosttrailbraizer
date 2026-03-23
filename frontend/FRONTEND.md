@@ -52,14 +52,21 @@ frontend/
 │   │   ├── ui/
 │   │   │   ├── Button.tsx   bottone con varianti (primary, secondary, danger) e stato loading
 │   │   │   └── Input.tsx    input con label, placeholder, stato error
-│   │   └── lobby/
-│   │       ├── CharacterSelect.tsx  selezione seniority (con HP) + ruolo (dropdown)
-│   │       └── PlayerList.tsx       lista giocatori in lobby con stato ready/non-ready
+│   │   ├── lobby/
+│   │   │   ├── CharacterSelect.tsx  selezione seniority (con HP) + ruolo (dropdown)
+│   │   │   └── PlayerList.tsx       lista giocatori in lobby con stato ready/non-ready
+│   │   └── game/
+│   │       ├── CardVisual.tsx   CardInfo type, CardVisual, CardOverlay, DeckCard, HandCardVisual
+│   │       ├── PlayerCell.tsx   HP, Certs, Corner type, PlayerCell
+│   │       ├── PlayArea.tsx     LeftSidebar, BossSidebar, PlayArea, CellData type
+│   │       ├── HandPanel.tsx    mano + gruppi mazzi (HandPanel)
+│   │       ├── LogPanel.tsx     pannello log partita (LogPanel)
+│   │       └── GameModals.tsx   ReactionWindowModal, CardChoiceModal
 │   ├── pages/
 │   │   ├── LoginPage.tsx        login + registrazione (tab switch)
 │   │   ├── HomePage.tsx         crea partita, unisciti con codice, lista partite aperte
 │   │   ├── LobbyPage.tsx        lobby pre-partita: selezione personaggio + lista giocatori + avvia
-│   │   ├── GamePage.tsx         schermata di gioco reale (usa gameStore + WS live)
+│   │   ├── GamePage.tsx         orchestrazione schermata di gioco (thin, ~140 righe)
 │   │   └── GamePagePreview.tsx  bozza layout con dati mock (da eliminare dopo validazione)
 │   ├── App.tsx              router basato su stato (Screen union type, no libreria router)
 │   ├── index.css            reset base + import Tailwind
@@ -146,8 +153,12 @@ Tutti gli endpoint passano per `api` in `http.ts`:
 | `ROLES` | Array readonly dei 25 ruoli disponibili |
 | `PlayerState` | Stato di un giocatore (id, hp, licenze, cert, hand_count, addons…) |
 | `GameState` | Stato completo partita (players, mercati, current_player_id…) |
-| `AddonInfo` | Addon con numero, nome, is_tapped, type |
-| `BossInfo` | Boss con hp, dice_threshold, has_certification, reward_licenze |
+| `HandCard` | Carta in mano: `hand_card_id`, `card_id`, `name`, `card_type`, `effect`, `rarity` |
+| `HandAddon` | Addon in mano: `player_addon_id`, `addon_id`, `name`, `addon_type`, `effect`, `is_tapped` |
+| `PublicAddon` | Addon visibile a tutti: `player_addon_id`, `addon_id`, `name`, `effect`, `is_tapped` |
+| `BossMarketInfo` | Boss in market: `id`, `name`, `hp`, `threshold`, `ability`, `reward_licenze`, `difficulty` |
+| `AddonMarketInfo` | Addon in market: `id`, `name`, `cost`, `effect`, `rarity` |
+| `BossInfo` | (legacy LobbyPage) Boss con hp, dice_threshold, has_certification, reward_licenze |
 
 ---
 
@@ -187,7 +198,12 @@ Tutti gli endpoint passano per `api` in `http.ts`:
 ## 10. Da fare
 
 - [x] **GamePage** — implementazione reale con dati WS (gameStore, hand, combat)
-- [x] **gameStore** — stato partita in Zustand (game_state, hand privata)
+- [x] **gameStore** — stato partita in Zustand (game_state, hand privata, log, pendingChoice, reactionWindow)
+- [x] **Modal interattivi** — ReactionWindowModal + CardChoiceModal (tutti 8 choice_type)
+- [x] **Log partita** — panel toggle con tutti gli eventi WS in tempo reale
+- [x] **CardOverlay** — overlay ingrandita con descrizione effetto + pulsante azione
+- [x] **GamePage refactor** — suddivisa in componenti: CardVisual, PlayerCell, PlayArea, HandPanel, LogPanel
 - [ ] **Abilità passiva ruolo** — mostrare descrizione ruolo nella lobby in CharacterSelect
 - [ ] **Toast / notifiche** — feedback visivo per eventi WS (boss sconfitto, carta giocata, ecc.)
-- [ ] **Modal interattivi** — choice, reaction, boss interattivi
+- [ ] **Modal combattimento** — tiro dado, dichiarazione carta per boss 33/86
+- [ ] **Game over screen** — schermata finale con vincitore + statistiche
