@@ -31,6 +31,7 @@ export const api = {
 
   listGames: () => request<import('./http').GameInfoDTO[]>('/games'),
   listMyGames: () => request<import('./http').GameInfoDTO[]>('/games/mine'),
+  cancelGame: (code: string) => request<void>(`/games/${code}`, { method: 'DELETE' }),
 
   createGame: (max_players: number) =>
     request<import('./http').GameInfoDTO>('/games', { method: 'POST', body: JSON.stringify({ max_players }) }),

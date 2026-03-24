@@ -93,20 +93,36 @@ export function HomePage({ onJoinGame }: Props) {
           </div>
         </div>
 
-        {/* Riprendi partita */}
+        {/* Le mie partite */}
         {myGames.length > 0 && (
           <div className="bg-slate-900 rounded-2xl p-6 border border-violet-800/50 mb-4">
-            <h2 className="text-lg font-bold text-violet-300 mb-4">▶ Riprendi partita</h2>
+            <h2 className="text-lg font-bold text-violet-300 mb-4">▶ Le mie partite</h2>
             <div className="flex flex-col gap-2">
               {myGames.map((g) => (
                 <div key={g.id} className="flex items-center justify-between py-2 px-3 bg-slate-800 rounded-lg">
                   <div>
                     <code className="text-violet-300 font-mono font-bold">{g.code}</code>
                     <span className="text-slate-500 text-sm ml-3">{g.player_count}/{g.max_players} giocatori</span>
+                    <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${g.status === 'waiting' ? 'bg-amber-900/50 text-amber-400' : 'bg-green-900/50 text-green-400'}`}>
+                      {g.status === 'waiting' ? 'In attesa' : 'In corso'}
+                    </span>
                   </div>
-                  <Button variant="secondary" onClick={() => onJoinGame(g.code)} className="text-sm py-1 px-3">
-                    Riprendi
-                  </Button>
+                  <div className="flex gap-2">
+                    {g.status === 'waiting' && g.player_count === 1 && (
+                      <button
+                        onClick={async () => {
+                          await api.cancelGame(g.code)
+                          setMyGames(prev => prev.filter(x => x.code !== g.code))
+                        }}
+                        className="text-xs text-slate-500 hover:text-red-400 border border-slate-700 hover:border-red-700 rounded px-2 py-1 transition-colors"
+                      >
+                        Annulla
+                      </button>
+                    )}
+                    <Button variant="secondary" onClick={() => onJoinGame(g.code)} className="text-sm py-1 px-3">
+                      {g.status === 'waiting' ? 'Entra' : 'Riprendi'}
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>

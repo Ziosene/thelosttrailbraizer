@@ -85,7 +85,7 @@ def list_my_games(
         db.query(GameSession)
         .filter(
             GameSession.id.in_(game_ids),
-            GameSession.status == GameStatus.in_progress,
+            GameSession.status.in_([GameStatus.waiting, GameStatus.in_progress]),
         )
         .order_by(GameSession.created_at.desc())
         .all()
@@ -100,6 +100,27 @@ def list_my_games(
         )
         for g in games
     ]
+
+
+@router.delete("/{code}", status_code=204)
+def cancel_game(
+    code: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Cancel a waiting game. Only the host can do this, and only if alone."""
+    game = db.query(GameSession).filter(GameSession.code == code).first()
+    if not game:
+        raise HTTPException(status_code=404, detail="Partita non trovata")
+    if game.status != GameStatus.waiting:
+        raise HTTPException(status_code=400, detail="Solo le partite in attesa possono essere annullate")
+    players = list(game.players)
+    if len(players) > 1:
+        raise HTTPException(status_code=400, detail="Non puoi annullare una partita con altri giocatori")
+    if players and players[0].user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Solo il creatore può annullare la partita")
+    db.delete(game)
+    db.commit()
 
 
 @router.get("/{code}", response_model=GameInfo)

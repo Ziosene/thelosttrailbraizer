@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useAuthStore } from '../store/authStore'
 import { connectSocket, sendAction, disconnectSocket, bus } from '../api/socket'
+import { api } from '../api/http'
 import { CharacterSelect } from '../components/lobby/CharacterSelect'
 import { PlayerList } from '../components/lobby/PlayerList'
 import { Button } from '../components/ui/Button'
@@ -9,9 +10,10 @@ import type { PlayerState, GameState, Seniority, Role } from '../types/game'
 interface Props {
   gameCode: string
   onGameStart: () => void
+  onCancel: () => void
 }
 
-export function LobbyPage({ gameCode, onGameStart }: Props) {
+export function LobbyPage({ gameCode, onGameStart, onCancel }: Props) {
   const { user } = useAuthStore()
   const [players, setPlayers] = useState<PlayerState[]>([])
   const [maxPlayers, setMaxPlayers] = useState(4)
@@ -61,6 +63,12 @@ export function LobbyPage({ gameCode, onGameStart }: Props) {
     sendAction('start_game')
   }
 
+  const handleCancel = async () => {
+    await api.cancelGame(gameCode)
+    disconnectSocket()
+    onCancel()
+  }
+
   if (!connected) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950">
@@ -107,16 +115,26 @@ export function LobbyPage({ gameCode, onGameStart }: Props) {
               </div>
             )}
 
-            {/* Avvia partita (solo host) */}
+            {/* Avvia / Annulla partita (solo host) */}
             {isHost && (
-              <Button
-                onClick={handleStartGame}
-                disabled={!allReady}
-                className="w-full"
-                title={!allReady ? 'Tutti i giocatori devono scegliere il personaggio' : ''}
-              >
-                {allReady ? 'Avvia partita' : `In attesa (${players.filter(p => p.seniority).length}/${players.length} pronti)`}
-              </Button>
+              <div className="flex flex-col gap-2">
+                <Button
+                  onClick={handleStartGame}
+                  disabled={!allReady}
+                  className="w-full"
+                  title={!allReady ? 'Tutti i giocatori devono scegliere il personaggio' : ''}
+                >
+                  {allReady ? 'Avvia partita' : `In attesa (${players.filter(p => p.seniority).length}/${players.length} pronti)`}
+                </Button>
+                {players.length === 1 && (
+                  <button
+                    onClick={handleCancel}
+                    className="w-full text-sm text-slate-500 hover:text-red-400 border border-slate-700 hover:border-red-700 rounded-xl py-2 transition-colors"
+                  >
+                    Annulla partita
+                  </button>
+                )}
+              </div>
             )}
             {!isHost && (
               <p className="text-center text-slate-600 text-sm">

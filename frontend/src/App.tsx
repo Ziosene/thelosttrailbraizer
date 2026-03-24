@@ -38,6 +38,7 @@ export default function App() {
         <LobbyPage
           gameCode={screen.code}
           onGameStart={() => setScreen({ name: 'game', code: screen.code })}
+          onCancel={() => setScreen({ name: 'home' })}
         />
       )}
       {screen.name === 'game' && <GamePage gameCode={screen.code} />}
