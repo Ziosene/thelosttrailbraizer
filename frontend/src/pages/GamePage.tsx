@@ -22,6 +22,7 @@ import { HandPanel } from '../components/game/HandPanel'
 import { LogPanel } from '../components/game/LogPanel'
 import { ReactionWindowModal, CardChoiceModal, ComplyOrRefuseModal, DebugModeModal } from '../components/game/GameModals'
 import { ToastLayer } from '../components/game/ToastLayer'
+import { CombatOverlay } from '../components/game/CombatOverlay'
 
 interface GamePageProps {
   gameCode: string
@@ -31,7 +32,7 @@ export function GamePage({ gameCode }: GamePageProps) {
   const { user } = useAuthStore()
   const {
     gameState, hand, myAddons, pendingChoice, reactionWindow, complyOrRefuse, debugModePeek, log,
-    connect, disconnect, send, clearPendingChoice,
+    lastDiceRoll, connect, disconnect, send, clearPendingChoice,
   } = useGameStore()
   const [logOpen, setLogOpen] = useState(false)
   const [selectedCard, setSelectedCard] = useState<CardInfo | null>(null)
@@ -169,6 +170,25 @@ export function GamePage({ gameCode }: GamePageProps) {
       {logOpen && <LogPanel entries={log} onClose={() => setLogOpen(false)} />}
       {selectedCard && <CardOverlay card={selectedCard} onClose={() => setSelectedCard(null)} />}
       <ToastLayer />
+
+      {/* Combat overlay — shown when the current user is in combat */}
+      {myPlayer?.is_in_combat && myPlayer.current_boss && (
+        <CombatOverlay
+          boss={myPlayer.current_boss}
+          bossHp={myPlayer.current_boss_hp ?? myPlayer.current_boss.hp}
+          playerHp={myPlayer.hp}
+          playerMaxHp={myPlayer.max_hp}
+          combatRound={myPlayer.combat_round ?? 0}
+          hand={hand}
+          addons={myAddons}
+          lastDiceRoll={lastDiceRoll}
+          isMyTurn={isMyTurn}
+          onRollDice={() => send('roll_dice')}
+          onPlayCard={(id) => send('play_card', { hand_card_id: id })}
+          onUseAddon={(id) => send('use_addon', { player_addon_id: id })}
+          onRetreat={() => send('retreat_combat')}
+        />
+      )}
 
       {reactionWindow && (
         <ReactionWindowModal

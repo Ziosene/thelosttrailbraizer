@@ -45,6 +45,9 @@ def _build_game_state(game: GameSession, db: Session) -> dict:
             "is_in_combat": gp.is_in_combat,
             "bosses_defeated": gp.bosses_defeated,
             "trophies": gp.trophies or [],  # list of BossCard.id — visible to all players
+            "current_boss": _boss_info(gp.current_boss_id) if gp.is_in_combat else None,
+            "current_boss_hp": gp.current_boss_hp if gp.is_in_combat else None,
+            "combat_round": gp.combat_round if gp.is_in_combat else None,
         })
 
     # Resolve visible market cards to full objects for the client

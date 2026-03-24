@@ -63,7 +63,8 @@ frontend/
 │   │       ├── DeckModal.tsx    modale mazzi: Mazzo 1, Mazzo 2, Scarti (ultima carta visibile)
 │   │       ├── LogPanel.tsx     pannello log partita (LogPanel)
 │   │       ├── ToastLayer.tsx   toast errori backend (fixed top-right, auto-dismiss 4s)
-│   │       └── GameModals.tsx   ReactionWindowModal, CardChoiceModal, ComplyOrRefuseModal
+│   │       ├── GameModals.tsx   ReactionWindowModal, CardChoiceModal, ComplyOrRefuseModal
+│   │       └── CombatOverlay.tsx overlay combattimento (boss, dado animato, addons, carte in mano)
 │   ├── pages/
 │   │   ├── LoginPage.tsx        login + registrazione (tab switch)
 │   │   ├── HomePage.tsx         crea partita, unisciti con codice, lista partite aperte

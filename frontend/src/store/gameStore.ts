@@ -59,6 +59,13 @@ export interface DebugModePeek {
   source: string
 }
 
+export interface LastDiceRoll {
+  roll: number
+  result: 'hit' | 'miss'
+  boss_hp: number
+  player_hp: number
+}
+
 let _toastSeq = 0
 
 let _logSeq = 0
@@ -75,6 +82,7 @@ interface GameStore {
   hand: HandCard[]
   myAddons: HandAddon[]
   combatActive: boolean
+  lastDiceRoll: LastDiceRoll | null
   pendingChoice: PendingChoice | null
   reactionWindow: ReactionWindow | null
   complyOrRefuse: ComplyOrRefuse | null
@@ -86,6 +94,7 @@ interface GameStore {
   send: (action: string, data?: Record<string, unknown>) => void
   clearPendingChoice: () => void
   removeToast: (id: number) => void
+  clearDiceRoll: () => void
 }
 
 export const useGameStore = create<GameStore>((set, get) => {
@@ -110,6 +119,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     hand: [],
     myAddons: [],
     combatActive: false,
+    lastDiceRoll: null,
     pendingChoice: null,
     reactionWindow: null,
     complyOrRefuse: null,
@@ -162,9 +172,17 @@ export const useGameStore = create<GameStore>((set, get) => {
           `🎲 ${pName(msg.player_id)} tira ${msg.roll} → ${hit ? 'COLPITO!' : 'mancato'}`,
           hit ? 'text-green-400' : 'text-red-400',
         )
+        set({
+          lastDiceRoll: {
+            roll: msg.roll,
+            result: msg.result,
+            boss_hp: msg.boss_hp,
+            player_hp: msg.player_hp,
+          },
+        })
       })
       bus.on('combat_ended', (msg: any) => {
-        set({ combatActive: false })
+        set({ combatActive: false, lastDiceRoll: null })
         if (msg.boss_defeated) addLog(`🏆 Boss sconfitto da ${pName(msg.player_id)}!`, 'text-yellow-400')
         else if (msg.player_died) addLog(`💀 ${pName(msg.player_id)} è morto in combattimento`, 'text-red-500')
         else addLog(`🏃 ${pName(msg.player_id)} si ritira dal combattimento`, 'text-slate-400')
@@ -235,7 +253,7 @@ export const useGameStore = create<GameStore>((set, get) => {
       disconnectSocket()
       set({
         gameCode: null, gameState: null, hand: [], myAddons: [],
-        combatActive: false, pendingChoice: null, reactionWindow: null, complyOrRefuse: null, log: [], toasts: [], debugModePeek: null,
+        combatActive: false, lastDiceRoll: null, pendingChoice: null, reactionWindow: null, complyOrRefuse: null, log: [], toasts: [], debugModePeek: null,
       })
     },
 
@@ -249,6 +267,10 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     removeToast(id) {
       set(s => ({ toasts: s.toasts.filter(t => t.id !== id) }))
+    },
+
+    clearDiceRoll() {
+      set({ lastDiceRoll: null })
     },
   }
 })

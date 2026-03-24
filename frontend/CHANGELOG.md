@@ -5,6 +5,33 @@
 
 ---
 
+## Sessione 9 — Combat UI (overlay combattimento)
+
+### Nuovi componenti
+- **`CombatOverlay.tsx`**: overlay a schermo intero che appare automaticamente quando il giocatore è in combattimento
+  - Boss card: nome, difficoltà, HP bar, soglia dado, abilità, ricompensa licenze
+  - Sezione dado animato: rotolamento CSS (`animate-bounce`) con valori casuali a 80ms, atterraggio sul risultato finale con animazione 1.2s
+  - Risultato dado colorato: verde (COLPITO) / rosso (MANCATO)
+  - Sezione AddOn: mostra tutti gli addon, tooltip espandibile con effetto + pulsante "Usa" per addon non tappati
+  - Sezione Carte in mano: badge colorati per tipo (Offensiva/Difensiva/Utilità/Economica), tooltip espandibile con effetto + pulsante "Gioca"
+  - Pulsante "Ritirati" (solo host del turno)
+  - Visibile anche agli spettatori (altri giocatori vedono l'overlay passivo)
+
+### Modifiche a componenti esistenti
+- **`GamePage.tsx`**: integrato `CombatOverlay` — appare quando `myPlayer.is_in_combat && myPlayer.current_boss !== null`
+  - Passa `lastDiceRoll` per animare il dado all'arrivo dell'evento `dice_rolled`
+
+### Modifiche al tipo `PlayerState` (`types/game.ts`)
+- Aggiunti campi: `current_boss: BossMarketInfo | null`, `current_boss_hp: number | null`, `combat_round: number | null`
+
+### Modifiche a `gameStore.ts`
+- Aggiunto stato `lastDiceRoll: LastDiceRoll | null` con interfaccia `{ roll, result, boss_hp, player_hp }`
+- Handler `dice_rolled`: ora salva il risultato in store (oltre al log)
+- Handler `combat_ended`: resetta `lastDiceRoll` a null
+- Aggiunto metodo `clearDiceRoll()`
+
+---
+
 ## Sessione 1 — Setup iniziale + Login + Lobby
 
 ### Setup progetto

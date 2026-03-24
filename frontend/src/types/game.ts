@@ -79,6 +79,9 @@ export interface PlayerState {
   bosses_defeated: number
   trophies: number[]
   addons: PublicAddon[]
+  current_boss: BossMarketInfo | null
+  current_boss_hp: number | null
+  combat_round: number | null
 }
 
 export interface BossMarketInfo {
