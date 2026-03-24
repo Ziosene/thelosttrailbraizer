@@ -11,6 +11,7 @@ interface Props {
 export function HomePage({ onJoinGame }: Props) {
   const { user } = useAuthStore()
   const [games, setGames] = useState<GameInfoDTO[]>([])
+  const [myGames, setMyGames] = useState<GameInfoDTO[]>([])
   const [codeInput, setCodeInput] = useState('')
   const [maxPlayers, setMaxPlayers] = useState(4)
   const [loading, setLoading] = useState(false)
@@ -18,6 +19,7 @@ export function HomePage({ onJoinGame }: Props) {
 
   useEffect(() => {
     api.listGames().then(setGames).catch(() => {})
+    api.listMyGames().then(setMyGames).catch(() => {})
   }, [])
 
   const handleCreate = async () => {
@@ -90,6 +92,26 @@ export function HomePage({ onJoinGame }: Props) {
             </Button>
           </div>
         </div>
+
+        {/* Riprendi partita */}
+        {myGames.length > 0 && (
+          <div className="bg-slate-900 rounded-2xl p-6 border border-violet-800/50 mb-4">
+            <h2 className="text-lg font-bold text-violet-300 mb-4">▶ Riprendi partita</h2>
+            <div className="flex flex-col gap-2">
+              {myGames.map((g) => (
+                <div key={g.id} className="flex items-center justify-between py-2 px-3 bg-slate-800 rounded-lg">
+                  <div>
+                    <code className="text-violet-300 font-mono font-bold">{g.code}</code>
+                    <span className="text-slate-500 text-sm ml-3">{g.player_count}/{g.max_players} giocatori</span>
+                  </div>
+                  <Button variant="secondary" onClick={() => onJoinGame(g.code)} className="text-sm py-1 px-3">
+                    Riprendi
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Partite aperte */}
         {games.length > 0 && (

@@ -67,6 +67,41 @@ def list_open_games(db: Session = Depends(get_db)):
     ]
 
 
+@router.get("/mine", response_model=list[GameInfo])
+def list_my_games(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Return in_progress games where the current user is a player."""
+    players = (
+        db.query(GamePlayer)
+        .filter(GamePlayer.user_id == current_user.id)
+        .all()
+    )
+    game_ids = [p.game_id for p in players]
+    if not game_ids:
+        return []
+    games = (
+        db.query(GameSession)
+        .filter(
+            GameSession.id.in_(game_ids),
+            GameSession.status == GameStatus.in_progress,
+        )
+        .order_by(GameSession.created_at.desc())
+        .all()
+    )
+    return [
+        GameInfo(
+            id=g.id,
+            code=g.code,
+            status=g.status,
+            max_players=g.max_players,
+            player_count=len(g.players),
+        )
+        for g in games
+    ]
+
+
 @router.get("/{code}", response_model=GameInfo)
 def get_game(code: str, db: Session = Depends(get_db)):
     game = db.query(GameSession).filter(GameSession.code == code).first()

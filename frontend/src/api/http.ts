@@ -30,6 +30,7 @@ export const api = {
   me: () => request<UserPublic>('/auth/me'),
 
   listGames: () => request<import('./http').GameInfoDTO[]>('/games'),
+  listMyGames: () => request<import('./http').GameInfoDTO[]>('/games/mine'),
 
   createGame: (max_players: number) =>
     request<import('./http').GameInfoDTO>('/games', { method: 'POST', body: JSON.stringify({ max_players }) }),
