@@ -108,6 +108,7 @@ class GamePlayer(Base):
     # Cards & state
     cards_played_this_turn: Mapped[int] = mapped_column(Integer, default=0)
     is_in_combat: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_eliminated: Mapped[bool] = mapped_column(Boolean, default=False)
     current_boss_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("boss_cards.id"), nullable=True)
     current_boss_hp: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # "market_1" | "market_2" | "deck_1" | "deck_2" — determines what happens on win/loss

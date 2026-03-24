@@ -19,7 +19,7 @@ from app.websocket.handlers.turn import (
 )
 from app.websocket.handlers.combat import (
     _handle_start_combat, _handle_roll_dice, _handle_retreat,
-    _handle_declare_card, _handle_declare_card_type,
+    _handle_declare_card, _handle_declare_card_type, _handle_choose_death_penalty,
 )
 from app.websocket.handlers.reaction import _handle_play_reaction, _handle_pass_reaction, _handle_card115_refuse
 
@@ -108,6 +108,8 @@ async def handle_message(
         await _handle_use_borrowed_passive(game, user_id, data, db)
     elif action == "skill_transfer_choice":
         await _handle_skill_transfer_choice(game, user_id, data, db)
+    elif action == "choose_death_penalty":
+        await _handle_choose_death_penalty(game, user_id, data, db)
     else:
         await _error(game_code, user_id, f"Unknown action: {action}")
 

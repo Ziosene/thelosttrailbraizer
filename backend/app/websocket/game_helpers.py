@@ -52,6 +52,7 @@ def _build_game_state(game: GameSession, db: Session) -> dict:
                 for pa in gp.addons
             ],
             "is_in_combat": gp.is_in_combat,
+            "is_eliminated": gp.is_eliminated,
             "bosses_defeated": gp.bosses_defeated,
             "trophies": gp.trophies or [],  # list of BossCard.id — visible to all players
             "current_boss": _boss_info(gp.current_boss_id) if gp.is_in_combat else None,

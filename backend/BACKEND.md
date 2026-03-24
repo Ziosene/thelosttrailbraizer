@@ -480,6 +480,7 @@ Tutti i messaggi sono JSON. Il server autentica via JWT al momento della conness
 | `play_reaction` | `{hand_card_id}` | Fuori dal proprio turno — risposta a `reaction_window_open`; gioca una carta interferenza |
 | `pass_reaction` | — | Fuori dal proprio turno — rinuncia alla finestra di reazione |
 | `card_choice` | `{choice_type, ...}` | Risposta a `card_choice_required` — il giocatore invia la propria scelta per completare l'effetto di una carta |
+| `choose_death_penalty` | `{hand_card_id: int\|null, player_addon_id: int\|null}` | Risposta a `death_penalty_choice_required` — il giocatore sceglie quale carta e addon perdere dopo la morte |
 
 ### Server → Client (eventi)
 
@@ -497,7 +498,8 @@ Tutti i messaggi sono JSON. Il server autentica via JWT al momento della conness
 | `combat_started` | `{player_id, boss}` | combattimento iniziato |
 | `dice_rolled` | `{player_id, roll, result, boss_hp, player_hp}` | dado tirati |
 | `combat_ended` | `{player_id, boss_defeated?, player_died?}` | fine combattimento |
-| `player_died` | `{player_id, lost}` | penalità morte applicata |
+| `player_died` | `{player_id}` | giocatore morto — penalità in attesa di scelta |
+| `death_penalty_choice_required` | `{hand: [...], addons: [...]}` | privato al giocatore morto — sceglie quale carta e addon perdere |
 | `turn_ended` | `{player_id, next_player_id}` | fine turno |
 | `game_over` | `{winner_id}` | partita terminata |
 | `hand_state` | `{hand: [...], addons: [...]}` | privato — inviato solo al giocatore dopo draw, play, morte, reconnect |

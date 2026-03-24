@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.websocket.manager import manager
 from app.websocket.events import ServerEvent
 from app.websocket.game_helpers import (
-    _get_player, _is_player_turn, _error, _broadcast_state, _send_hand_state, _apply_elo,
+    _get_player, _is_player_turn, _error, _broadcast_state, _send_hand_state,
 )
 from app.models.game import GameSession, GameStatus, TurnPhase
 from app.models.card import ActionCard, BossCard, AddonCard
@@ -29,6 +29,23 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
     if player.is_in_combat:
         await _error(game.code, user_id, "Already in combat")
         return
+
+    if player.hp == 0:
+        await _error(game.code, user_id, "Non puoi combattere: sei morto questo turno")
+        return
+
+    # Regola base: un solo combattimento per turno
+    # Carte/addon possono concedere combattimenti extra impostando extra_combat_remaining > 0
+    _cs_pre = player.combat_state or {}
+    if _cs_pre.get("fought_this_turn"):
+        _extra = _cs_pre.get("extra_combat_remaining", 0)
+        if _extra <= 0:
+            await _error(game.code, user_id, "Hai già combattuto questo turno")
+            return
+        # Consuma un combattimento extra
+        _cs_new = dict(_cs_pre)
+        _cs_new["extra_combat_remaining"] = _extra - 1
+        player.combat_state = _cs_new
 
     # Addon 191 (404 Not Found): cannot start combat while active
     if (player.combat_state or {}).get('not_found_active'):

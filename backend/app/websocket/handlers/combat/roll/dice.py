@@ -1215,21 +1215,51 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         return
 
     elif player_died:
+        prevented = await _player_death_sequence(player, game, db, boss)
+        if prevented:
+            return  # addon 56/59 saved the player — already committed+broadcast
+        # Player died — commit current state then notify
         event["combat_ended"] = True
         event["player_died"] = True
-        penalty = await _player_death_sequence(player, game, db, boss)
-        event["penalty"] = penalty["lost"]
+        db.commit()
+        db.refresh(game)
         await manager.broadcast(game.code, event)
         await manager.broadcast(game.code, {
             "type": ServerEvent.PLAYER_DIED,
             "player_id": player.id,
-            "lost": penalty["lost"],
         })
-        db.commit()
-        db.refresh(game)
+        # Ask the dying player to choose which card + addon to lose
         db.refresh(player)
+        if player.hand or player.addons:
+            from app.models.card import ActionCard as _AC_dc, AddonCard as _ADC_dc
+            _dc_hand = []
+            for hc in player.hand:
+                c = db.get(_AC_dc, hc.action_card_id)
+                if c:
+                    _dc_hand.append({
+                        "hand_card_id": hc.id,
+                        "card_id": c.id,
+                        "name": c.name,
+                        "card_type": c.card_type,
+                        "rarity": c.rarity,
+                    })
+            _dc_addons = []
+            for pa in player.addons:
+                a = db.get(_ADC_dc, pa.addon_id)
+                if a:
+                    _dc_addons.append({
+                        "player_addon_id": pa.id,
+                        "addon_id": a.id,
+                        "name": a.name,
+                        "effect": a.effect,
+                        "is_tapped": pa.is_tapped,
+                    })
+            await manager.send_to_player(game.code, player.user_id, {
+                "type": "death_penalty_choice_required",
+                "hand": _dc_hand,
+                "addons": _dc_addons,
+            })
         await _broadcast_state(game, db)
-        await _send_hand_state(game.code, player, db)
         return
 
     db.commit()

@@ -172,7 +172,6 @@ FASE FINALE
   5. Il turno passa al giocatore successivo
 ```
 
-> *Salvo possesso di una carta azione che permette la ritirata dal combattimento.
 
 ### 4.1 Limiti mano
 
@@ -185,6 +184,10 @@ FASE FINALE
 ## 5. Combattimento
 
 ### 5.1 Inizio combattimento
+
+> **Regola fondamentale:** ogni giocatore può **combattere al massimo una volta per turno**.
+> Dopo aver vinto o perso un combattimento, non è possibile sfidare un altro boss nello stesso turno,
+> salvo effetti di carte azione o AddOn che concedano esplicitamente un combattimento extra.
 
 Il giocatore decide di combattere e **sceglie quale boss affrontare**:
 - Boss visibile nel **mercato A** o **mercato B** (carta scoperta, caratteristiche note)
@@ -341,20 +344,31 @@ TROFEO:
 
 ## 6. Morte del Giocatore
 
-Quando l'HP scende a 0:
+Quando l'HP scende a 0 durante il combattimento, il giocatore **muore**. La morte avviene
+esclusivamente in combattimento: se gli HP scendono a 0 a causa di carte azione avversarie
+fuori dal combattimento, il giocatore scende a 1 HP minimo.
 
 ```
-CONSEGUENZE MORTE (pena di morte):
-  ├─ Perde 1 carta dalla propria mano (se ne ha) — scartata
-  ├─ Perde 1 Licenza (se ne ha)
-  ├─ Perde 1 AddOn (il giocatore sceglie quale, se ne ha)
-  └─ Tutti gli AddOn rimanenti si tappano (non utilizzabili fino al prossimo turno)
+CONSEGUENZE MORTE (applicate nell'ordine):
+  ├─ Perde automaticamente 1 Licenza
+  ├─ Sceglie quale carta perdere dalla mano (se ne ha)
+  ├─ Sceglie quale AddOn perdere dalla propria collezione (se ne ha)
+  ├─ Tutti gli AddOn rimanenti si tappano (non utilizzabili)
+  └─ HP scende a 0 — il giocatore non può giocare carte né usare AddOn
+     fino all'inizio del suo prossimo turno.
 
-L'HP si resetta all'inizio del prossimo turno del giocatore.
+Il boss torna in cima al mazzo da cui proveniva (o rimane nel mercato se era un boss di mercato).
 ```
 
-> Un giocatore può morire anche quando non è il suo turno (a causa di carte azione degli avversari).
-> **Un giocatore può morire al massimo una volta per turno** (proprio o altrui).
+> **Resurrezione automatica:** all'inizio del prossimo turno del giocatore morto, gli HP
+> vengono ripristinati al massimo e tutti gli AddOn si stappano. Il giocatore può giocare
+> normalmente quel turno.
+
+> **Nessuna eliminazione:** un giocatore non viene mai eliminato dalla partita.
+> Continua a partecipare ai turni anche dopo la morte.
+
+> Alcune carte azione (es. *Disaster Recovery*) o AddOn (es. *Backup & Restore*,
+> *Incident Management*) possono annullare o mitigare la morte una volta per partita.
 
 ---
 
@@ -520,7 +534,7 @@ VITTORIA
 | **Dare / Rubare** | Spostare una risorsa o carta da un giocatore a un altro. *Rubare* = scegli tu cosa prendere; *Dare* = chi cede sceglie cosa cedere. |
 | **Scaricare (Tap)** | Ruotare un AddOn attivo di 90° per indicare che è stato usato. Un AddOn tappato non può essere riusato nello stesso turno. |
 | **Ricaricare (Untap)** | Riportare un AddOn in posizione attiva. Avviene automaticamente all'inizio del proprio turno. |
-| **Morire** | Il giocatore raggiunge 0 HP. Esegue la pena di morte e l'HP si resetta all'inizio del suo prossimo turno. Un giocatore può morire al massimo una volta per turno. |
+| **Morire** | Il giocatore raggiunge 0 HP in combattimento. Perde 1 Licenza + 1 carta a scelta + 1 AddOn a scelta; tutti gli AddOn rimanenti si tappano. HP rimane 0 fino all'inizio del suo prossimo turno, quando torna a piena vita con tutti gli AddOn stappati. |
 | **Distruggere** | Rimuovere permanentemente una carta (AddOn o boss) dal gioco, inviandola nel relativo Cimitero. Diverso da "perdere" (che va nel mazzo scarti). |
 | **Annullare** | Bloccare l'effetto di una carta prima che si risolva. La carta viene comunque consumata (va negli scarti). |
 | **Guarire** | Recuperare HP fino al massimo del proprio personaggio. Non si può superare il massimo. |

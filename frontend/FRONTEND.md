@@ -64,7 +64,8 @@ frontend/
 │   │       ├── LogPanel.tsx     pannello log partita (LogPanel)
 │   │       ├── ToastLayer.tsx   toast errori backend (fixed top-right, auto-dismiss 4s)
 │   │       ├── GameModals.tsx   ReactionWindowModal, CardChoiceModal, ComplyOrRefuseModal
-│   │       └── CombatOverlay.tsx overlay combattimento (boss, dado animato, addons, carte in mano)
+│   │       ├── CombatOverlay.tsx overlay combattimento (boss, dado animato, addons, carte in mano)
+│   │       └── DeathPenaltyModal.tsx modale scelta penalità morte (carta + addon da perdere)
 │   ├── pages/
 │   │   ├── LoginPage.tsx        login + registrazione (tab switch)
 │   │   ├── HomePage.tsx         crea partita, unisciti con codice, lista partite aperte

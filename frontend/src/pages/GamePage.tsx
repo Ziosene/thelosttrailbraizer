@@ -23,6 +23,7 @@ import { LogPanel } from '../components/game/LogPanel'
 import { ReactionWindowModal, CardChoiceModal, ComplyOrRefuseModal, DebugModeModal } from '../components/game/GameModals'
 import { ToastLayer } from '../components/game/ToastLayer'
 import { CombatOverlay } from '../components/game/CombatOverlay'
+import { DeathPenaltyModal } from '../components/game/DeathPenaltyModal'
 
 interface GamePageProps {
   gameCode: string
@@ -31,8 +32,8 @@ interface GamePageProps {
 export function GamePage({ gameCode }: GamePageProps) {
   const { user } = useAuthStore()
   const {
-    gameState, hand, myAddons, pendingChoice, reactionWindow, complyOrRefuse, debugModePeek, log,
-    lastDiceRoll, connect, disconnect, send, clearPendingChoice,
+    gameState, hand, myAddons, pendingChoice, reactionWindow, complyOrRefuse, debugModePeek,
+    deathPenalty, log, lastDiceRoll, connect, disconnect, send, clearPendingChoice,
   } = useGameStore()
   const [logOpen, setLogOpen] = useState(false)
   const [selectedCard, setSelectedCard] = useState<CardInfo | null>(null)
@@ -234,6 +235,19 @@ export function GamePage({ gameCode }: GamePageProps) {
           onRefuse={() => {
             send('card115_refuse')
             useGameStore.setState({ complyOrRefuse: null })
+          }}
+        />
+      )}
+
+      {deathPenalty && (
+        <DeathPenaltyModal
+          penalty={deathPenalty}
+          onConfirm={(handCardId, playerAddonId) => {
+            send('choose_death_penalty', {
+              hand_card_id: handCardId,
+              player_addon_id: playerAddonId,
+            })
+            useGameStore.setState({ deathPenalty: null })
           }}
         />
       )}

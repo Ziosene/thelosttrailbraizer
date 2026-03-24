@@ -75,8 +75,10 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
     # Each timed effect is cleared individually below (card 18, card 116, etc.).
     # No generic expiry system needed — all flags are cleared by their specific handlers.
 
-    # ── FASE FINALE step 4: reset HP to max_hp ───────────────────────────────
-    player.hp = player.max_hp
+    # ── FASE FINALE step 4: reset HP to max_hp (solo se vivo) ───────────────
+    # I giocatori morti (hp=0) vengono rianimati all'inizio del LORO prossimo turno, non qui.
+    if player.hp > 0:
+        player.hp = player.max_hp
 
     # Card 18 (Org Takeover): clear the one-turn addon block when this player's turn ends
     if player.combat_state and player.combat_state.get("addons_blocked_next_turn"):
@@ -133,6 +135,9 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
     # Batch 7 end-of-turn cleanups (single cs mutation for performance)
     if player.combat_state:
         cs = dict(player.combat_state)
+        # Regola base: reset combat-per-turn tracker
+        cs.pop("fought_this_turn", None)
+        cs.pop("extra_combat_remaining", None)
         # Card 160 (Storefront Reference): clear per-turn addon-bought flag
         cs.pop("bought_addon_this_turn", None)
         # Card 161 (Promotions Engine): decrement turns counter
@@ -291,9 +296,9 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
     # but clearing is still needed for other players without addon 65)
     # (locked_out is cleared when the player's turn ends via the Anypoint MQ card effect)
 
-    # Addon 183 (Ohana Spirit): if all players are alive at end of turn, gain 1L
+    # Addon 183 (Ohana Spirit): if all active players are alive at end of turn, gain 1L
     if _has_addon_end(player, 183):
-        if all(p.hp > 0 for p in game.players):
+        if all(p.hp > 0 for p in game.players if not p.is_eliminated):
             player.licenze += 1
 
     # Addon 191 (404 Not Found): clear not_found_active flag at end of turn for ALL players
@@ -326,11 +331,30 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
 
     player.cards_played_this_turn = 0
 
+    # Clear death_penalty_pending if player skipped the choice (avoids frozen game)
+    if (player.combat_state or {}).get("death_penalty_pending"):
+        cs_dp = dict(player.combat_state)
+        cs_dp.pop("death_penalty_pending", None)
+        player.combat_state = cs_dp
+
     # Advance turn
     game.current_turn_index = (game.current_turn_index + 1) % len(game.turn_order)
     if game.current_turn_index == 0:
         game.turn_number += 1
     game.current_phase = TurnPhase.draw
+
+    # Resurrezione: se il prossimo giocatore era morto (hp=0), rianimalo all'inizio del suo turno
+    _next_player_id = game.turn_order[game.current_turn_index]
+    _next_player = next((p for p in game.players if p.id == _next_player_id), None)
+    if _next_player and _next_player.hp == 0:
+        _next_player.hp = _next_player.max_hp
+        for pa_rev in _next_player.addons:
+            pa_rev.is_tapped = False
+        # Pulisci anche il flag di penalità morte se non ancora risolto
+        if (_next_player.combat_state or {}).get("death_penalty_pending"):
+            cs_rev = dict(_next_player.combat_state)
+            cs_rev.pop("death_penalty_pending", None)
+            _next_player.combat_state = cs_rev
 
     db.commit()
     db.refresh(game)

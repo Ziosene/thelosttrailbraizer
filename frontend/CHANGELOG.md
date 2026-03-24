@@ -5,6 +5,27 @@
 
 ---
 
+## Sessione 10 — Meccanica morte (penalità con scelta)
+
+### Nuovi componenti
+- **`DeathPenaltyModal.tsx`**: modale che appare quando il giocatore muore in combattimento
+  - Mostra le carte in mano e gli addon del giocatore
+  - Il giocatore seleziona quale carta e quale addon perdere
+  - Se non ha carte o addon, quella sezione viene saltata automaticamente
+  - Bottone "Conferma perdita" abilitato solo quando tutte le scelte necessarie sono fatte
+  - Invia `choose_death_penalty` al backend con `hand_card_id` e `player_addon_id`
+
+### Modifiche store (`gameStore.ts`)
+- Aggiunto tipo `DeathPenaltyChoice` e stato `deathPenalty`
+- Gestore evento `death_penalty_choice_required` → popola `deathPenalty` e aggiunge log
+- Reset di `deathPenalty: null` nella `disconnect`
+
+### Modifiche `GamePage.tsx`
+- Importa e mostra `DeathPenaltyModal` quando `deathPenalty` è non-null
+- Alla conferma: invia `choose_death_penalty`, azzera `deathPenalty` nello store
+
+---
+
 ## Sessione 9 — Combat UI (overlay combattimento)
 
 ### Nuovi componenti

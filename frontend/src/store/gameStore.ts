@@ -59,6 +59,11 @@ export interface DebugModePeek {
   source: string
 }
 
+export interface DeathPenaltyChoice {
+  hand: Array<{ hand_card_id: number; card_id: number; name: string; card_type: string; rarity: string }>
+  addons: Array<{ player_addon_id: number; addon_id: number; name: string; effect: string; is_tapped: boolean }>
+}
+
 export interface LastDiceRoll {
   roll: number
   result: 'hit' | 'miss'
@@ -89,6 +94,7 @@ interface GameStore {
   log: LogEntry[]
   toasts: Toast[]
   debugModePeek: DebugModePeek | null
+  deathPenalty: DeathPenaltyChoice | null
   connect: (gameCode: string, userId: number) => void
   disconnect: () => void
   send: (action: string, data?: Record<string, unknown>) => void
@@ -126,6 +132,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     log: [],
     toasts: [],
     debugModePeek: null,
+    deathPenalty: null,
 
     connect(gameCode, userId) {
       set({ gameCode, myUserId: userId })
@@ -231,6 +238,10 @@ export const useGameStore = create<GameStore>((set, get) => {
         )
       })
 
+      bus.on('death_penalty_choice_required', (msg: any) => {
+        set({ deathPenalty: { hand: msg.hand ?? [], addons: msg.addons ?? [] } })
+        addLog('💀 Scegli quale carta e addon perdere per la morte', 'text-red-400')
+      })
       bus.on('card_choice_required', (msg: any) => {
         const { type: _t, ...rest } = msg
         set({ pendingChoice: rest as PendingChoice })
@@ -253,7 +264,7 @@ export const useGameStore = create<GameStore>((set, get) => {
       disconnectSocket()
       set({
         gameCode: null, gameState: null, hand: [], myAddons: [],
-        combatActive: false, lastDiceRoll: null, pendingChoice: null, reactionWindow: null, complyOrRefuse: null, log: [], toasts: [], debugModePeek: null,
+        combatActive: false, lastDiceRoll: null, pendingChoice: null, reactionWindow: null, complyOrRefuse: null, log: [], toasts: [], debugModePeek: null, deathPenalty: null,
       })
     },
 
