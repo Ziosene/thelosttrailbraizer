@@ -4,14 +4,6 @@ import type { LastDiceRoll } from '../../store/gameStore'
 import { CardVisual, CardOverlay } from './CardVisual'
 import type { CardInfo } from './CardVisual'
 
-// ─── Dice faces (Unicode) ──────────────────────────────────────────────────
-const DICE_FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅', '⚅', '⚅', '⚅', '⚅'] // d10: show d6 faces + extra ⚅ for 7-10
-
-function diceEmoji(n: number) {
-  if (n <= 6) return DICE_FACES[n - 1]
-  return '🎲'
-}
-
 // ─── HP Bar ────────────────────────────────────────────────────────────────
 function HpBar({ current, max, color = 'bg-red-500' }: { current: number; max: number; color?: string }) {
   const pct = max > 0 ? Math.max(0, Math.min(100, (current / max) * 100)) : 0
@@ -25,39 +17,134 @@ function HpBar({ current, max, color = 'bg-red-500' }: { current: number; max: n
   )
 }
 
-// ─── Dice roller component ─────────────────────────────────────────────────
+// ─── D10 SVG ───────────────────────────────────────────────────────────────
+// Classica forma a diamante allungato con punta inferiore
+function DiceD10SVG({ value, result }: { value: number; result: 'hit' | 'miss' | null }) {
+  const accent = result === 'hit' ? '#4ade80' : result === 'miss' ? '#f87171' : '#94a3b8'
+  const glow   = result === 'hit' ? '#4ade8040' : result === 'miss' ? '#f8717140' : 'transparent'
+
+  return (
+    <svg viewBox="0 0 100 120" width={90} height={108} style={{ overflow: 'visible' }}>
+      <defs>
+        <linearGradient id="d10top" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#1e293b" />
+          <stop offset="100%" stopColor="#0f172a" />
+        </linearGradient>
+        <linearGradient id="d10bot" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#0f172a" />
+          <stop offset="100%" stopColor="#020617" />
+        </linearGradient>
+        <filter id="glow">
+          <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor={glow} />
+        </filter>
+      </defs>
+
+      {/* Corpo superiore: pentagono d10 */}
+      <polygon
+        points="50,4 96,36 80,88 20,88 4,36"
+        fill="url(#d10top)"
+        stroke={accent}
+        strokeWidth="2"
+        filter="url(#glow)"
+      />
+      {/* Punta inferiore */}
+      <polygon
+        points="20,88 50,116 80,88"
+        fill="url(#d10bot)"
+        stroke={accent}
+        strokeWidth="2"
+        filter="url(#glow)"
+      />
+
+      {/* Linee di spigolo per look 3D */}
+      <line x1="50" y1="4"  x2="20" y2="88" stroke={accent} strokeWidth="0.6" opacity="0.25" />
+      <line x1="50" y1="4"  x2="80" y2="88" stroke={accent} strokeWidth="0.6" opacity="0.25" />
+      <line x1="20" y1="88" x2="50" y2="116" stroke={accent} strokeWidth="0.6" opacity="0.25" />
+      <line x1="80" y1="88" x2="50" y2="116" stroke={accent} strokeWidth="0.6" opacity="0.25" />
+      <line x1="4"  y1="36" x2="96" y2="36"  stroke={accent} strokeWidth="0.5" opacity="0.15" />
+
+      {/* Numero */}
+      <text
+        x="50" y="55"
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill={accent}
+        fontSize={value >= 10 ? '28' : '34'}
+        fontWeight="bold"
+        fontFamily="'Courier New', monospace"
+        style={{ letterSpacing: '-1px' }}
+      >
+        {value}
+      </text>
+    </svg>
+  )
+}
+
+// ─── Dice roller ───────────────────────────────────────────────────────────
+const DICE_KEYFRAMES = `
+@keyframes d10roll {
+  0%   { transform: perspective(300px) rotateY(0deg)   rotateX(15deg)  scale(1);    filter: blur(0px); }
+  15%  { transform: perspective(300px) rotateY(90deg)  rotateX(-10deg) scale(0.9);  filter: blur(1.5px); }
+  30%  { transform: perspective(300px) rotateY(180deg) rotateX(15deg)  scale(1.05); filter: blur(2px); }
+  50%  { transform: perspective(300px) rotateY(270deg) rotateX(-10deg) scale(0.95); filter: blur(1.5px); }
+  70%  { transform: perspective(300px) rotateY(360deg) rotateX(15deg)  scale(1.02); filter: blur(1px); }
+  85%  { transform: perspective(300px) rotateY(450deg) rotateX(-8deg)  scale(0.98); filter: blur(0.5px); }
+  100% { transform: perspective(300px) rotateY(540deg) rotateX(12deg)  scale(1);    filter: blur(0px); }
+}
+@keyframes d10settle {
+  0%   { transform: scale(1.3) rotateZ(-10deg); }
+  40%  { transform: scale(1.12) rotateZ(6deg); }
+  65%  { transform: scale(1.05) rotateZ(-3deg); }
+  82%  { transform: scale(1.02) rotateZ(1deg); }
+  100% { transform: scale(1) rotateZ(0deg); }
+}
+`
+
 function DiceDisplay({ rolling, finalRoll, result }: {
   rolling: boolean
   finalRoll: number | null
   result: 'hit' | 'miss' | null
 }) {
   const [displayRoll, setDisplayRoll] = useState<number>(1)
+  const [settled, setSettled]         = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const prevFinal   = useRef<number | null>(null)
 
   useEffect(() => {
     if (rolling) {
+      setSettled(false)
       intervalRef.current = setInterval(() => {
         setDisplayRoll(Math.floor(Math.random() * 10) + 1)
-      }, 80)
+      }, 55)
     } else {
       if (intervalRef.current) clearInterval(intervalRef.current)
-      if (finalRoll !== null) setDisplayRoll(finalRoll)
+      if (finalRoll !== null && finalRoll !== prevFinal.current) {
+        prevFinal.current = finalRoll
+        setDisplayRoll(finalRoll)
+        setSettled(true)
+        const t = setTimeout(() => setSettled(false), 500)
+        return () => clearTimeout(t)
+      }
     }
     return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [rolling, finalRoll])
 
-  const hitColor = result === 'hit' ? 'text-green-400' : result === 'miss' ? 'text-red-400' : 'text-slate-300'
+  const labelColor = result === 'hit' ? 'text-green-400' : result === 'miss' ? 'text-red-400' : 'text-slate-400'
+
+  const animation = rolling
+    ? 'd10roll 0.35s linear infinite'
+    : settled
+      ? 'd10settle 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards'
+      : 'none'
 
   return (
-    <div className="flex flex-col items-center gap-1">
-      <span className={`text-7xl transition-all ${rolling ? 'animate-bounce' : ''} ${hitColor}`}>
-        {diceEmoji(displayRoll)}
-      </span>
-      <span className={`text-2xl font-bold tabular-nums ${hitColor}`}>
-        {finalRoll !== null ? finalRoll : '?'}
-      </span>
-      {result && (
-        <span className={`text-sm font-bold tracking-widest ${hitColor}`}>
+    <div className="flex flex-col items-center gap-2">
+      <style>{DICE_KEYFRAMES}</style>
+      <div style={{ animation, transformOrigin: 'center center', willChange: 'transform' }}>
+        <DiceD10SVG value={displayRoll} result={rolling ? null : result} />
+      </div>
+      {result && !rolling && (
+        <span className={`text-sm font-bold tracking-widest ${labelColor}`}>
           {result === 'hit' ? '✓ COLPITO' : '✗ MANCATO'}
         </span>
       )}
@@ -95,11 +182,10 @@ export function CombatOverlay({
   onPlayCard,
   onUseAddon,
 }: CombatOverlayProps) {
-  const [rolling, setRolling] = useState(false)
-  const [shownRoll, setShownRoll] = useState<LastDiceRoll | null>(null)
+  const [rolling, setRolling]       = useState(false)
+  const [shownRoll, setShownRoll]   = useState<LastDiceRoll | null>(null)
   const [expandedCard, setExpandedCard] = useState<CardInfo | null>(null)
 
-  // Animate when a new dice_rolled event arrives
   useEffect(() => {
     if (!lastDiceRoll) return
     if (shownRoll?.roll === lastDiceRoll.roll && shownRoll?.result === lastDiceRoll.result) return
@@ -142,7 +228,6 @@ export function CombatOverlay({
             </div>
           </div>
 
-          {/* Boss HP bar */}
           <div>
             <div className="flex justify-between text-xs text-slate-400 mb-1">
               <span>HP Boss</span>
@@ -151,7 +236,6 @@ export function CombatOverlay({
             <HpBar current={bossHp} max={boss.hp} color="bg-red-600" />
           </div>
 
-          {/* Player HP */}
           <div>
             <div className="flex justify-between text-xs text-slate-400 mb-1">
               <span>I tuoi HP</span>
@@ -160,15 +244,11 @@ export function CombatOverlay({
             <HpBar current={playerHp} max={playerMaxHp} color="bg-emerald-600" />
           </div>
 
-          {/* Boss ability */}
           {boss.ability && (
             <p className="text-xs text-slate-400 italic border-t border-slate-700 pt-2">{boss.ability}</p>
           )}
-
           {boss.reward_licenze > 0 && (
-            <div className="text-xs text-amber-400">
-              🏆 Ricompensa: {boss.reward_licenze} licenze
-            </div>
+            <div className="text-xs text-amber-400">🏆 Ricompensa: {boss.reward_licenze} licenze</div>
           )}
         </div>
 
@@ -250,7 +330,6 @@ export function CombatOverlay({
         )}
       </div>
 
-      {/* Card detail overlay */}
       {expandedCard && (
         <CardOverlay card={expandedCard} onClose={() => setExpandedCard(null)} />
       )}
