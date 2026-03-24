@@ -5,6 +5,7 @@ import { HomePage } from './pages/HomePage'
 import { LobbyPage } from './pages/LobbyPage'
 import { GamePagePreview } from './pages/GamePagePreview'
 import { GamePage } from './pages/GamePage'
+import { UserBar } from './components/ui/UserBar'
 
 type Screen = { name: 'login' } | { name: 'home' } | { name: 'lobby'; code: string } | { name: 'game'; code: string }
 
@@ -27,18 +28,19 @@ export default function App() {
 
   if (screen.name === 'login') return <LoginPage />
 
-  if (screen.name === 'home') return (
-    <HomePage onJoinGame={(code) => setScreen({ name: 'lobby', code })} />
+  return (
+    <>
+      <UserBar />
+      {screen.name === 'home' && (
+        <HomePage onJoinGame={(code) => setScreen({ name: 'lobby', code })} />
+      )}
+      {screen.name === 'lobby' && (
+        <LobbyPage
+          gameCode={screen.code}
+          onGameStart={() => setScreen({ name: 'game', code: screen.code })}
+        />
+      )}
+      {screen.name === 'game' && <GamePage gameCode={screen.code} />}
+    </>
   )
-
-  if (screen.name === 'lobby') return (
-    <LobbyPage
-      gameCode={screen.code}
-      onGameStart={() => setScreen({ name: 'game', code: screen.code })}
-    />
-  )
-
-  if (screen.name === 'game') return <GamePage gameCode={screen.code} />
-
-  return null
 }

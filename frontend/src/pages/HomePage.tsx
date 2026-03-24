@@ -9,7 +9,7 @@ interface Props {
 }
 
 export function HomePage({ onJoinGame }: Props) {
-  const { user, logout } = useAuthStore()
+  const { user } = useAuthStore()
   const [games, setGames] = useState<GameInfoDTO[]>([])
   const [codeInput, setCodeInput] = useState('')
   const [maxPlayers, setMaxPlayers] = useState(4)
@@ -111,12 +111,6 @@ export function HomePage({ onJoinGame }: Props) {
           </div>
         )}
 
-        {/* Logout */}
-        <div className="text-center">
-          <button onClick={logout} className="text-slate-600 hover:text-slate-400 text-sm transition-colors">
-            Esci
-          </button>
-        </div>
       </div>
     </div>
   )
