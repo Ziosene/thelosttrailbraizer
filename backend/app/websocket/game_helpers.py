@@ -17,6 +17,15 @@ def _build_game_state(game: GameSession, db: Session) -> dict:
     if game.turn_order and game.current_turn_index < len(game.turn_order):
         current_player_id = game.turn_order[game.current_turn_index]
 
+    def _boss_info(boss_id: int | None) -> dict | None:
+        if boss_id is None:
+            return None
+        b = db.get(BossCard, boss_id)
+        return {
+            "id": b.id, "name": b.name, "hp": b.hp, "threshold": b.dice_threshold,
+            "ability": b.ability, "reward_licenze": b.reward_licenze, "difficulty": b.difficulty,
+        } if b else None
+
     players = []
     for gp in game.players:
         user = db.get(User, gp.user_id)
@@ -51,15 +60,6 @@ def _build_game_state(game: GameSession, db: Session) -> dict:
         })
 
     # Resolve visible market cards to full objects for the client
-    def _boss_info(boss_id: int | None) -> dict | None:
-        if boss_id is None:
-            return None
-        b = db.get(BossCard, boss_id)
-        return {
-            "id": b.id, "name": b.name, "hp": b.hp, "threshold": b.dice_threshold,
-            "ability": b.ability, "reward_licenze": b.reward_licenze, "difficulty": b.difficulty,
-        } if b else None
-
     def _addon_info(addon_id: int | None) -> dict | None:
         if addon_id is None:
             return None
