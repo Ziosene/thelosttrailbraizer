@@ -24,6 +24,8 @@ from app.game.engine_cards.choices_logic import (
     resolve_choose_cards_to_keep,
     resolve_choose_addon_to_return,
     resolve_delete_target_addon,
+    resolve_choose_boss_to_front,
+    resolve_sell_addon_for_licenze,
 )
 from tests.engine_cards.conftest import make_game, make_player, make_action_card
 
@@ -335,5 +337,93 @@ class TestResolveDeleteTargetAddon:
         game, p1, p2 = game2
 
         result = resolve_delete_target_addon(game, p1, db, 99999, p2.id)
+
+        assert "error" in result
+
+
+# ── resolve_choose_boss_to_front ──────────────────────────────────────────────
+
+class TestResolveChooseBossToFront:
+    def test_happy_path_moves_chosen_to_front(self, db, game2):
+        game, p1, _ = game2
+        game.boss_deck_1 = [10, 20, 30, 40, 50]
+        db.flush()
+        choices = [10, 20, 30]  # top 3 shown to player
+
+        result = resolve_choose_boss_to_front(game, p1, db, chosen_boss_id=20, choices=choices)
+
+        assert result["ok"] is True
+        assert result["chosen_boss_id"] == 20
+        assert game.boss_deck_1[0] == 20
+        # Others from choices are next, then rest of deck
+        assert 10 in game.boss_deck_1[1:3]
+        assert 30 in game.boss_deck_1[1:3]
+        assert game.boss_deck_1[3:] == [40, 50]
+
+    def test_uses_deck_2_when_deck_1_empty(self, db, game2):
+        game, p1, _ = game2
+        game.boss_deck_1 = []
+        game.boss_deck_2 = [10, 20, 30]
+        db.flush()
+
+        result = resolve_choose_boss_to_front(game, p1, db, chosen_boss_id=10, choices=[10, 20, 30])
+
+        assert result["ok"] is True
+        assert game.boss_deck_2[0] == 10
+
+    def test_invalid_boss_id(self, db, game2):
+        game, p1, _ = game2
+        game.boss_deck_1 = [10, 20, 30]
+
+        result = resolve_choose_boss_to_front(game, p1, db, chosen_boss_id=99, choices=[10, 20, 30])
+
+        assert "error" in result
+
+    def test_empty_deck(self, db, game2):
+        game, p1, _ = game2
+        game.boss_deck_1 = []
+        game.boss_deck_2 = []
+
+        result = resolve_choose_boss_to_front(game, p1, db, chosen_boss_id=10, choices=[10])
+
+        assert "error" in result
+
+
+# ── resolve_sell_addon_for_licenze ────────────────────────────────────────────
+
+class TestResolveSellAddonForLicenze:
+    def test_happy_path(self, db, game2):
+        game, p1, _ = game2
+        pa = _add_addon(db, p1)
+        # Set addon cost manually via db
+        from app.models.card import AddonCard
+        addon = db.get(AddonCard, pa.addon_id)
+        addon.cost = 10
+        db.flush()
+        licenze_before = p1.licenze
+        hand_before = len(list(p1.hand))
+
+        result = resolve_sell_addon_for_licenze(game, p1, db, pa.id)
+
+        assert result["ok"] is True
+        assert result["licenze_gained"] == 5  # floor(10/2)
+        assert p1.licenze == licenze_before + 5
+        assert pa.addon_id in game.addon_deck_1
+        assert db.get(type(pa), pa.id) is None
+        db.refresh(p1)
+        assert len(list(p1.hand)) == hand_before + 1  # drew 1 card
+
+    def test_addon_not_owned(self, db, game2):
+        game, p1, p2 = game2
+        pa = _add_addon(db, p2)
+
+        result = resolve_sell_addon_for_licenze(game, p1, db, pa.id)
+
+        assert "error" in result
+
+    def test_invalid_id(self, db, game2):
+        game, p1, _ = game2
+
+        result = resolve_sell_addon_for_licenze(game, p1, db, 99999)
 
         assert "error" in result

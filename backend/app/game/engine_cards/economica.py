@@ -167,12 +167,7 @@ def _card_43(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_44(player, game, db, *, target_player_id=None) -> dict:
-    """Cache Hit — Pesca 3 carte, tienine 1, rimetti le altre 2 in cima al mazzo.
-
-    Draws up to 3 cards and returns their details for client-side selection.
-    The client must follow up with a 'cache_hit_keep' action specifying which
-    hand_card_id to keep; the handler puts the other 2 back on top of the deck.
-    """
+    """Cache Hit — Pesca 3 carte, tienine 1, rimetti le altre 2 in cima al mazzo."""
     from app.models.game import PlayerHandCard
     drawn_ids = []
     for _ in range(3):
@@ -182,11 +177,15 @@ def _card_44(player, game, db, *, target_player_id=None) -> dict:
             hc = PlayerHandCard(player_id=player.id, action_card_id=cid)
             db.add(hc)
             db.flush()
-            drawn_ids.append({"hand_card_id": hc.id, "action_card_id": cid})
-    cs = dict(player.combat_state or {})
-    cs["cache_hit_pending"] = [x["hand_card_id"] for x in drawn_ids]
-    player.combat_state = cs
-    return {"applied": True, "drew": len(drawn_ids), "choose_one": drawn_ids, "note": "cache_hit_keep_required"}
+            drawn_ids.append(cid)
+    if not drawn_ids:
+        return {"applied": False, "reason": "no_cards_in_deck"}
+    return {
+        "status": "pending_choice",
+        "choice_type": "keep_one_from_drawn",
+        "card_number": 44,
+        "drawn_card_ids": drawn_ids,
+    }
 
 
 def _card_45(player, game, db, *, target_player_id=None) -> dict:

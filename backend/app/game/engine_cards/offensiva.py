@@ -314,21 +314,17 @@ def _card_93(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_94(player, game, db, *, target_player_id=None) -> dict:
-    """Territory Assignment Rule — Guarda i primi 3 boss di uno dei due mazzi e scegline 1 da pescare.
-
-    Reveals up to 3 boss IDs from deck_1 (or deck_2 if deck_1 is empty) and stores them
-    in combat_state["territory_pending_choices"] for the client to pick one via
-    ClientAction 'territory_assignment_pick' with boss_id. The handler removes the chosen
-    boss from the deck and adds it to the player's combat queue.
-    """
+    """Territory Assignment Rule — Guarda i primi 3 boss di uno dei due mazzi e scegline 1 da mettere in cima."""
     src = game.boss_deck_1 if game.boss_deck_1 else game.boss_deck_2
     if not src:
         return {"applied": False, "reason": "no_boss_deck"}
     choices = src[:3]
-    cs = dict(player.combat_state or {})
-    cs["territory_pending_choices"] = choices
-    player.combat_state = cs
-    return {"applied": True, "choices": choices, "note": "territory_assignment_pick_required"}
+    return {
+        "status": "pending_choice",
+        "choice_type": "choose_boss_to_front",
+        "card_number": 94,
+        "choices": choices,
+    }
 
 
 def _card_95(player, game, db, *, target_player_id=None) -> dict:

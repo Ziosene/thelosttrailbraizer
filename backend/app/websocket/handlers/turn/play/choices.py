@@ -18,6 +18,8 @@ from app.game.engine_cards.choices_logic import (
     resolve_choose_cards_to_keep,
     resolve_choose_addon_to_return,
     resolve_delete_target_addon,
+    resolve_choose_boss_to_front,
+    resolve_sell_addon_for_licenze,
 )
 
 
@@ -113,6 +115,21 @@ async def _handle_card_choice(game: GameSession, user_id: int, data: dict, db):
             game, player, db,
             chosen_pa_id=data.get("player_addon_id"),
             target_player_id=pending.get("target_player_id"),
+        )
+        error = result.get("error")
+
+    elif choice_type == "choose_boss_to_front":
+        result = resolve_choose_boss_to_front(
+            game, player, db,
+            chosen_boss_id=data.get("boss_id"),
+            choices=pending.get("choices", []),
+        )
+        error = result.get("error")
+
+    elif choice_type == "sell_addon_for_licenze":
+        result = resolve_sell_addon_for_licenze(
+            game, player, db,
+            chosen_pa_id=data.get("player_addon_id"),
         )
         error = result.get("error")
 

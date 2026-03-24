@@ -651,39 +651,31 @@ def _card_178(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_179(player, game, db, *, target_player_id=None) -> dict:
-    """API Autodiscovery — Guarda i prossimi 3 boss e rimettili nell'ordine che preferisci.
-
-    Returns the top 3 boss IDs from deck_1 (or deck_2) for client inspection.
-    Client must respond with 'api_autodiscovery_reorder' action providing the
-    ordered list of those boss IDs; server updates the deck accordingly.
-    """
+    """API Autodiscovery — Guarda i prossimi 3 boss e rimettili nell'ordine che preferisci."""
     src = game.boss_deck_1 if game.boss_deck_1 else game.boss_deck_2
     if not src:
         return {"applied": False, "reason": "no_boss_deck"}
     preview = src[:3]
-    cs = dict(player.combat_state or {})
-    cs["api_autodiscovery_pending"] = preview
-    player.combat_state = cs
-    return {"applied": True, "boss_preview": preview, "note": "api_autodiscovery_reorder_required"}
+    return {
+        "status": "pending_choice",
+        "choice_type": "reorder_boss_deck",
+        "card_number": 179,
+        "boss_card_ids": preview,
+    }
 
 
 def _card_180(player, game, db, *, target_player_id=None) -> dict:
-    """Related Attribute — Vendi 1 tuo addon: recupera metà del costo in Licenze e pesca 1 carta.
-
-    Sends the player's addon list for selection via 'related_attribute_sell' ClientAction
-    with player_addon_id. Handler removes the PlayerAddon, awards floor(cost/2) Licenze,
-    draws 1 card, and returns the addon to addon_deck_1.
-    Stores related_attribute_sell_pending=True in combat_state to open the selection window.
-    """
-    from app.models.game import PlayerHandCard as _PHC180
+    """Related Attribute — Vendi 1 tuo addon: recupera metà del costo in Licenze e pesca 1 carta."""
     addons = list(player.addons)
     if not addons:
         return {"applied": False, "reason": "no_addons_to_sell"}
     addon_options = [{"player_addon_id": pa.id, "addon_id": pa.addon_id} for pa in addons]
-    cs = dict(player.combat_state or {})
-    cs["related_attribute_sell_pending"] = True
-    player.combat_state = cs
-    return {"applied": True, "addon_options": addon_options, "note": "related_attribute_sell_required"}
+    return {
+        "status": "pending_choice",
+        "choice_type": "sell_addon_for_licenze",
+        "card_number": 180,
+        "addon_options": addon_options,
+    }
 
 
 def _card_196(player, game, db, *, target_player_id=None) -> dict:

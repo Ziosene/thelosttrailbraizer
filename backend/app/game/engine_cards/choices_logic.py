@@ -170,3 +170,46 @@ def resolve_delete_target_addon(game, player, db, chosen_pa_id: int, target_play
     db.delete(pa)
     db.flush()
     return {"ok": True, "deleted_addon_id": addon_id}
+
+
+def resolve_choose_boss_to_front(game, player, db, chosen_boss_id: int, choices: list) -> dict:
+    """Card 94 — move a chosen boss to the top of the boss deck.
+    chosen_boss_id: boss card ID to place first.
+    choices: the IDs that were shown to the player (top N of deck).
+    """
+    if chosen_boss_id not in choices:
+        return {"error": "Boss non valido — scegli tra quelli mostrati"}
+    deck = game.boss_deck_1 if game.boss_deck_1 else game.boss_deck_2
+    if not deck:
+        return {"error": "Mazzo boss vuoto"}
+    rest = deck[len(choices):]
+    not_chosen = [bid for bid in choices if bid != chosen_boss_id]
+    reordered = [chosen_boss_id] + not_chosen + rest
+    if game.boss_deck_1:
+        game.boss_deck_1 = reordered
+    else:
+        game.boss_deck_2 = reordered
+    return {"ok": True, "chosen_boss_id": chosen_boss_id}
+
+
+def resolve_sell_addon_for_licenze(game, player, db, chosen_pa_id: int) -> dict:
+    """Card 180 — sell one of the player's addons: gain floor(cost/2) licenze + draw 1 card.
+    chosen_pa_id: PlayerAddon.id of the addon to sell.
+    """
+    from app.models.game import PlayerAddon as _PA, PlayerHandCard as _PHC
+    from app.models.card import AddonCard as _ADC
+    pa = db.get(_PA, chosen_pa_id)
+    if not pa or pa.player_id != player.id:
+        return {"error": "Addon non valido"}
+    addon = db.get(_ADC, pa.addon_id)
+    licenze_gained = (addon.cost or 0) // 2
+    game.addon_deck_1 = [pa.addon_id] + (game.addon_deck_1 or [])
+    db.delete(pa)
+    db.flush()
+    player.licenze += licenze_gained
+    drew = False
+    src = game.action_deck_1 if game.action_deck_1 else game.action_deck_2
+    if src:
+        db.add(_PHC(player_id=player.id, action_card_id=src.pop(0)))
+        drew = True
+    return {"ok": True, "sold_addon_id": pa.addon_id, "licenze_gained": licenze_gained, "drew_card": drew}
