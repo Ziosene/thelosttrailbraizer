@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuthStore } from '../store/authStore'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
+import logo from '../assets/logo.png'
 
 export function LoginPage() {
   const [mode, setMode] = useState<'login' | 'register'>('login')
@@ -19,7 +20,7 @@ export function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-slate-950">
       <div className="w-full max-w-sm bg-slate-900 rounded-2xl p-8 shadow-2xl border border-slate-800">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-violet-400">The Lost Trailbraizer</h1>
+          <img src={logo} alt="The Lost Trailbraizer" className="mx-auto mb-4 w-48 h-auto" />
           <p className="text-slate-500 mt-2 text-sm">Il gioco di carte Salesforce</p>
         </div>
 

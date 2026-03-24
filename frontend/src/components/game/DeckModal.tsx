@@ -146,8 +146,9 @@ export function DeckModal({ type, gameState: gs, mustDraw, onDrawDeck1, onDrawDe
     : gs.boss_graveyard_top
 
   const discardTopName = discardTop?.name
-  const discardTopSub = discardTop
-    ? ('card_type' in discardTop ? discardTop.card_type : 'difficulty' in discardTop ? discardTop.difficulty : discardTop.rarity)
+  const _dt = discardTop as unknown as Record<string, string> | undefined
+  const discardTopSub: string | undefined = _dt
+    ? (_dt['card_type'] ?? _dt['difficulty'] ?? _dt['rarity'])
     : undefined
 
   const canDraw = mustDraw && type === 'action'
