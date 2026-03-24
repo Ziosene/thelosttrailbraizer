@@ -186,7 +186,6 @@ export function GamePage({ gameCode }: GamePageProps) {
           onRollDice={() => send('roll_dice')}
           onPlayCard={(id) => send('play_card', { hand_card_id: id })}
           onUseAddon={(id) => send('use_addon', { player_addon_id: id })}
-          onRetreat={() => send('retreat_combat')}
         />
       )}
 

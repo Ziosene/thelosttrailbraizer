@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import type { BossMarketInfo, HandCard, HandAddon } from '../../types/game'
 import type { LastDiceRoll } from '../../store/gameStore'
+import { CardVisual, CardOverlay } from './CardVisual'
+import type { CardInfo } from './CardVisual'
 
 // ─── Dice faces (Unicode) ──────────────────────────────────────────────────
 const DICE_FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅', '⚅', '⚅', '⚅', '⚅'] // d10: show d6 faces + extra ⚅ for 7-10
@@ -77,7 +79,6 @@ interface CombatOverlayProps {
   onRollDice: () => void
   onPlayCard: (handCardId: number) => void
   onUseAddon: (playerAddonId: number) => void
-  onRetreat: () => void
 }
 
 export function CombatOverlay({
@@ -93,12 +94,10 @@ export function CombatOverlay({
   onRollDice,
   onPlayCard,
   onUseAddon,
-  onRetreat,
 }: CombatOverlayProps) {
   const [rolling, setRolling] = useState(false)
   const [shownRoll, setShownRoll] = useState<LastDiceRoll | null>(null)
-  const [expandedCard, setExpandedCard] = useState<number | null>(null)
-  const [expandedAddon, setExpandedAddon] = useState<number | null>(null)
+  const [expandedCard, setExpandedCard] = useState<CardInfo | null>(null)
 
   // Animate when a new dice_rolled event arrives
   useEffect(() => {
@@ -128,14 +127,6 @@ export function CombatOverlay({
           <span className="text-orange-400 font-bold text-xs tracking-widest uppercase">
             ⚔ Combattimento — Round {combatRound}
           </span>
-          {isMyTurn && (
-            <button
-              onClick={onRetreat}
-              className="text-xs text-slate-500 hover:text-red-400 border border-slate-700 hover:border-red-700 rounded px-2 py-1 transition-colors"
-            >
-              🏃 Ritirati
-            </button>
-          )}
         </div>
 
         {/* Boss card */}
@@ -201,42 +192,30 @@ export function CombatOverlay({
           )}
         </div>
 
-        {/* Addons usabili */}
+        {/* Addons */}
         {addons.length > 0 && (
           <div>
-            <h3 className="text-xs text-slate-500 uppercase font-semibold mb-2">AddOn</h3>
-            <div className="flex flex-wrap gap-2">
-              {addons.map(a => {
-                const isExpanded = expandedAddon === a.player_addon_id
-                return (
-                  <div key={a.player_addon_id} className="relative">
-                    <button
-                      onClick={() => setExpandedAddon(isExpanded ? null : a.player_addon_id)}
-                      className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-all ${
-                        a.is_tapped
-                          ? 'border-slate-700 text-slate-600 bg-slate-800/30 cursor-not-allowed'
-                          : 'border-teal-700 text-teal-300 bg-teal-900/20 hover:bg-teal-900/40'
-                      }`}
-                    >
-                      {a.name} {a.is_tapped ? '(tap)' : ''}
-                    </button>
-                    {isExpanded && (
-                      <div className="absolute bottom-full mb-1 left-0 z-50 w-52 bg-slate-800 border border-slate-600 rounded-lg p-2 text-xs text-slate-300 shadow-xl">
-                        <p className="font-semibold text-teal-300 mb-1">{a.name}</p>
-                        <p className="text-slate-400 mb-2">{a.effect}</p>
-                        {!a.is_tapped && isMyTurn && (
-                          <button
-                            onClick={() => { onUseAddon(a.player_addon_id); setExpandedAddon(null) }}
-                            className="w-full py-1 bg-teal-700 hover:bg-teal-600 rounded text-white font-semibold"
-                          >
-                            Usa
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
+            <h3 className="text-xs text-slate-500 uppercase font-semibold mb-2">I tuoi AddOn</h3>
+            <div className="flex gap-3 overflow-x-auto pb-1">
+              {addons.map(a => (
+                <div key={a.player_addon_id} className={`shrink-0 ${a.is_tapped ? 'opacity-40' : ''}`}>
+                  <CardVisual
+                    type="addon"
+                    name={a.name}
+                    subtitle={a.is_tapped ? 'tap' : 'untapped'}
+                    width={90}
+                    actionLabel={!a.is_tapped && isMyTurn ? 'Usa' : undefined}
+                    onClick={() => setExpandedCard({
+                      type: 'addon',
+                      name: a.name,
+                      effect: a.effect,
+                      actionLabel: !a.is_tapped && isMyTurn ? 'Usa' : undefined,
+                      onAction: !a.is_tapped && isMyTurn ? () => onUseAddon(a.player_addon_id) : undefined,
+                    })}
+                    onAction={!a.is_tapped && isMyTurn ? () => onUseAddon(a.player_addon_id) : undefined}
+                  />
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -245,46 +224,36 @@ export function CombatOverlay({
         {hand.length > 0 && (
           <div>
             <h3 className="text-xs text-slate-500 uppercase font-semibold mb-2">Carte in mano ({hand.length})</h3>
-            <div className="flex flex-wrap gap-2">
-              {hand.map(c => {
-                const isExpanded = expandedCard === c.hand_card_id
-                const typeColor: Record<string, string> = {
-                  Offensiva: 'border-red-700 text-red-300 bg-red-900/20',
-                  Difensiva: 'border-blue-700 text-blue-300 bg-blue-900/20',
-                  Utilità: 'border-purple-700 text-purple-300 bg-purple-900/20',
-                  Economica: 'border-amber-700 text-amber-300 bg-amber-900/20',
-                }
-                const cls = typeColor[c.card_type] ?? 'border-slate-600 text-slate-300 bg-slate-800/30'
-                return (
-                  <div key={c.hand_card_id} className="relative">
-                    <button
-                      onClick={() => setExpandedCard(isExpanded ? null : c.hand_card_id)}
-                      className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-all hover:opacity-90 ${cls}`}
-                    >
-                      {c.name}
-                    </button>
-                    {isExpanded && (
-                      <div className="absolute bottom-full mb-1 left-0 z-50 w-56 bg-slate-800 border border-slate-600 rounded-lg p-2 text-xs text-slate-300 shadow-xl">
-                        <p className="font-semibold mb-0.5">{c.name}</p>
-                        <p className="text-slate-500 mb-1">{c.card_type} · {c.rarity}</p>
-                        <p className="text-slate-400 mb-2">{c.effect}</p>
-                        {isMyTurn && (
-                          <button
-                            onClick={() => { onPlayCard(c.hand_card_id); setExpandedCard(null) }}
-                            className="w-full py-1 bg-violet-700 hover:bg-violet-600 rounded text-white font-semibold"
-                          >
-                            Gioca
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
+            <div className="flex gap-3 overflow-x-auto pb-1">
+              {hand.map(c => (
+                <div key={c.hand_card_id} className="shrink-0">
+                  <CardVisual
+                    type="action"
+                    name={c.name}
+                    subtitle={`#${c.card_id} · ${c.card_type}`}
+                    width={90}
+                    actionLabel={isMyTurn ? 'Gioca' : undefined}
+                    onClick={() => setExpandedCard({
+                      type: 'action',
+                      name: c.name,
+                      subtitle: `#${c.card_id} · ${c.card_type}`,
+                      effect: c.effect,
+                      actionLabel: isMyTurn ? 'Gioca' : undefined,
+                      onAction: isMyTurn ? () => onPlayCard(c.hand_card_id) : undefined,
+                    })}
+                    onAction={isMyTurn ? () => onPlayCard(c.hand_card_id) : undefined}
+                  />
+                </div>
+              ))}
             </div>
           </div>
         )}
       </div>
+
+      {/* Card detail overlay */}
+      {expandedCard && (
+        <CardOverlay card={expandedCard} onClose={() => setExpandedCard(null)} />
+      )}
     </div>
   )
 }
