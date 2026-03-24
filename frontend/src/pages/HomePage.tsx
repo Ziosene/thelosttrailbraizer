@@ -6,9 +6,10 @@ import { Input } from '../components/ui/Input'
 
 interface Props {
   onJoinGame: (code: string) => void
+  onResumeGame: (code: string) => void
 }
 
-export function HomePage({ onJoinGame }: Props) {
+export function HomePage({ onJoinGame, onResumeGame }: Props) {
   const { user } = useAuthStore()
   const [games, setGames] = useState<GameInfoDTO[]>([])
   const [myGames, setMyGames] = useState<GameInfoDTO[]>([])
@@ -119,7 +120,11 @@ export function HomePage({ onJoinGame }: Props) {
                         Annulla
                       </button>
                     )}
-                    <Button variant="secondary" onClick={() => onJoinGame(g.code)} className="text-sm py-1 px-3">
+                    <Button
+                      variant="secondary"
+                      onClick={() => g.status === 'in_progress' ? onResumeGame(g.code) : onJoinGame(g.code)}
+                      className="text-sm py-1 px-3"
+                    >
                       {g.status === 'waiting' ? 'Entra' : 'Riprendi'}
                     </Button>
                   </div>
