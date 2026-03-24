@@ -1,6 +1,18 @@
 import { useEffect, useState } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { useAuthStore } from '../store/authStore'
+
+function LogoutButton() {
+  const { logout } = useAuthStore()
+  return (
+    <button
+      onClick={logout}
+      className="text-[10px] text-slate-500 hover:text-red-400 border border-slate-700 hover:border-red-700 rounded px-2 py-1 transition-colors"
+    >
+      Esci
+    </button>
+  )
+}
 import { CardOverlay } from '../components/game/CardVisual'
 import type { CardInfo } from '../components/game/CardVisual'
 import { PlayArea } from '../components/game/PlayArea'
@@ -120,13 +132,14 @@ export function GamePage({ gameCode }: GamePageProps) {
           </span>
         )}
         <span className="text-slate-600 text-[10px]">#{gameCode}</span>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
           <button
             onClick={() => setLogOpen(v => !v)}
             className="bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg px-3 py-1 text-slate-300 transition-colors"
           >
             📋 Log
           </button>
+          <LogoutButton />
         </div>
       </div>
 

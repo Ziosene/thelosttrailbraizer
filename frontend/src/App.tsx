@@ -30,7 +30,7 @@ export default function App() {
 
   return (
     <>
-      <UserBar />
+      {screen.name !== 'game' && <UserBar />}
       {screen.name === 'home' && (
         <HomePage onJoinGame={(code) => setScreen({ name: 'lobby', code })} />
       )}
