@@ -104,13 +104,17 @@ Davanti al Mazzo Boss e al Mazzo AddOn sono sempre presenti **2 carte scoperte**
 
 Quando una carta del mercato viene acquisita (sconfitta o acquistata), viene immediatamente sostituita dalla prima carta del mazzo corrispondente.
 
-### Mazzo Scarto Azione
+### Mazzi degli Scarti
 
-Il Mazzo Scarto Azione è **condiviso da tutti i giocatori** — uno solo per tutta la partita. Tutte le carte azione giocate da qualsiasi giocatore finiscono qui. La carta in cima al mazzo scarto è sempre visibile e accessibile ad alcuni effetti di carte o AddOn.
+Esistono tre mazzi degli scarti, uno per tipologia di carta — **Scarto Azione**, **Cimitero Boss**, **Cimitero AddOn**. Funzionano tutti allo stesso modo: sono zone pubbliche, condivise da tutti i giocatori, e raccolgono le carte usate o rimosse dal gioco. I nomi sono diversi solo per chiarezza tematica.
 
-### Cimitero Boss e Cimitero AddOn
+- **Scarto Azione:** dove finiscono tutte le carte azione giocate da qualsiasi giocatore.
+- **Cimitero Boss:** dove finiscono i boss sconfitti (senza certificazione).
+- **Cimitero AddOn:** dove finiscono gli AddOn persi alla morte o distrutti da carte avversarie.
 
-I Cimiteri raccolgono le carte rimosse definitivamente dal gioco. Boss sconfitti senza certificazione e AddOn distrutti o persi alla morte finiscono qui. I cimiteri sono zone pubbliche.
+La carta in cima a ciascun mazzo degli scarti è sempre visibile. Alcuni effetti di carte o AddOn permettono di recuperare carte dagli scarti.
+
+Quando il mazzo di pesca corrispondente si esaurisce, il relativo mazzo degli scarti viene rimescolato per formare un nuovo mazzo.
 
 ---
 
@@ -401,8 +405,9 @@ Vengono poi calcolati i punteggi finali per tutti i giocatori e aggiornata la cl
 | **Budget carte** | Max 2 carte per ciclo di turno (in-turno + reazioni). |
 | **Trofeo** | Un boss con Certificazione sconfitto, fisicamente nel possesso del vincitore. 5 trofei = vittoria. |
 | **Mercato** | Le 2 carte scoperte davanti al Mazzo Boss o al Mazzo AddOn. |
-| **Cimitero** | Zona dove finiscono i boss normali sconfitti (Cimitero Boss) e gli AddOn distrutti/persi (Cimitero AddOn). |
-| **Mazzo Scarto Azione** | Mazzo condiviso dove finiscono tutte le carte azione giocate. |
+| **Scarto Azione** | Mazzo degli scarti condiviso dove finiscono le carte azione giocate. |
+| **Cimitero Boss** | Mazzo degli scarti condiviso dove finiscono i boss sconfitti senza certificazione. |
+| **Cimitero AddOn** | Mazzo degli scarti condiviso dove finiscono gli AddOn persi o distrutti. |
 
 ---
 
