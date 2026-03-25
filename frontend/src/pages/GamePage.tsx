@@ -168,7 +168,13 @@ export function GamePage({ gameCode }: GamePageProps) {
         onDrawCard={(deck) => send('draw_card', { deck })}
       />
 
-      {logOpen && <LogPanel entries={log} onClose={() => setLogOpen(false)} />}
+      {logOpen && (
+        <LogPanel
+          entries={log}
+          onClose={() => setLogOpen(false)}
+          onCardClick={(c) => setSelectedCard({ type: 'action', name: c.name, effect: c.effect, subtitle: c.cardId ? `#${c.cardId}` : undefined })}
+        />
+      )}
       {selectedCard && <CardOverlay card={selectedCard} onClose={() => setSelectedCard(null)} />}
       <ToastLayer />
 

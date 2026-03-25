@@ -37,11 +37,18 @@ export interface ComplyOrRefuse {
   opened_at: number
 }
 
+export interface LogCardLink {
+  name: string
+  effect: string
+  cardId?: number
+}
+
 export interface LogEntry {
   id: number
   time: string
   text: string
   color: string
+  cardLink?: LogCardLink
 }
 
 export interface Toast {
@@ -74,10 +81,10 @@ export interface LastDiceRoll {
 let _toastSeq = 0
 
 let _logSeq = 0
-function mkEntry(text: string, color = 'text-slate-400'): LogEntry {
+function mkEntry(text: string, color = 'text-slate-400', cardLink?: LogCardLink): LogEntry {
   const now = new Date()
   const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
-  return { id: _logSeq++, time, text, color }
+  return { id: _logSeq++, time, text, color, cardLink }
 }
 
 interface GameStore {
@@ -110,8 +117,8 @@ export const useGameStore = create<GameStore>((set, get) => {
     return p ? p.nickname : `#${id}`
   }
 
-  const addLog = (text: string, color = 'text-slate-400') => {
-    set(s => ({ log: [mkEntry(text, color), ...s.log].slice(0, 200) }))
+  const addLog = (text: string, color = 'text-slate-400', cardLink?: LogCardLink) => {
+    set(s => ({ log: [mkEntry(text, color, cardLink), ...s.log].slice(0, 200) }))
   }
 
   const addToast = (message: string) => {
@@ -158,7 +165,10 @@ export const useGameStore = create<GameStore>((set, get) => {
       bus.on('card_played', (msg: any) => {
         const who = pName(msg.player_id)
         const card = msg.card?.name ?? '?'
-        addLog(`${who} gioca "${card}"`, 'text-blue-400')
+        const cardLink = msg.card?.effect
+          ? { name: card, effect: msg.card.effect, cardId: msg.card.id }
+          : undefined
+        addLog(`${who} gioca "${card}"`, 'text-blue-400', cardLink)
       })
       bus.on('addon_bought', (msg: any) => {
         const who = pName(msg.player_id)

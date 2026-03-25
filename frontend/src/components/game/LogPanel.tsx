@@ -1,7 +1,39 @@
 import { useEffect, useRef } from 'react'
-import type { LogEntry } from '../../store/gameStore'
+import type { LogEntry, LogCardLink } from '../../store/gameStore'
 
-export function LogPanel({ entries, onClose }: { entries: LogEntry[]; onClose: () => void }) {
+interface LogPanelProps {
+  entries: LogEntry[]
+  onClose: () => void
+  onCardClick?: (card: LogCardLink) => void
+}
+
+function LogText({ text, cardLink, color, onCardClick }: {
+  text: string
+  cardLink?: LogCardLink
+  color: string
+  onCardClick?: (card: LogCardLink) => void
+}) {
+  if (!cardLink || !onCardClick) {
+    return <span className={color}>{text}</span>
+  }
+
+  // Split on the quoted card name, e.g. `Player gioca "Block Kit"`
+  const parts = text.split(`"${cardLink.name}"`)
+  return (
+    <span className={color}>
+      {parts[0]}
+      <button
+        onClick={() => onCardClick(cardLink)}
+        className="underline decoration-dotted cursor-pointer hover:text-white transition-colors"
+      >
+        &ldquo;{cardLink.name}&rdquo;
+      </button>
+      {parts[1] ?? ''}
+    </span>
+  )
+}
+
+export function LogPanel({ entries, onClose, onCardClick }: LogPanelProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -21,7 +53,12 @@ export function LogPanel({ entries, onClose }: { entries: LogEntry[]; onClose: (
         {entries.map(e => (
           <div key={e.id} className="flex gap-2 text-xs leading-snug">
             <span className="text-slate-600 font-mono shrink-0">{e.time}</span>
-            <span className={e.color}>{e.text}</span>
+            <LogText
+              text={e.text}
+              cardLink={e.cardLink}
+              color={e.color}
+              onCardClick={onCardClick}
+            />
           </div>
         ))}
         <div ref={bottomRef} />
