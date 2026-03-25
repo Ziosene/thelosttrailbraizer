@@ -124,9 +124,10 @@ Quando il mazzo di pesca corrispondente si esaurisce, il relativo mazzo degli sc
 
 All'inizio del proprio turno, nell'ordine:
 
-1. **Untap AddOn:** tutti gli AddOn tappati del giocatore si stappano e tornano disponibili.
-2. **Abilità "inizio turno":** si attivano tutte le abilità del personaggio o degli AddOn che recitano "all'inizio del tuo turno".
-3. **Pesca:** il giocatore pesca obbligatoriamente 1 carta dal Mazzo Azione.
+1. **Recupero HP:** il giocatore recupera tutti i punti vita al massimo del proprio personaggio. Se il giocatore era morto (HP = 0), questo è il momento in cui ritorna in vita.
+2. **Untap AddOn:** tutti gli AddOn tappati del giocatore si stappano e tornano disponibili.
+3. **Abilità "inizio turno":** si attivano tutte le abilità del personaggio o degli AddOn che recitano "all'inizio del tuo turno".
+4. **Pesca:** il giocatore pesca obbligatoriamente 1 carta dal Mazzo Azione.
 
 ### Fase Azioni
 
@@ -151,45 +152,77 @@ Al termine del turno, nell'ordine:
 
 ---
 
-## Priorità e Reazione
+## La Pila e la Priorità
+
+### Cos'è la Pila
+
+Le carte azione, le attivazioni di AddOn e i tiri di dado non hanno effetto immediato sul gioco. Vengono invece aggiunti a una zona d'attesa chiamata **la Pila**, dove aspettano di essere risolti.
+
+**Regola d'oro:** l'ultima cosa aggiunta alla Pila è la prima a essere risolta.
+
+### Cosa va nella Pila
+
+- Il lancio del dado (ogni round di combattimento)
+- Le carte azione giocate
+- Le attivazioni di AddOn attivi
+
+Non usano la Pila: le abilità passive, il recupero HP a inizio turno, il controllo vittoria.
+
+### Priorità
+
+La **Priorità** indica chi può agire in un dato momento aggiungendo qualcosa alla Pila. Chi ha la priorità può:
+
+- **Giocare una carta** dalla propria mano → la carta va in cima alla Pila
+- **Attivare un AddOn** → l'effetto va in cima alla Pila
+- **Passare** la priorità al giocatore successivo
+
+**Ordine di priorità:** parte sempre dal **giocatore attivo** (chi sta svolgendo il turno o chi ha appena tirato il dado), poi prosegue in senso orario.
+
+Dopo che qualcuno aggiunge qualcosa alla Pila, la priorità **riparte dall'inizio** — il giocatore attivo ha di nuovo la possibilità di rispondere prima degli altri.
+
+### Come si risolve la Pila
+
+La cosa in cima alla Pila si risolve quando **tutti i giocatori passano la priorità in sequenza senza aggiungere nulla**. In quel momento, la cosa in cima esce dalla Pila e il suo effetto viene applicato.
+
+Dopo ogni risoluzione, la priorità si apre di nuovo per ciò che rimane in Pila. Questo continua finché la Pila è vuota.
+
+```
+ESEMPIO:
+1. Il dado viene tirato (risultato: 5) → va in Pila
+2. Priorità al giocatore attivo → gioca "+2 al dado" → va in cima alla Pila
+3. Priorità riparte: tutti passano
+4. "+2 al dado" si risolve → il risultato effettivo diventa 7
+5. Priorità riparte: tutti passano
+6. Il dado (risultato 7) si risolve → viene confrontato con la soglia del boss
+```
+
+### Bersagli
+
+I bersagli di una carta o di un addon vengono scelti **quando la cosa viene aggiunta alla Pila**, non quando si risolve. Se il bersaglio non è più valido al momento della risoluzione, l'effetto fallisce senza conseguenze. La carta è comunque consumata.
+
+### Annullare
+
+**Annullare** significa rimuovere qualcosa dalla Pila prima che si risolva. La cosa rimossa non produce nessun effetto. Le carte annullate vanno comunque negli scarti.
 
 ### Budget carte
 
-Ogni giocatore può giocare al massimo **2 carte azione per ciclo di turno** — ovvero dall'inizio del proprio turno all'inizio del proprio turno successivo. Questo budget è **condiviso** tra le carte giocate nel proprio turno e quelle usate come reazione durante i turni altrui.
+Ogni giocatore può aggiungere alla Pila al massimo **2 carte azione per ciclo di turno** — dall'inizio del proprio turno all'inizio del proprio turno successivo. Le attivazioni di AddOn non consumano questo budget.
 
-| Carte giocate nel proprio turno | Reazioni disponibili |
+| Carte giocate nel proprio turno | Carte ancora disponibili per reagire |
 |---|---|
 | 0 | fino a 2 |
 | 1 | fino a 1 |
 | 2 | nessuna |
 
-### Finestra di reazione
-
-Quando un giocatore gioca una carta che colpisce **direttamente** un avversario (ruba Licenze, ruba Certificazioni, infligge danni, ecc.), il server apre una **finestra di reazione** privata per il giocatore bersaglio.
-
-Il bersaglio ha **8 secondi** per decidere:
-
-- **Reagire:** giocare una carta dalla propria mano. La carta di reazione si risolve **prima** dell'effetto originale.
-- **Passare:** non fare nulla. L'effetto originale si applica normalmente.
-- **Non rispondere:** equivale a passare.
-
-Tutti i giocatori ricevono poi un broadcast dell'esito della reazione.
-
-> La finestra di reazione si apre solo per carte che colpiscono un bersaglio specifico. Effetti generici (es. "tutti i giocatori guadagnano 1 Licenza") non aprono finestre di reazione.
-
 ### Effetti speciali di reazione
 
-| Carta di reazione | Effetto sulla carta originale |
+Alcune carte producono effetti particolari quando vengono aggiunte alla Pila in risposta a un'altra carta:
+
+| Carta | Effetto |
 |---|---|
-| **Shield Platform** | Annulla completamente la carta originale |
+| **Shield Platform** | Annulla la carta avversaria sulla Pila |
 | **Chargeback** (vs furto Licenze) | Annulla il furto + il difensore guadagna 1 Licenza extra |
-| Qualsiasi altra carta | L'effetto di reazione si applica, ma la carta originale si applica comunque |
-
-### Annullare vs Bloccare
-
-Una carta **annullata** non produce nessun effetto ma viene comunque consumata (va negli scarti).
-
-Una carta **bloccata** (es. dal boss che reagisce a certi effetti) viene rimossa dalla pila senza effetto, ma le regole specifiche dipendono dalla carta o dall'abilità del boss che blocca.
+| Qualsiasi altra carta | Si risolve normalmente per prima; la carta originale si risolve dopo |
 
 ---
 
@@ -208,9 +241,11 @@ Dopo aver scelto il boss, il combattimento ha inizio e non può essere abbandona
 
 Il combattimento si svolge round per round. Ogni round:
 
-1. Il giocatore tira il **dado d10**.
-2. Se il risultato è **≥ soglia del boss** → il boss perde 1 HP.
-3. Se il risultato è **< soglia del boss** → il giocatore perde 1 HP.
+1. Il giocatore tira il **dado d10** — il risultato viene mostrato a tutti e va in **Pila**.
+2. Si apre la Pila: partendo dal giocatore in combattimento e procedendo in senso orario, ogni giocatore può giocare carte, attivare AddOn o passare (vedi **La Pila e la Priorità**).
+3. Quando tutti i giocatori hanno passato in sequenza, il dado si risolve:
+   - Risultato **≥ soglia del boss** → il boss perde 1 HP
+   - Risultato **< soglia del boss** → il giocatore perde 1 HP
 
 Il combattimento termina quando:
 - **HP Boss = 0** → il giocatore vince lo scontro (vedi **Vittoria sul Boss**)
@@ -218,13 +253,9 @@ Il combattimento termina quando:
 
 Non esiste un limite di round: il combattimento continua finché non si verifica una delle due condizioni di termine.
 
-### Carte azione durante il combattimento
-
-Il giocatore può giocare carte azione **durante il proprio combattimento** (es. modificatori al dado, cure). Gli altri giocatori possono reagire con le proprie carte nel loro turno di reazione.
-
 ### Modificatori al dado
 
-Alcune carte o AddOn modificano il tiro del dado. Tutte le modifiche si sommano e si applicano prima di confrontare il risultato con la soglia.
+Carte e AddOn aggiunti alla Pila in risposta al tiro si risolvono **prima** del dado stesso. Le modifiche al risultato (es. +2, reroll, forza soglia) si applicano tutte prima che il dado venga confrontato con la soglia.
 
 Il dado non può produrre un risultato superiore a **10** né inferiore a **1** dopo le modifiche.
 
@@ -293,10 +324,7 @@ Un giocatore muore quando i suoi **HP scendono a 0 durante il combattimento**.
 
 ### Resurrezione automatica
 
-All'inizio del prossimo turno del giocatore morto:
-- Gli HP si **ripristinano al massimo** del personaggio.
-- Tutti gli AddOn si **stappano**.
-- Il giocatore ricomincia il turno normalmente.
+All'inizio del prossimo turno del giocatore morto, la Fase Iniziale si applica normalmente: HP ripristinati al massimo, AddOn stappati, pesca obbligatoria. Il giocatore ricomincia come se nulla fosse accaduto.
 
 **Un giocatore non viene mai eliminato dalla partita.** Continua a giocare anche dopo la morte.
 
@@ -400,9 +428,9 @@ Vengono poi calcolati i punteggi finali per tutti i giocatori e aggiornata la cl
 | **Distruggere** | Rimuovere permanentemente una carta (va nel Cimitero). |
 | **Annullare** | Bloccare l'effetto di una carta. La carta è comunque consumata (va negli scarti). |
 | **Guarire** | Recuperare HP. Non si può superare il massimo del personaggio. |
-| **Priorità** | Chi ha il diritto di agire in un dato momento. |
-| **Finestra di reazione** | Periodo di 8 secondi in cui un bersaglio può rispondere a una carta che lo colpisce. |
-| **Budget carte** | Max 2 carte per ciclo di turno (in-turno + reazioni). |
+| **La Pila** | Zona d'attesa dove vanno dadi, carte e addon prima di risolversi. Si risolve dall'ultimo aggiunto al primo (LIFO). |
+| **Priorità** | Il diritto di agire aggiungendo qualcosa alla Pila. Parte dal giocatore attivo, poi in senso orario. |
+| **Budget carte** | Max 2 carte azione per ciclo di turno (in-turno + reazioni). |
 | **Trofeo** | Un boss con Certificazione sconfitto, fisicamente nel possesso del vincitore. 5 trofei = vittoria. |
 | **Mercato** | Le 2 carte scoperte davanti al Mazzo Boss o al Mazzo AddOn. |
 | **Scarto Azione** | Mazzo degli scarti condiviso dove finiscono le carte azione giocate. |
