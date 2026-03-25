@@ -18,11 +18,11 @@ All'inizio di ogni partita:
 
 1. **Personaggi:** ciascun giocatore riceve un **Personaggio** assegnato casualmente. Il personaggio definisce la **Seniority** (punti vita massimi) e il **Ruolo** (abilità passiva).
 
-2. **Mazzi:** i mazzi Azione, Boss e AddOn vengono mescolati separatamente. Ogni tipologia è divisa in due metà — **Mazzo A** e **Mazzo B** — mescolate indipendentemente.
+2. **Mazzi:** i mazzi Azione, Boss e AddOn vengono mescolati separatamente — un mazzo per tipologia.
 
-3. **Mercato iniziale:** viene scoperta la prima carta dalla cima del Mazzo Boss A e del Mazzo Boss B — questi sono i **boss del mercato** iniziali. Lo stesso avviene per il Mazzo AddOn A e il Mazzo AddOn B — questi sono gli **AddOn del mercato** iniziali.
+3. **Mercato iniziale:** vengono scoperte le prime **2 carte** dalla cima del Mazzo Boss — questi sono i **boss del mercato** iniziali. Lo stesso avviene per il Mazzo AddOn — questi sono gli **AddOn del mercato** iniziali.
 
-4. **Mano iniziale:** ciascun giocatore pesca **3 carte** dal Mazzo Azione (a scelta, A o B) e le aggiunge alla propria mano.
+4. **Mano iniziale:** ciascun giocatore pesca **3 carte** dal Mazzo Azione e le aggiunge alla propria mano.
 
 5. **Licenze iniziali:** ciascun giocatore riceve **3 Licenze**.
 
@@ -34,18 +34,20 @@ All'inizio di ogni partita:
 
 ### Carte Azione
 
-Le carte azione si trovano nei Mazzi Azione A e B, e nella mano dei giocatori. Ogni giocatore pesca carte azione e le usa durante il proprio turno o come reazione al turno degli avversari.
+Le carte azione si trovano nel Mazzo Azione e nella mano dei giocatori. Ogni giocatore pesca carte azione e le usa durante il proprio turno o come reazione al turno degli avversari.
 
-Le carte azione hanno una **categoria** che indica quando possono essere giocate:
+Le carte azione hanno una **categoria** che descrive il tipo di effetto:
 
-| Categoria | Quando si gioca |
+| Categoria | Descrizione |
 |---|---|
-| **Offensiva** | Durante il proprio turno (dentro o fuori dal combattimento) |
-| **Difensiva** | In qualsiasi momento, anche fuori dal proprio turno |
-| **Economica** | Durante il proprio turno, fuori dal combattimento |
-| **Manipolazione dado** | Durante il proprio combattimento |
-| **Interferenza** | Fuori dal proprio turno, durante il turno di un avversario |
-| **Utilità** | In qualsiasi momento, salvo indicazioni specifiche sulla carta |
+| **Offensiva** | Infligge danni al boss o ad altri giocatori |
+| **Difensiva** | Recupera HP, crea scudi, fuga dal combattimento |
+| **Economica** | Guadagna, ruba o trasferisce Licenze o Certificazioni |
+| **Manipolazione dado** | Modifica il tiro di dado in combattimento |
+| **Interferenza** | Sabota o aiuta durante il turno di un avversario |
+| **Utilità** | Pesca carte, rimescola mazzi, effetti vari |
+
+La categoria **non determina quando la carta può essere giocata** — qualsiasi carta può essere giocata in qualsiasi momento, nel proprio turno o fuori. È il **testo della carta** a specificare eventuali restrizioni (es. "solo durante il combattimento", "solo fuori dal tuo turno", "solo se sei in combattimento").
 
 Quando una carta azione viene giocata, il suo effetto si applica immediatamente (vedi **Priorità e Reazione**). Dopo essere stata giocata, la carta va nel **Mazzo Scarto Azione** condiviso.
 
@@ -53,17 +55,17 @@ Quando una carta azione viene giocata, il suo effetto si applica immediatamente 
 
 ### Carte Boss
 
-Le carte boss si trovano nei Mazzi Boss A e B. Quando sono nel mercato (scoperte), i loro valori sono visibili a tutti: nome, HP, soglia dado, abilità speciale e se hanno una Certificazione.
+Le carte boss si trovano nel Mazzo Boss. Quando sono nel mercato (scoperte), i loro valori sono visibili a tutti: nome, HP, soglia dado, abilità speciale e se hanno una Certificazione.
 
 I boss **non hanno una zona mano** — non finiscono mai nella mano di un giocatore.
 
 Quando un boss viene sconfitto, va nel **Cimitero Boss**. Se il boss aveva la Certificazione, rimane fisicamente nel possesso del giocatore come **Trofeo** e non va nel Cimitero.
 
-Se un boss viene pescato blind da un mazzo e il giocatore muore combattendolo, il boss torna in cima al mazzo da cui proveniva.
+Se un boss viene pescato blind dal mazzo e il giocatore muore combattendolo, il boss torna in cima al Mazzo Boss.
 
 ### Carte AddOn
 
-Le carte AddOn si trovano nei Mazzi AddOn A e B. Gli AddOn si acquistano spendendo Licenze e rimangono nel possesso del giocatore per tutto il resto della partita, salvo perdita (morte) o distruzione (carte avversarie).
+Le carte AddOn si trovano nel Mazzo AddOn. Gli AddOn si acquistano spendendo Licenze e rimangono nel possesso del giocatore per tutto il resto della partita, salvo perdita (morte) o distruzione (carte avversarie).
 
 Gli AddOn si dividono in **Passivi** (sempre attivi, non si tappano) e **Attivi** (si attivano una volta per turno, poi si tappano — vedi **Meccanica di Tapping**).
 
@@ -88,19 +90,19 @@ Ogni giocatore ha una propria mano privata, composta esclusivamente da **carte a
 
 Il **limite di mano è 10 carte**. Se a fine turno un giocatore ha più di 10 carte, deve scartarne fino a raggiungere il limite.
 
-Se a un giocatore viene indicato di pescare quando ha già 10 carte in mano, la pesca non avviene.
+Non esiste un limite durante il turno: un giocatore può pescare anche se ha già 10 carte in mano. Il limite si applica solo a **fine turno**, durante la Fase Finale.
 
-### Mazzi (A e B)
+### Mazzi
 
-Ogni tipo di carta ha due mazzi (A e B). I mazzi sono zone **nascoste**: l'ordine delle carte non è noto ai giocatori, salvo effetti specifici che lo permettano.
+Esistono tre mazzi di pesca — uno per tipologia: **Mazzo Azione**, **Mazzo Boss**, **Mazzo AddOn**. I mazzi sono zone **nascoste**: l'ordine delle carte non è noto ai giocatori, salvo effetti specifici che lo permettano.
 
-Quando un mazzo si esaurisce, il relativo mazzo degli scarti (o cimitero) viene rimescolato per formare un nuovo mazzo. Per i mazzi Azione, il Mazzo Scarto viene diviso in due nuovi mazzi A e B.
+Quando un mazzo si esaurisce, il relativo mazzo degli scarti viene rimescolato per formare un nuovo mazzo. Esistono tre mazzi degli scarti separati: uno per le **carte azione** (Scarto Azione), uno per i **boss** (Cimitero Boss) e uno per gli **AddOn** (Cimitero AddOn).
 
 ### Mercato
 
-Davanti a ciascun mazzo Boss e a ciascun mazzo AddOn è sempre presente **1 carta scoperta**, visibile a tutti — questa è la carta del mercato. La carta del mercato è **in gioco** a tutti gli effetti.
+Davanti al Mazzo Boss e al Mazzo AddOn sono sempre presenti **2 carte scoperte**, visibili a tutti — queste sono le carte del mercato. Le carte del mercato sono **in gioco** a tutti gli effetti.
 
-Quando la carta del mercato viene acquisita (sconfitta o acquistata), viene immediatamente sostituita dalla prima carta del mazzo corrispondente.
+Quando una carta del mercato viene acquisita (sconfitta o acquistata), viene immediatamente sostituita dalla prima carta del mazzo corrispondente.
 
 ### Mazzo Scarto Azione
 
@@ -120,7 +122,7 @@ All'inizio del proprio turno, nell'ordine:
 
 1. **Untap AddOn:** tutti gli AddOn tappati del giocatore si stappano e tornano disponibili.
 2. **Abilità "inizio turno":** si attivano tutte le abilità del personaggio o degli AddOn che recitano "all'inizio del tuo turno".
-3. **Pesca:** il giocatore pesca obbligatoriamente 1 carta azione (a scelta dal Mazzo A o dal Mazzo B). Se la mano è già a 10 carte, la pesca non avviene.
+3. **Pesca:** il giocatore pesca obbligatoriamente 1 carta dal Mazzo Azione.
 
 ### Fase Azioni
 
@@ -163,7 +165,7 @@ Quando un giocatore gioca una carta che colpisce **direttamente** un avversario 
 
 Il bersaglio ha **8 secondi** per decidere:
 
-- **Reagire:** giocare una carta "Fuori dal proprio turno" (Difensiva o Interferenza) dalla propria mano. La carta di reazione si risolve **prima** dell'effetto originale.
+- **Reagire:** giocare una carta dalla propria mano. La carta di reazione si risolve **prima** dell'effetto originale.
 - **Passare:** non fare nulla. L'effetto originale si applica normalmente.
 - **Non rispondere:** equivale a passare.
 
@@ -191,12 +193,10 @@ Una carta **bloccata** (es. dal boss che reagisce a certi effetti) viene rimossa
 
 ### Dichiarare un attacco
 
-Un giocatore può combattere **al massimo una volta per turno**. Per attaccare, sceglie tra quattro opzioni:
+Un giocatore può combattere **al massimo una volta per turno**. Per attaccare, sceglie tra tre opzioni:
 
-- **Boss del mercato A** — caratteristiche note, visibili a tutti
-- **Boss del mercato B** — caratteristiche note, visibili a tutti
-- **Boss blind dal Mazzo A** — la carta viene pescata al momento della dichiarazione
-- **Boss blind dal Mazzo B** — la carta viene pescata al momento della dichiarazione
+- **Boss del mercato (slot 1 o slot 2)** — caratteristiche note, visibili a tutti
+- **Boss blind dal Mazzo Boss** — la carta viene pescata al momento della dichiarazione
 
 Dopo aver scelto il boss, il combattimento ha inizio e non può essere abbandonato salvo effetti specifici (es. la carta **Escape Route**).
 
@@ -216,11 +216,7 @@ Non esiste un limite di round: il combattimento continua finché non si verifica
 
 ### Carte azione durante il combattimento
 
-Il giocatore può giocare carte azione **durante il proprio combattimento** (es. modificatori al dado, cure). Gli altri giocatori possono reagire con carte Interferenza o Difensive nel loro turno di reazione.
-
-Le carte **Manipolazione dado** (es. force reroll, aggiungi +X al dado) si applicano solo durante il combattimento e modificano il risultato del tiro in corso o del prossimo tiro.
-
-Le carte **Economica** e **Utilità** non possono essere giocate durante il combattimento, salvo indicazioni specifiche.
+Il giocatore può giocare carte azione **durante il proprio combattimento** (es. modificatori al dado, cure). Gli altri giocatori possono reagire con le proprie carte nel loro turno di reazione.
 
 ### Modificatori al dado
 
@@ -238,7 +234,7 @@ Quando un boss raggiunge 0 HP, i seguenti passaggi si eseguono in ordine:
 4. Si attivano eventuali abilità del boss "dopo la ricompensa".
 5. **Se il boss ha la Certificazione:** il boss diventa un **Trofeo** nel possesso del giocatore (+1 Certificazione). Si controlla subito se il giocatore ha raggiunto 5 Certificazioni → vittoria immediata.
 6. **Se il boss non ha la Certificazione:** va nel Cimitero Boss.
-7. Lo spazio mercato lasciato vuoto viene riempito con la prima carta del mazzo Boss corrispondente.
+7. Lo spazio mercato lasciato vuoto viene riempito con la prima carta del Mazzo Boss.
 
 > Il controllo vittoria (passo 5) avviene **prima** del riempimento del mercato.
 
@@ -248,16 +244,14 @@ Quando un boss raggiunge 0 HP, i seguenti passaggi si eseguono in ordine:
 
 Un giocatore può acquistare **1 AddOn per turno**, non durante il combattimento. Il costo è **10 Licenze**.
 
-Per acquistare, il giocatore sceglie tra quattro opzioni:
+Per acquistare, il giocatore sceglie tra tre opzioni:
 
-- **AddOn del mercato A** — caratteristiche note
-- **AddOn del mercato B** — caratteristiche note
-- **AddOn blind dal Mazzo A** — si pesca al momento dell'acquisto
-- **AddOn blind dal Mazzo B** — si pesca al momento dell'acquisto
+- **AddOn del mercato (slot 1 o slot 2)** — caratteristiche note
+- **AddOn blind dal Mazzo AddOn** — si pesca al momento dell'acquisto
 
 L'AddOn entra immediatamente nel possesso del giocatore. Se è un AddOn con effetto immediato all'acquisto, quell'effetto si applica subito.
 
-Lo spazio mercato lasciato vuoto viene sostituito dalla prima carta del mazzo AddOn corrispondente.
+Lo spazio mercato lasciato vuoto viene sostituito dalla prima carta del Mazzo AddOn.
 
 ---
 
@@ -291,7 +285,7 @@ Un giocatore muore quando i suoi **HP scendono a 0 durante il combattimento**.
 3. Il giocatore **sceglie quale AddOn perdere** dalla propria collezione (se ha AddOn). L'AddOn scelto va nel Cimitero AddOn.
 4. Tutti gli AddOn rimanenti si **tappano** immediatamente.
 5. L'HP scende a **0** — il giocatore non può giocare carte né usare AddOn finché non inizia il suo prossimo turno.
-6. Il boss torna in cima al mazzo da cui proveniva. Se era un boss del mercato, rimane nel mercato.
+6. Il boss torna in cima al Mazzo Boss. Se era un boss del mercato, rimane nel mercato.
 
 ### Resurrezione automatica
 
@@ -406,7 +400,7 @@ Vengono poi calcolati i punteggi finali per tutti i giocatori e aggiornata la cl
 | **Finestra di reazione** | Periodo di 8 secondi in cui un bersaglio può rispondere a una carta che lo colpisce. |
 | **Budget carte** | Max 2 carte per ciclo di turno (in-turno + reazioni). |
 | **Trofeo** | Un boss con Certificazione sconfitto, fisicamente nel possesso del vincitore. 5 trofei = vittoria. |
-| **Mercato** | La carta scoperta davanti a ciascun mazzo Boss o AddOn. |
+| **Mercato** | Le 2 carte scoperte davanti al Mazzo Boss o al Mazzo AddOn. |
 | **Cimitero** | Zona dove finiscono i boss normali sconfitti (Cimitero Boss) e gli AddOn distrutti/persi (Cimitero AddOn). |
 | **Mazzo Scarto Azione** | Mazzo condiviso dove finiscono tutte le carte azione giocate. |
 

@@ -141,9 +141,9 @@ FASE AZIONI
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   Il giocatore può svolgere, in qualsiasi ordine, fino a:
   ├─ 1 ATTACCO: scegli quale boss affrontare
-  │    (mercato A/B o pesca blind dal mazzo A/B)
+  │    (mercato slot 1/2 o pesca blind dal Mazzo Boss)
   ├─ 1 ACQUISTO: acquista un AddOn
-  │    (mercato A/B o pesca blind dal mazzo A/B) — non durante il combattimento
+  │    (mercato slot 1/2 o pesca blind dal Mazzo AddOn) — non durante il combattimento
   └─ CARTE AZIONE: gioca 0–2 carte dalla propria mano
        (prima, durante o dopo il combattimento)
 
@@ -190,8 +190,8 @@ FASE FINALE
 > salvo effetti di carte azione o AddOn che concedano esplicitamente un combattimento extra.
 
 Il giocatore decide di combattere e **sceglie quale boss affrontare**:
-- Boss visibile nel **mercato A** o **mercato B** (carta scoperta, caratteristiche note)
-- Pesca **blind** dal **mazzo A** o **mazzo B** (senza vedere la carta prima)
+- Boss visibile nel **mercato slot 1** o **slot 2** (carta scoperta, caratteristiche note)
+- Pesca **blind** dal **Mazzo Boss** (senza vedere la carta prima)
 
 La carta Boss riporta:
 - Nome del boss
@@ -309,7 +309,7 @@ Quando un boss raggiunge 0 HP, i seguenti passaggi si eseguono **in ordine**:
 6. Il boss va nel Cimitero Boss
    (se era un boss con Certificazione, rimane come Trofeo — non va nel Cimitero)
 
-7. Lo spazio mercato viene riempito con la carta in cima al mazzo Boss corrispondente
+7. Lo spazio mercato viene riempito con la carta in cima al Mazzo Boss
 ```
 
 > I passi 2 e 4 sono rilevanti per le abilità speciali dei boss implementate in `engine.py`.
@@ -375,9 +375,9 @@ Il boss torna in cima al mazzo da cui proveniva (o rimane nel mercato se era un 
 ## 7. I Mazzi
 
 Tutti e tre i mazzi sono **condivisi** tra tutti i giocatori della stessa partita.
-Ogni tipologia di mazzo è **divisa in due metà** (Mazzo A e Mazzo B), mescolate separatamente.
+Ogni tipologia ha **un unico mazzo di pesca**.
 
-### 7.1 Mazzo Azione (A e B)
+### 7.1 Mazzo Azione
 
 Carte giocabili durante il turno. Tipologie:
 - **Offensiva** – danni al boss o ad altri giocatori
@@ -387,34 +387,31 @@ Carte giocabili durante il turno. Tipologie:
 - **Utilità** – pesca carte extra, ritirata dal boss, ecc.
 - **Combo** – effetti potenziati se si hanno certi AddOn o carte
 
-Quando peschi, **scegli da quale dei due mazzi pescare** (A o B).
-Le carte giocate vanno in un **unico mazzo degli scarti condiviso**.
-Quando un mazzo si esaurisce, il mazzo degli scarti viene rimescolato e ridistribuito tra A e B.
+Le carte giocate vanno nel **Mazzo Scarto Azione** condiviso.
+Quando il mazzo si esaurisce, lo scarto viene rimescolato per formare un nuovo mazzo.
 
-### 7.2 Mazzo Boss (A e B) + Mercato
+### 7.2 Mazzo Boss + Mercato
 
-I boss sono suddivisi in **due mazzi** (A e B).
-Davanti a ciascun mazzo è sempre presente **1 carta boss scoperta** ("mercato").
+Un unico Mazzo Boss condiviso.
+Davanti al mazzo sono sempre presenti **2 carte boss scoperte** ("mercato", slot 1 e slot 2).
 
-Quando vuoi combattere, scegli tra 4 opzioni:
-- **Attacca il boss del mercato A** — se perdi rimane lì; se vinci viene sostituito dalla cima del mazzo A
-- **Attacca il boss del mercato B** — stessa logica del mercato A
-- **Pesca dal mazzo A** (blind) — se perdi torna in cima al mazzo A; se vinci va nel cimitero
-- **Pesca dal mazzo B** (blind) — stessa logica del mazzo A
+Quando vuoi combattere, scegli tra 3 opzioni:
+- **Attacca boss mercato slot 1** — se perdi rimane lì; se vinci viene sostituito dalla cima del mazzo
+- **Attacca boss mercato slot 2** — stessa logica dello slot 1
+- **Pesca blind dal Mazzo Boss** — se perdi torna in cima al mazzo; se vinci va nel cimitero
 
 Boss sconfitti: i boss **senza certificazione** vanno nel **Cimitero Boss**.
-Boss con certificazione: rimossi permanentemente dal gioco dopo la sconfitta.
+Boss con certificazione: diventano Trofeo nel possesso del giocatore.
 
-### 7.3 Mazzo AddOn (A e B) + Mercato
+### 7.3 Mazzo AddOn + Mercato
 
-Gli AddOn sono suddivisi in **due mazzi** (A e B).
-Davanti a ciascun mazzo è sempre presente **1 carta AddOn scoperta** ("mercato").
+Un unico Mazzo AddOn condiviso.
+Davanti al mazzo sono sempre presenti **2 carte AddOn scoperte** ("mercato", slot 1 e slot 2).
 
-Quando vuoi acquistare, scegli tra 4 opzioni:
-- **Acquista l'AddOn del mercato A** — sostituito dalla cima del mazzo A
-- **Acquista l'AddOn del mercato B** — sostituito dalla cima del mazzo B
-- **Pesca random dal mazzo A** (blind) — acquisti la carta in cima al mazzo A
-- **Pesca random dal mazzo B** (blind) — acquisti la carta in cima al mazzo B
+Quando vuoi acquistare, scegli tra 3 opzioni:
+- **Acquista AddOn mercato slot 1** — sostituito dalla cima del mazzo
+- **Acquista AddOn mercato slot 2** — sostituito dalla cima del mazzo
+- **Pesca blind dal Mazzo AddOn** — acquisti la carta in cima al mazzo
 
 AddOn persi (morte del giocatore) o distrutti da carte azione vanno nel **Cimitero AddOn**.
 
@@ -548,7 +545,7 @@ VITTORIA
 | **Trofeo / Certificazione** | Una carta boss con certificazione sconfitta rimane nel possesso del giocatore come trofeo visibile. 5 trofei = vittoria. |
 | **Cimitero Boss** | Zona dove finiscono i boss normali sconfitti. |
 | **Cimitero AddOn** | Zona dove finiscono gli AddOn distrutti o persi alla morte. |
-| **Mercato** | La carta in cima al mazzo Boss o AddOn, sempre scoperta e visibile a tutti. |
+| **Mercato** | Le 2 carte scoperte davanti al Mazzo Boss o al Mazzo AddOn, sempre visibili a tutti. |
 
 ---
 
