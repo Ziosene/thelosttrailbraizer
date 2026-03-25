@@ -195,6 +195,10 @@ interface CombatOverlayProps {
   onUseAddon: (playerAddonId: number) => void
 }
 
+const ROLL_DURATION   = 1200  // ms animazione rolling
+const SETTLE_DURATION =  720  // ms animazione settle
+const ANIM_TOTAL = ROLL_DURATION + SETTLE_DURATION
+
 export function CombatOverlay({
   boss, bossHp, playerHp, playerMaxHp, combatRound,
   hand, addons, lastDiceRoll, isMyTurn,
@@ -204,16 +208,44 @@ export function CombatOverlay({
   const [shownRoll, setShownRoll]   = useState<LastDiceRoll | null>(null)
   const [expandedCard, setExpandedCard] = useState<CardInfo | null>(null)
 
+  // HP mostrati — aggiornati SOLO dopo la fine dell'animazione dado
+  const [displayedBossHp,   setDisplayedBossHp]   = useState(bossHp)
+  const [displayedPlayerHp, setDisplayedPlayerHp] = useState(playerHp)
+  const hpTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Quando arriva un nuovo risultato dado: avvia animazione + ritarda aggiornamento HP
   useEffect(() => {
     if (!lastDiceRoll) return
     if (shownRoll?.roll === lastDiceRoll.roll && shownRoll?.result === lastDiceRoll.result) return
+
     setRolling(true)
-    const timer = setTimeout(() => {
+    // Dopo rolling: settle
+    const rollTimer = setTimeout(() => {
       setRolling(false)
       setShownRoll(lastDiceRoll)
-    }, 1200)
-    return () => clearTimeout(timer)
+    }, ROLL_DURATION)
+
+    // Aggiorna HP solo dopo la fine dell'animazione settle
+    if (hpTimerRef.current) clearTimeout(hpTimerRef.current)
+    hpTimerRef.current = setTimeout(() => {
+      setDisplayedBossHp(lastDiceRoll.boss_hp)
+      setDisplayedPlayerHp(lastDiceRoll.player_hp)
+    }, ANIM_TOTAL)
+
+    return () => {
+      clearTimeout(rollTimer)
+      if (hpTimerRef.current) clearTimeout(hpTimerRef.current)
+    }
   }, [lastDiceRoll])
+
+  // Sincronizza HP subito quando non c'è animazione in corso
+  // (primo mount, entrata in combattimento, danni da carte, ecc.)
+  useEffect(() => {
+    if (!rolling && !lastDiceRoll) {
+      setDisplayedBossHp(bossHp)
+      setDisplayedPlayerHp(playerHp)
+    }
+  }, [bossHp, playerHp, rolling, lastDiceRoll])
 
   const difficultyColor = {
     'Easy': 'text-green-400', 'Medium': 'text-yellow-400',
@@ -245,16 +277,16 @@ export function CombatOverlay({
           <div>
             <div className="flex justify-between text-xs text-slate-400 mb-1">
               <span>HP Boss</span>
-              <span className="font-mono"><span className="text-red-400 font-bold">{bossHp}</span> / {boss.hp}</span>
+              <span className="font-mono"><span className="text-red-400 font-bold">{displayedBossHp}</span> / {boss.hp}</span>
             </div>
-            <HpBar current={bossHp} max={boss.hp} color="bg-red-600" />
+            <HpBar current={displayedBossHp} max={boss.hp} color="bg-red-600" />
           </div>
           <div>
             <div className="flex justify-between text-xs text-slate-400 mb-1">
               <span>I tuoi HP</span>
-              <span className="font-mono"><span className="text-emerald-400 font-bold">{playerHp}</span> / {playerMaxHp}</span>
+              <span className="font-mono"><span className="text-emerald-400 font-bold">{displayedPlayerHp}</span> / {playerMaxHp}</span>
             </div>
-            <HpBar current={playerHp} max={playerMaxHp} color="bg-emerald-600" />
+            <HpBar current={displayedPlayerHp} max={playerMaxHp} color="bg-emerald-600" />
           </div>
           {boss.ability && (
             <p className="text-xs text-slate-400 italic border-t border-slate-700 pt-2">{boss.ability}</p>
