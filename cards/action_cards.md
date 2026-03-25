@@ -1970,11 +1970,11 @@
 ---
 
 ### 201. Web Studio
-- **Tipo**: Difensiva
-- **Quando**: Fuori dal proprio turno
-- **Effetto**: Costruisci una pagina difensiva — ogni carta offensiva avversaria fa 1 punto di danno in meno per questo turno
+- **Tipo**: Azione
+- **Quando**: Durante il proprio turno
+- **Effetto**: Pesca la prima carta dalla cima del mazzo Scarto Azione e aggiungila alla tua mano, poi scarta una carta dalla tua mano a scelta.
 - **Rarità**: Non comune
-- **Image prompt**: `A 2D hand-drawn web page shield in the art style of The Binding of Isaac. A defensive webpage construction absorbing incoming attack cards, each one losing one damage point before it can reach the player. Thick black outlines, flat shading, structural protection mood. Plain off-white parchment background. Indie game card art.`
+- **Image prompt**: `A 2D hand-drawn drag-and-drop web editor interface in the art style of The Binding of Isaac. A hand pulling a discarded page from a trash pile and placing it into a fresh web canvas, while another page floats away. Thick black outlines, flat shading, tinkering and recycling mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 

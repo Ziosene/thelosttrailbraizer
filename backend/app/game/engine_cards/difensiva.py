@@ -416,16 +416,33 @@ def _card_158(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_201(player, game, db, *, target_player_id=None) -> dict:
-    """Web Studio — Nel prossimo turno puoi giocare fino a 3 carte invece di 2.
+    """Web Studio — Pesca la cima dello Scarto Azione nella mano, poi scarta 1 carta a scelta.
 
-    Stores web_studio_extra_card=True in combat_state.
-    turn.py _handle_play_card: if flag set, max_cards_per_turn = 3 (instead of 2).
-    Cleared at end of the following turn.
+    If action_discard is empty the effect does nothing.
+    The "discard 1" step uses the existing discard_specific_cards pending-choice flow.
     """
-    cs = dict(player.combat_state or {})
-    cs["web_studio_extra_card"] = True
-    player.combat_state = cs
-    return {"applied": True, "web_studio_extra_card": True}
+    from app.models.game import PlayerHandCard as _PHC201
+    from app.game import engine as _eng201
+
+    discard = list(game.action_discard or [])
+    if not discard:
+        return {"applied": False, "reason": "no_cards_in_discard"}
+
+    if len(list(player.hand)) >= _eng201.MAX_HAND_SIZE:
+        return {"applied": False, "reason": "hand_full"}
+
+    top_card_id = discard.pop()  # top = last appended
+    game.action_discard = discard
+    db.add(_PHC201(player_id=player.id, action_card_id=top_card_id))
+    db.flush()
+
+    return {
+        "status": "pending_choice",
+        "choice_type": "discard_specific_cards",
+        "card_number": 201,
+        "count": 1,
+        "recovered_card_id": top_card_id,
+    }
 
 
 def _card_202(player, game, db, *, target_player_id=None) -> dict:

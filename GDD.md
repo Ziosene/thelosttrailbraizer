@@ -420,11 +420,15 @@ AddOn persi (morte del giocatore) o distrutti da carte azione vanno nel **Cimite
 
 ### 7.4 Mazzi degli Scarti
 
+I mazzi degli scarti sono **condivisi da tutti i giocatori** — uno solo per tipologia, indipendentemente da chi ha usato o perso la carta.
+
 | Mazzo | Cosa contiene | Riciclabile? |
 |---|---|---|
-| **Scarto Azione** | Carte azione giocate | ✅ — si rimescola nei mazzi A/B quando si esauriscono |
-| **Cimitero Boss** | Boss sconfitti senza certificazione | Da definire (post-bilanciamento) |
-| **Cimitero AddOn** | AddOn persi o distrutti | Da definire (post-bilanciamento) |
+| **Scarto Azione** | Carte azione giocate da qualsiasi giocatore | ✅ — si rimescola nei mazzi A/B quando si esauriscono |
+| **Cimitero Boss** | Boss sconfitti senza certificazione (da qualsiasi giocatore) | Da definire (post-bilanciamento) |
+| **Cimitero AddOn** | AddOn persi o distrutti da qualsiasi giocatore | Da definire (post-bilanciamento) |
+
+> La cima del mazzo Scarto Azione è sempre visibile e accessibile a effetti di carte o AddOn che permettono di "recuperare" carte scartate.
 
 ---
 

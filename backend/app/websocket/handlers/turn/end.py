@@ -191,9 +191,7 @@ async def _handle_end_turn(game: GameSession, user_id: int, db: Session):
         cs.pop("sales_engagement_active", None)
         # Card 226 (Shortcut): consume extra plays granted this turn
         cs.pop("shortcut_extra_plays", None)
-        # Card 201 (Web Studio): consume extra card slot granted this turn
-        cs.pop("web_studio_extra_card", None)
-        # Card 241 (Object Storage): clear per-turn theft immunity
+# Card 241 (Object Storage): clear per-turn theft immunity
         cs.pop("licenze_theft_immune", None)
         # Card 269 (Trailhead GO): clear per-turn max cards override
         cs.pop("trailhead_go_max_cards", None)

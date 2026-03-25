@@ -44,9 +44,7 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
         max_cards = min(max_cards, _api_limit)
     # Card 226 (Shortcut): bonus card plays this turn (skip draw = extra slots)
     max_cards += (player.combat_state or {}).get("shortcut_extra_plays", 0)
-    # Card 201 (Web Studio): +1 card slot this turn
-    if (player.combat_state or {}).get("web_studio_extra_card"):
-        max_cards += 1
+
     # Card 269 (Trailhead GO): set max to 4 if higher than current limit
     _tg_max = (player.combat_state or {}).get("trailhead_go_max_cards")
     if _tg_max is not None:
