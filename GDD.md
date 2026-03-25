@@ -130,11 +130,12 @@ I ruoli sono organizzati per track certificativo Salesforce.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 FASE INIZIALE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  1. UNTAP: tutti gli AddOn tappati del giocatore si ricaricano (untap)
-  2. ABILITÀ "INIZIO TURNO": si attivano le abilità dei personaggi/AddOn
+  1. RECUPERO HP: il giocatore recupera tutti i punti vita al massimo.
+     Se era morto (HP = 0), qui ritorna in vita.
+  2. UNTAP: tutti gli AddOn tappati del giocatore si ricaricano (untap)
+  3. ABILITÀ "INIZIO TURNO": si attivano le abilità dei personaggi/AddOn
      con effetto "all'inizio del tuo turno"
-  3. PESCA: il giocatore pesca 1 carta obbligatoria dal mazzo Azione
-     (se la mano è già a 10 carte, non pesca)
+  4. PESCA: il giocatore pesca 1 carta obbligatoria dal mazzo Azione
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 FASE AZIONI
@@ -168,8 +169,7 @@ FASE FINALE
   2. SCARTO ECCESSO: se il giocatore ha più di 10 carte in mano,
      deve scartare fino a raggiungere il limite di 10
   3. SCADENZA EFFETTI: tutti gli effetti "fino a fine turno" terminano
-  4. RESET HP: l'HP del giocatore si resetta al valore base del personaggio
-  5. Il turno passa al giocatore successivo
+  4. Il turno passa al giocatore successivo
 ```
 
 
@@ -202,17 +202,24 @@ La carta Boss riporta:
 
 ### 5.2 Risoluzione combattimento
 
-Il combattimento si svolge **round per round**:
+Il combattimento si svolge **round per round**. Ogni round usa **La Pila** (vedi §5.5):
 
 ```
 OGNI ROUND DI COMBATTIMENTO:
-  └─ Il giocatore tira il dado (d10)
-      ├─ Risultato ≥ soglia → -1 HP al Boss
-      └─ Risultato < soglia → -1 HP al Giocatore
+  1. Il giocatore attivo tira il dado (d10)
+  2. Il risultato viene messo in cima a La Pila
+  3. FINESTRA DI PRIORITÀ: a partire dal giocatore attivo in senso orario,
+     ogni giocatore (incluso l'attivo) può:
+       A) Aggiungere una carta/abilità alla Pila → la priorità riparte dall'attivo
+       B) Passare la priorità al prossimo giocatore
+     Quando tutti i giocatori passano consecutivamente → La Pila si risolve (LIFO)
+  4. Risoluzione del tiro di dado:
+       ├─ Risultato (con eventuali modificatori) ≥ soglia → -1 HP al Boss
+       └─ Risultato (con eventuali modificatori) < soglia → -1 HP al Giocatore
 
 Il combattimento termina quando:
   ├─ HP Boss = 0 → Giocatore vince lo scontro
-  └─ HP Giocatore = 0 → Giocatore muore
+  └─ HP Giocatore = 0 → Giocatore muore (anche se causato da una reazione della Pila)
 ```
 
 ### 5.3 Categorie di carte azione
@@ -257,34 +264,50 @@ Durante il combattimento di un giocatore, gli **altri giocatori** possono giocar
 
 > Un boss è "occupato" finché non viene sconfitto o il combattente muore. Due giocatori non possono combattere lo stesso boss contemporaneamente.
 
-### 5.5 Sistema di reazione (finestra out-of-turn)
+### 5.5 La Pila e la Priorità
 
-Quando un giocatore gioca una carta che colpisce direttamente un avversario (es. ruba Licenze, ruba Certificazioni, infligge danno), il server apre automaticamente una **finestra di reazione** per il giocatore bersaglio.
+Il gioco usa un sistema a **Pila** (Stack) ispirato a Four Souls. Ogni azione che può essere reagita — un tiro di dado, una carta giocata, un'abilità attivata — viene messa in cima alla Pila. La Pila si risolve in ordine **LIFO** (last-in, first-out) quando tutti i giocatori passano consecutivamente.
 
 ```
-FINESTRA DI REAZIONE:
-  ├─ Notifica privata al bersaglio: tipo di carta, chi l'ha giocata, timeout 8 s
-  ├─ Il bersaglio può:
-  │    A) Giocare una carta "Fuori dal proprio turno" dalla sua mano
-  │       └─ La carta di reazione si applica PRIMA dell'effetto originale
-  │    B) Passare (nessun effetto, l'originale si applica normalmente)
-  │    C) Non rispondere entro 8 s → equivale a passare
-  └─ Broadcast a tutti: come è andata la reazione
+COME FUNZIONA LA PILA:
+
+  1. Un'azione viene dichiarata (carta giocata, dado tirato, abilità attivata)
+     └─ L'azione viene messa in cima alla Pila — NON si risolve ancora
+
+  2. PRIORITÀ: parte dal giocatore attivo e gira in senso orario.
+     Ogni giocatore, quando ha la priorità, può:
+       A) Aggiungere un'azione alla Pila (carta, abilità, reazione)
+          → la priorità riparte dal giocatore attivo
+       B) Passare la priorità al giocatore successivo
+
+  3. Quando TUTTI i giocatori passano consecutivamente senza aggiungere nulla:
+     La Pila si risolve — l'azione in cima si risolve per prima (LIFO).
+     Dopo ogni risoluzione, la priorità riparte dal giocatore attivo.
+
+  4. Se durante la risoluzione viene aggiunta una nuova azione alla Pila,
+     il processo di priorità ricomincia prima che quella nuova azione si risolva.
 ```
+
+**Quando si apre la Pila:**
+- Ogni tiro di dado in combattimento
+- Ogni carta giocata da qualsiasi giocatore
+- Ogni abilità attivata (AddOn attivo, abilità personaggio)
+
+**Timeout:** ogni giocatore ha **8 secondi** per dichiarare un'azione o passare. Scaduto il tempo, la priorità passa automaticamente al giocatore successivo.
 
 **Regole speciali di risoluzione:**
 
 | Carta di reazione | Effetto sulla carta originale |
 |---|---|
-| **Shield Platform** | Annulla completamente la carta originale (nessun effetto) |
+| **Shield Platform** | Annulla completamente la carta sotto nella Pila (nessun effetto) |
 | **Chargeback** (contro furto di Licenze) | Annulla il furto + il difensore guadagna 1 Licenza extra |
-| Qualsiasi altra carta di interferenza | Si applica normalmente; l'effetto originale si applica comunque |
+| Qualsiasi altra carta di interferenza | Si aggiunge alla Pila e si risolve prima dell'azione originale |
 
-**Budget carte condiviso:** ogni giocatore può giocare al massimo **2 carte per ciclo di turno** (dal proprio inizio turno all'inizio del turno successivo), contando sia le carte giocate in-turno sia quelle giocate come reazione.
+**Budget carte condiviso:** ogni giocatore può giocare al massimo **2 carte per ciclo di turno** (dal proprio inizio turno all'inizio del turno successivo), contando sia le carte giocate in-turno sia quelle aggiunte alla Pila come reazione.
 
 - 0 carte giocate nel proprio turno → può reagire fino a 2 volte
 - 1 carta giocata nel proprio turno → può reagire 1 volta
-- 2 carte giocate nel proprio turno → non può reagire
+- 2 carte giocate nel proprio turno → non può aggiungere alla Pila
 
 ### 5.6 Morte del Boss (ordine degli step)
 
@@ -344,9 +367,7 @@ TROFEO:
 
 ## 6. Morte del Giocatore
 
-Quando l'HP scende a 0 durante il combattimento, il giocatore **muore**. La morte avviene
-esclusivamente in combattimento: se gli HP scendono a 0 a causa di carte azione avversarie
-fuori dal combattimento, il giocatore scende a 1 HP minimo.
+Quando l'HP scende a 0 da qualsiasi fonte — combattimento, carta di un avversario, abilità di un AddOn, o una reazione della Pila — il giocatore **muore**.
 
 ```
 CONSEGUENZE MORTE (applicate nell'ordine):
@@ -498,9 +519,9 @@ SETUP
   └─ Ogni giocatore pesca 3 carte iniziali e riceve 3 Licenze
 
 LOOP DI PARTITA (turni in ordine)
-  └─ Fase Iniziale: untap AddOn → abilità "inizio turno" → pesca 1 carta
+  └─ Fase Iniziale: recupero HP → untap AddOn → abilità "inizio turno" → pesca 1 carta
   └─ Fase Azioni: attacca boss (opz.) + acquista AddOn (opz.) + gioca carte (max 2)
-  └─ Fase Finale: abilità "fine turno" → scarta eccesso → reset HP → passa turno
+  └─ Fase Finale: abilità "fine turno" → scarta eccesso → scadenza effetti → passa turno
 
 VITTORIA
   └─ Un giocatore raggiunge 5 Certificazioni → partita terminata
@@ -539,8 +560,9 @@ VITTORIA
 | **Distruggere** | Rimuovere permanentemente una carta (AddOn o boss) dal gioco, inviandola nel relativo Cimitero. Diverso da "perdere" (che va nel mazzo scarti). |
 | **Annullare** | Bloccare l'effetto di una carta prima che si risolva. La carta viene comunque consumata (va negli scarti). |
 | **Guarire** | Recuperare HP fino al massimo del proprio personaggio. Non si può superare il massimo. |
-| **Priorità** | Indica quale giocatore può agire. Il giocatore bersaglio di una carta ha sempre la possibilità di reagire (finestra 8 s) prima che l'effetto si applichi. |
-| **Finestra di reazione** | Periodo di 8 secondi in cui un giocatore colpito direttamente da una carta può rispondere con una propria carta. |
+| **La Pila** | Stack LIFO in cui vengono inserite le azioni (dadi, carte, abilità) prima di risolversi. Si risolve dall'alto quando tutti i giocatori passano consecutivamente. |
+| **Priorità** | Indica quale giocatore può agire sulla Pila. Parte sempre dal giocatore attivo e gira in senso orario. Si aggiunge un'azione o si passa; quando tutti passano la Pila risolve il top. |
+| **Finestra di reazione** | Periodo di 8 secondi in cui ogni giocatore, quando ha la priorità, può aggiungere un'azione alla Pila o passare. Scaduto il tempo → passa automaticamente. |
 | **Budget carte** | Ogni giocatore può giocare al massimo 2 carte per ciclo di turno (in-turno + reazioni). |
 | **Trofeo / Certificazione** | Una carta boss con certificazione sconfitta rimane nel possesso del giocatore come trofeo visibile. 5 trofei = vittoria. |
 | **Cimitero Boss** | Zona dove finiscono i boss normali sconfitti. |
