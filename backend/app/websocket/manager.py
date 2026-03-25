@@ -32,7 +32,7 @@ class ConnectionManager:
 
     async def broadcast(self, game_code: str, message: dict, exclude_user: int | None = None):
         """Send a message to all players in a game room."""
-        for uid, ws in self.rooms.get(game_code, {}).items():
+        for uid, ws in list(self.rooms.get(game_code, {}).items()):
             if uid != exclude_user:
                 try:
                     await ws.send_text(json.dumps(message))
