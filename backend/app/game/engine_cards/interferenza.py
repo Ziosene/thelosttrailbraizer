@@ -605,10 +605,11 @@ def _card_190(player, game, db, *, target_player_id=None) -> dict:
 
 
 def _card_222(player, game, db, *, target_player_id=None) -> dict:
-    """Block Kit — Riduce l'effetto della prossima carta di un avversario di 1 punto.
+    """Block Kit — La prossima carta giocata da un avversario non produce nessun effetto.
 
     Stores block_kit_pending=True in target's combat_state.
-    turn.py play_card: if target has block_kit_pending, -1L or -1HP to that card's effect.
+    card_play.py: if player has block_kit_pending, the card is discarded with no effect
+    (original_cancelled=True).
     """
     if not target_player_id:
         return {"applied": False, "reason": "target_required"}

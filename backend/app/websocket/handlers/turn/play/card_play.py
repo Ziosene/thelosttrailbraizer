@@ -532,15 +532,12 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
         if _se_target and (_se_target.combat_state or {}).get("sales_engagement_active"):
             _se_target.licenze += 1
 
-    # Card 222 (Block Kit): player's next card has -1 to its primary numeric effect
+    # Card 222 (Block Kit): player's next card is discarded with no effect
     if card and card_approved and not original_cancelled:
         _cs_bk = player.combat_state or {}
         if _cs_bk.get("block_kit_pending"):
-            # Effect reduction: subtract 1L from the player (proxy: undo part of the card benefit)
-            # The simplest hook: take back 1L if player gained any
-            _gained = card_effect_result.get("licenze_gained", 0) if isinstance(card_effect_result, dict) else 0
-            if _gained > 0:
-                player.licenze = max(0, player.licenze - 1)
+            original_cancelled = True
+            card_effect_result = {"card_number": card.number, "applied": False, "blocked_by": "block_kit"}
             _cs_bk2 = dict(player.combat_state)
             _cs_bk2.pop("block_kit_pending", None)
             player.combat_state = _cs_bk2

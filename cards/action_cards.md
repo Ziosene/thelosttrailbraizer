@@ -2173,9 +2173,9 @@
 ### 222. Block Kit
 - **Tipo**: Interferenza
 - **Quando**: Fuori dal proprio turno
-- **Effetto**: Blocca 1 componente dell'azione avversaria — riduce l'effetto della prossima carta giocata da un avversario di 1 punto (dado/HP/Licenze)
+- **Effetto**: La prossima carta giocata da un avversario non produce nessun effetto e viene scartata comunque.
 - **Rarità**: Non comune
-- **Image prompt**: `A 2D hand-drawn block component clamp in the art style of The Binding of Isaac. A modular block being pulled from an opponent's action card reducing its numeric effect by one pip before it resolves. Thick black outlines, flat shading, component-sabotage mood. Plain off-white parchment background. Indie game card art.`
+- **Image prompt**: `A 2D hand-drawn total block shield in the art style of The Binding of Isaac. An opponent's action card slamming into a thick wall and dissolving into nothing, the card still flying to the discard pile but leaving zero effect behind. Thick black outlines, flat shading, hard-counter mood. Plain off-white parchment background. Indie game card art.`
 
 ---
 
