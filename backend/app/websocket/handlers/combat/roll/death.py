@@ -28,7 +28,7 @@ async def _player_death_sequence(player, game, db, boss) -> bool:
             player.current_boss_id = None
             player.current_boss_hp = None
             player.current_boss_source = None
-            player.combat_round = None
+            player.combat_round = 0
             game.current_phase = TurnPhase.action
             db.commit()
             db.refresh(game)
@@ -45,7 +45,7 @@ async def _player_death_sequence(player, game, db, boss) -> bool:
             player.current_boss_id = None
             player.current_boss_hp = None
             player.current_boss_source = None
-            player.combat_round = None
+            player.combat_round = 0
             game.current_phase = TurnPhase.action
             db.commit()
             db.refresh(game)
