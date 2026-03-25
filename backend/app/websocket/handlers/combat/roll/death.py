@@ -140,7 +140,7 @@ async def _player_death_sequence(player, game, db, boss) -> bool:
     player.current_boss_id = None
     player.current_boss_hp = None
     player.current_boss_source = None
-    player.combat_round = None
+    player.combat_round = 0
 
     # Boss returns to top of its deck (market bosses stay in market)
     if _source_death == "deck_1":

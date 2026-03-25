@@ -168,7 +168,7 @@ async def handle_combat_effects(addon_number, game, user_id, data, player, pa, d
         player.current_boss_id = None
         player.current_boss_hp = None
         player.current_boss_source = None
-        player.combat_round = None
+        player.combat_round = 0
         cs82_new = dict(cs82)
         cs82_new["deployment_freeze_used"] = True
         player.combat_state = cs82_new
@@ -196,7 +196,7 @@ async def handle_combat_effects(addon_number, game, user_id, data, player, pa, d
         player.current_boss_id = None
         player.current_boss_hp = None
         player.current_boss_source = None
-        player.combat_round = None
+        player.combat_round = 0
         cs85_new = dict(cs85)
         cs85_new["instance_refresh_used"] = True
         player.combat_state = cs85_new
