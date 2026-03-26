@@ -25,16 +25,18 @@ import { ToastLayer } from '../components/game/ToastLayer'
 import { CombatOverlay } from '../components/game/CombatOverlay'
 import { DeathPenaltyModal } from '../components/game/DeathPenaltyModal'
 import { PilaModal } from '../components/game/PilaModal'
+import { GameOverOverlay } from '../components/game/GameOverOverlay'
 
 interface GamePageProps {
   gameCode: string
+  onGoHome: () => void
 }
 
-export function GamePage({ gameCode }: GamePageProps) {
+export function GamePage({ gameCode, onGoHome }: GamePageProps) {
   const { user } = useAuthStore()
   const {
     gameState, hand, myAddons, pendingChoice, reactionWindow, complyOrRefuse, debugModePeek,
-    deathPenalty, log, lastDiceRoll, pilaState, connect, disconnect, send, clearPendingChoice,
+    deathPenalty, log, lastDiceRoll, pilaState, gameOver, connect, disconnect, send, clearPendingChoice,
   } = useGameStore()
   const [logOpen, setLogOpen] = useState(false)
   const [selectedCard, setSelectedCard] = useState<CardInfo | null>(null)
@@ -154,8 +156,8 @@ export function GamePage({ gameCode }: GamePageProps) {
         bossMarket1={gameState.boss_market_1}
         bossMarket2={gameState.boss_market_2}
         onCardClick={setSelectedCard}
-        onBuyAddon={(slot) => send('buy_addon', { source: slot === 0 ? 'deck' : `market_${slot}` })}
-        onStartCombat={(slot) => send('start_combat', { source: slot === 0 ? 'deck' : `market_${slot}` })}
+        onBuyAddon={(slot) => send('buy_addon', { source: `market_${slot}` })}
+        onStartCombat={(slot) => send('start_combat', { source: `market_${slot}` })}
         onEndTurn={() => send('end_turn')}
       />
 
@@ -266,6 +268,14 @@ export function GamePage({ gameCode }: GamePageProps) {
           hand={hand}
           onPass={() => send('stack_pass')}
           onPlayCard={(id) => send('stack_play_card', { hand_card_id: id })}
+        />
+      )}
+
+      {gameOver && gameState && (
+        <GameOverOverlay
+          winnerId={gameOver.winnerId}
+          players={gameState.players}
+          onGoHome={() => { disconnect(); onGoHome() }}
         />
       )}
     </div>

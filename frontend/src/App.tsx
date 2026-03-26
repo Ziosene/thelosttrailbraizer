@@ -44,7 +44,7 @@ export default function App() {
           onCancel={() => setScreen({ name: 'home' })}
         />
       )}
-      {screen.name === 'game' && <GamePage gameCode={screen.code} />}
+      {screen.name === 'game' && <GamePage gameCode={screen.code} onGoHome={() => setScreen({ name: 'home' })} />}
     </>
   )
 }

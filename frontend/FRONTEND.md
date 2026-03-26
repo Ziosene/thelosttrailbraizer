@@ -216,4 +216,4 @@ Tutti gli endpoint passano per `api` in `http.ts`:
 - [x] **La Pila** — PilaModal: finestra reazione multi-giocatore LIFO dopo ogni tiro dado (stack_opened/priority/updated/passed/resolved)
 - [ ] **Abilità passiva ruolo** — mostrare descrizione ruolo nella lobby in CharacterSelect
 - [ ] **Modal combattimento** — tiro dado, dichiarazione carta per boss 33/86 (parzialmente fatto: CombatOverlay)
-- [ ] **Game over screen** — schermata finale con vincitore + statistiche
+- [x] **Game over screen** — GameOverOverlay: schermata finale con vincitore, leaderboard (HP/Licenze/Cert/Boss), pulsante "Torna alla home"

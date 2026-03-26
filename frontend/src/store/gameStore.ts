@@ -66,6 +66,10 @@ export interface DebugModePeek {
   source: string
 }
 
+export interface GameOver {
+  winnerId: number
+}
+
 export interface DeathPenaltyChoice {
   hand: Array<{ hand_card_id: number; card_id: number; name: string; card_type: string; rarity: string }>
   addons: Array<{ player_addon_id: number; addon_id: number; name: string; effect: string; is_tapped: boolean }>
@@ -125,6 +129,7 @@ interface GameStore {
   debugModePeek: DebugModePeek | null
   deathPenalty: DeathPenaltyChoice | null
   pilaState: PilaState | null
+  gameOver: GameOver | null
   connect: (gameCode: string, userId: number) => void
   disconnect: () => void
   send: (action: string, data?: Record<string, unknown>) => void
@@ -164,6 +169,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     debugModePeek: null,
     deathPenalty: null,
     pilaState: null,
+    gameOver: null,
 
     connect(gameCode, userId) {
       set({ gameCode, myUserId: userId })
@@ -235,6 +241,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         addLog(`✓ Fine turno di ${pName(msg.player_id)}`, 'text-slate-500')
       })
       bus.on('game_over', (msg: any) => {
+        set({ gameOver: { winnerId: msg.winner_id } })
         addLog(`🎉 Partita finita! Vince ${pName(msg.winner_id)}`, 'text-yellow-300')
       })
       bus.on('reaction_resolved', (msg: any) => {
@@ -338,7 +345,7 @@ export const useGameStore = create<GameStore>((set, get) => {
       disconnectSocket()
       set({
         gameCode: null, gameState: null, hand: [], myAddons: [],
-        combatActive: false, lastDiceRoll: null, pendingChoice: null, reactionWindow: null, complyOrRefuse: null, log: [], toasts: [], debugModePeek: null, deathPenalty: null, pilaState: null,
+        combatActive: false, lastDiceRoll: null, pendingChoice: null, reactionWindow: null, complyOrRefuse: null, log: [], toasts: [], debugModePeek: null, deathPenalty: null, pilaState: null, gameOver: null,
       })
     },
 
