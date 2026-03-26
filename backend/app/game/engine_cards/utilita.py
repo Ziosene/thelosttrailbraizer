@@ -15,18 +15,15 @@ def _card_31(player, game, db, *, target_player_id=None) -> dict:
     for _ in range(2):
         if len(list(player.hand)) + drawn >= engine.MAX_HAND_SIZE:
             break
-        if game.action_deck_1:
-            db.add(PlayerHandCard(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
-            drawn += 1
-        elif game.action_deck_2:
-            db.add(PlayerHandCard(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+        if game.action_deck:
+            db.add(PlayerHandCard(player_id=player.id, action_card_id=game.action_deck.pop(0)))
             drawn += 1
         elif game.action_discard:
             new_deck = engine.shuffle_deck(game.action_discard)
-            game.action_deck_1, game.action_deck_2 = engine.split_deck(new_deck)
+            game.action_deck, game.action_deck = engine.split_deck(new_deck)
             game.action_discard = []
-            if game.action_deck_1:
-                db.add(PlayerHandCard(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+            if game.action_deck:
+                db.add(PlayerHandCard(player_id=player.id, action_card_id=game.action_deck.pop(0)))
                 drawn += 1
 
     return {"applied": True, "cards_drawn": drawn}
@@ -37,7 +34,7 @@ def _card_32(player, game, db, *, target_player_id=None) -> dict:
 
     Returns pending_choice so the client can pick the preferred order.
     """
-    _top3 = (game.action_deck_1 or [])[:3]
+    _top3 = (game.action_deck or [])[:3]
     if not _top3:
         return {"applied": False, "reason": "action_deck_empty"}
     return {
@@ -57,7 +54,7 @@ def _card_33(player, game, db, *, target_player_id=None) -> dict:
     player.cards_played_this_turn = max(0, player.cards_played_this_turn - 1)
     drew = 0
     for _ in range(2):
-        src = game.action_deck_1 if game.action_deck_1 else game.action_deck_2
+        src = game.action_deck if game.action_deck else game.action_deck
         if src:
             db.add(PlayerHandCard(player_id=player.id, action_card_id=src.pop(0)))
             drew += 1
@@ -104,18 +101,15 @@ def _card_35(player, game, db, *, target_player_id=None) -> dict:
     # Draw 4 new cards
     drawn = 0
     for _ in range(4):
-        if game.action_deck_1:
-            db.add(PlayerHandCard(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
-            drawn += 1
-        elif game.action_deck_2:
-            db.add(PlayerHandCard(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+        if game.action_deck:
+            db.add(PlayerHandCard(player_id=player.id, action_card_id=game.action_deck.pop(0)))
             drawn += 1
         elif game.action_discard:
             new_deck = engine.shuffle_deck(game.action_discard)
-            game.action_deck_1, game.action_deck_2 = engine.split_deck(new_deck)
+            game.action_deck, game.action_deck = engine.split_deck(new_deck)
             game.action_discard = []
-            if game.action_deck_1:
-                db.add(PlayerHandCard(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+            if game.action_deck:
+                db.add(PlayerHandCard(player_id=player.id, action_card_id=game.action_deck.pop(0)))
                 drawn += 1
 
     return {"applied": True, "hand_discarded": hand_discarded, "cards_drawn": drawn}
@@ -127,7 +121,7 @@ def _card_36(player, game, db, *, target_player_id=None) -> dict:
         return {"applied": False, "reason": "cannot_use_in_combat"}
 
     preview = []
-    for bid in (game.boss_deck_1 or [])[:2]:
+    for bid in (game.boss_deck or [])[:2]:
         bc = db.get(BossCard, bid)
         if bc:
             preview.append({
@@ -143,18 +137,15 @@ def _card_36(player, game, db, *, target_player_id=None) -> dict:
 def _card_37(player, game, db, *, target_player_id=None) -> dict:
     """Free Trial — Pesca 1 carta AddOn e tienila senza pagare per questo turno. Scartata a fine turno.
 
-    Draws from addon_deck_1 (or deck_2 if empty). Creates a PlayerAddon tagged as
+    Draws from addon_deck (or deck if empty). Creates a PlayerAddon tagged as
     free trial in combat_state["free_trial_addon_player_addon_ids"].
     turn.py _handle_end_turn removes these addons when the player's turn ends.
     """
     from app.models.game import PlayerAddon
 
     addon_id = None
-    if game.addon_deck_1:
-        addon_id = game.addon_deck_1.pop(0)
-    elif game.addon_deck_2:
-        addon_id = game.addon_deck_2.pop(0)
-
+    if game.addon_deck:
+        addon_id = game.addon_deck.pop(0)
     if addon_id is None:
         return {"applied": False, "reason": "no_addons_available"}
 
@@ -185,18 +176,15 @@ def _card_63(player, game, db, *, target_player_id=None) -> dict:
     for _ in range(2):
         if len(list(player.hand)) + drawn >= engine.MAX_HAND_SIZE:
             break
-        if game.action_deck_1:
-            db.add(_PHC63(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
-            drawn += 1
-        elif game.action_deck_2:
-            db.add(_PHC63(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+        if game.action_deck:
+            db.add(_PHC63(player_id=player.id, action_card_id=game.action_deck.pop(0)))
             drawn += 1
         elif game.action_discard:
             new_deck = engine.shuffle_deck(game.action_discard)
-            game.action_deck_1, game.action_deck_2 = engine.split_deck(new_deck)
+            game.action_deck, game.action_deck = engine.split_deck(new_deck)
             game.action_discard = []
-            if game.action_deck_1:
-                db.add(_PHC63(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+            if game.action_deck:
+                db.add(_PHC63(player_id=player.id, action_card_id=game.action_deck.pop(0)))
                 drawn += 1
     return {"applied": True, "cards_drawn": drawn}
 
@@ -221,7 +209,7 @@ def _card_65(player, game, db, *, target_player_id=None) -> dict:
     if player.is_in_combat:
         return {"applied": False, "reason": "in_combat"}
     preview = []
-    for bid in (game.boss_deck_1 or [])[:3]:
+    for bid in (game.boss_deck or [])[:3]:
         bc = db.get(BossCard, bid)
         if bc:
             preview.append({
@@ -239,8 +227,8 @@ def _card_66(player, game, db, *, target_player_id=None) -> dict:
     recycled = len(game.action_discard)
     new_deck = engine.shuffle_deck(game.action_discard)
     d1, d2 = engine.split_deck(new_deck)
-    game.action_deck_1 = (game.action_deck_1 or []) + d1
-    game.action_deck_2 = (game.action_deck_2 or []) + d2
+    game.action_deck = (game.action_deck or []) + d1
+    game.action_deck = (game.action_deck or []) + d2
     game.action_discard = []
     return {"applied": True, "cards_recycled": recycled}
 
@@ -252,7 +240,7 @@ def _card_67(player, game, db, *, target_player_id=None) -> dict:
     """
     if player.is_in_combat:
         return {"applied": False, "reason": "in_combat"}
-    _top3 = (game.boss_deck_1 or [])[:3]
+    _top3 = (game.boss_deck or [])[:3]
     if not _top3:
         return {"applied": False, "reason": "boss_deck_empty"}
     return {
@@ -273,16 +261,14 @@ def _card_68(player, game, db, *, target_player_id=None) -> dict:
     from app.models.game import PlayerHandCard as _PHC68
     drawn_ids = []
     for _ in range(4):
-        if game.action_deck_1:
-            cid = game.action_deck_1.pop(0)
-        elif game.action_deck_2:
-            cid = game.action_deck_2.pop(0)
+        if game.action_deck:
+            cid = game.action_deck.pop(0)
         elif game.action_discard:
             new_deck = engine.shuffle_deck(game.action_discard)
-            game.action_deck_1, game.action_deck_2 = engine.split_deck(new_deck)
+            game.action_deck, game.action_deck = engine.split_deck(new_deck)
             game.action_discard = []
-            if game.action_deck_1:
-                cid = game.action_deck_1.pop(0)
+            if game.action_deck:
+                cid = game.action_deck.pop(0)
             else:
                 break
         else:
@@ -337,11 +323,8 @@ def _card_80(player, game, db, *, target_player_id=None) -> dict:
         for _ in range(2):
             if len(list(player.hand)) + drawn >= engine.MAX_HAND_SIZE:
                 break
-            if game.action_deck_1:
-                db.add(_PHC80(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
-                drawn += 1
-            elif game.action_deck_2:
-                db.add(_PHC80(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+            if game.action_deck:
+                db.add(_PHC80(player_id=player.id, action_card_id=game.action_deck.pop(0)))
                 drawn += 1
         return {"applied": True, "choice": "A", "cards_drawn": drawn}
     else:
@@ -359,16 +342,14 @@ def _card_106(player, game, db, *, target_player_id=None) -> dict:
     from app.models.game import PlayerHandCard as _PHC106
     drawn_ids = []
     for _ in range(3):
-        if game.action_deck_1:
-            drawn_ids.append(game.action_deck_1.pop(0))
-        elif game.action_deck_2:
-            drawn_ids.append(game.action_deck_2.pop(0))
+        if game.action_deck:
+            drawn_ids.append(game.action_deck.pop(0))
         elif game.action_discard:
             new_deck = engine.shuffle_deck(game.action_discard)
-            game.action_deck_1, game.action_deck_2 = engine.split_deck(new_deck)
+            game.action_deck, game.action_deck = engine.split_deck(new_deck)
             game.action_discard = []
-            if game.action_deck_1:
-                drawn_ids.append(game.action_deck_1.pop(0))
+            if game.action_deck:
+                drawn_ids.append(game.action_deck.pop(0))
     if len(drawn_ids) <= 2:
         # Not enough cards — just keep them all, no choice needed
         for cid in drawn_ids:
@@ -398,7 +379,7 @@ def _card_107(player, game, db, *, target_player_id=None) -> dict:
     """
     if player.is_in_combat:
         return {"applied": False, "reason": "in_combat"}
-    _top3 = (game.action_deck_1 or [])[:3]
+    _top3 = (game.action_deck or [])[:3]
     if not _top3:
         return {"applied": False, "reason": "action_deck_empty"}
     return {
@@ -419,16 +400,14 @@ def _card_108(player, game, db, *, target_player_id=None) -> dict:
     from app.models.game import PlayerHandCard as _PHC108
     drawn_ids = []
     for _ in range(4):
-        if game.action_deck_1:
-            drawn_ids.append(game.action_deck_1.pop(0))
-        elif game.action_deck_2:
-            drawn_ids.append(game.action_deck_2.pop(0))
+        if game.action_deck:
+            drawn_ids.append(game.action_deck.pop(0))
         elif game.action_discard:
             new_deck = engine.shuffle_deck(game.action_discard)
-            game.action_deck_1, game.action_deck_2 = engine.split_deck(new_deck)
+            game.action_deck, game.action_deck = engine.split_deck(new_deck)
             game.action_discard = []
-            if game.action_deck_1:
-                drawn_ids.append(game.action_deck_1.pop(0))
+            if game.action_deck:
+                drawn_ids.append(game.action_deck.pop(0))
     if len(drawn_ids) <= 2:
         # Not enough cards for a real choice — just keep them all
         for cid in drawn_ids:
@@ -455,16 +434,15 @@ def _card_108(player, game, db, *, target_player_id=None) -> dict:
 def _card_109(player, game, db, *, target_player_id=None) -> dict:
     """Checkout Flow — Acquista gratis 1 AddOn dal mazzo; gioca 1 carta extra che non conta nel limite.
 
-    Takes the first addon from addon_deck_1 (or deck_2) and gives it to the player for free.
+    Takes the first addon from addon_deck (or deck) and gives it to the player for free.
     Also decrements cards_played_this_turn by 1 so this card itself doesn't count.
     """
     from app.models.game import PlayerAddon
     if player.is_in_combat:
         return {"applied": False, "reason": "in_combat"}
-    src_deck = "deck_1" if game.addon_deck_1 else ("deck_2" if game.addon_deck_2 else None)
-    if not src_deck:
+    if not game.addon_deck:
         return {"applied": False, "reason": "no_addon_available"}
-    addon_id = game.addon_deck_1.pop(0) if src_deck == "deck_1" else game.addon_deck_2.pop(0)
+    addon_id = game.addon_deck.pop(0)
     db.add(PlayerAddon(player_id=player.id, addon_id=addon_id))
     player.cards_played_this_turn = max(0, player.cards_played_this_turn - 1)
     return {"applied": True, "addon_acquired_free": addon_id, "card_did_not_count": True}
@@ -501,10 +479,8 @@ def _card_137(player, game, db, *, target_player_id=None) -> dict:
     from app.models.game import PlayerHandCard as _PHC137
     drawn_ids = []
     for _ in range(5):
-        if game.action_deck_1:
-            drawn_ids.append(game.action_deck_1.pop(0))
-        elif game.action_deck_2:
-            drawn_ids.append(game.action_deck_2.pop(0))
+        if game.action_deck:
+            drawn_ids.append(game.action_deck.pop(0))
     if not drawn_ids:
         return {"applied": False, "reason": "action_deck_empty"}
     # Add all drawn cards to hand temporarily
@@ -538,11 +514,11 @@ def _card_172(player, game, db, *, target_player_id=None) -> dict:
     """Tableau Dashboard — Pesca 2 carte e guarda le prime 2 del mazzo boss (info)."""
     from app.models.game import PlayerHandCard as _PHC172
     drew = 0
-    for deck in (game.action_deck_1, game.action_deck_2):
+    for deck in (game.action_deck, game.action_deck):
         if deck and drew < 2:
             db.add(_PHC172(player_id=player.id, action_card_id=deck.pop(0)))
             drew += 1
-    next_boss_ids = (game.boss_deck_1 or game.boss_deck_2 or [])[:2]
+    next_boss_ids = (game.boss_deck or game.boss_deck or [])[:2]
     return {"applied": True, "cards_drawn": drew, "next_boss_card_ids": next_boss_ids}
 
 
@@ -556,7 +532,7 @@ def _card_173(player, game, db, *, target_player_id=None) -> dict:
     cs = dict(player.combat_state or {})
     cs["crm_analytics_reorder_pending"] = True
     player.combat_state = cs
-    top4 = (game.action_deck_1 or game.action_deck_2 or [])[:4]
+    top4 = (game.action_deck or game.action_deck or [])[:4]
     return {"applied": True, "crm_analytics_reorder_pending": True, "top4_card_ids": top4}
 
 
@@ -581,7 +557,7 @@ def _card_175(player, game, db, *, target_player_id=None) -> dict:
     from app.models.game import PlayerHandCard as _PHC175
     drew = 0
     for _ in range(2):
-        src = game.action_deck_1 if game.action_deck_1 else game.action_deck_2
+        src = game.action_deck if game.action_deck else game.action_deck
         if src:
             db.add(_PHC175(player_id=player.id, action_card_id=src.pop(0)))
             drew += 1
@@ -643,7 +619,7 @@ def _card_178(player, game, db, *, target_player_id=None) -> dict:
     game.action_discard = (game.action_discard or []) + discarded
     drew = 0
     for _ in range(count):
-        src = game.action_deck_1 if game.action_deck_1 else game.action_deck_2
+        src = game.action_deck if game.action_deck else game.action_deck
         if src:
             db.add(_PHC178(player_id=player.id, action_card_id=src.pop(0)))
             drew += 1
@@ -652,7 +628,7 @@ def _card_178(player, game, db, *, target_player_id=None) -> dict:
 
 def _card_179(player, game, db, *, target_player_id=None) -> dict:
     """API Autodiscovery — Guarda i prossimi 3 boss e rimettili nell'ordine che preferisci."""
-    src = game.boss_deck_1 if game.boss_deck_1 else game.boss_deck_2
+    src = game.boss_deck if game.boss_deck else game.boss_deck
     if not src:
         return {"applied": False, "reason": "no_boss_deck"}
     preview = src[:3]
@@ -682,13 +658,10 @@ def _card_196(player, game, db, *, target_player_id=None) -> dict:
     """Get Records — Pesca 1 carta e guarda le prime 2 del mazzo boss senza pescarle."""
     from app.models.game import PlayerHandCard as _PHC196
     drew = False
-    if game.action_deck_1:
-        db.add(_PHC196(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+    if game.action_deck:
+        db.add(_PHC196(player_id=player.id, action_card_id=game.action_deck.pop(0)))
         drew = True
-    elif game.action_deck_2:
-        db.add(_PHC196(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
-        drew = True
-    peeked = (game.boss_deck_1 or game.boss_deck_2 or [])[:2]
+    peeked = (game.boss_deck or game.boss_deck or [])[:2]
     return {"applied": True, "drew_card": drew, "boss_deck_top2": peeked}
 
 
@@ -697,7 +670,7 @@ def _card_197(player, game, db, *, target_player_id=None) -> dict:
     from app.models.game import PlayerHandCard as _PHC197
     drew = 0
     for _ in range(2):
-        src = game.action_deck_1 if game.action_deck_1 else game.action_deck_2
+        src = game.action_deck if game.action_deck else game.action_deck
         if src:
             db.add(_PHC197(player_id=player.id, action_card_id=src.pop(0)))
             drew += 1
@@ -707,7 +680,7 @@ def _card_197(player, game, db, *, target_player_id=None) -> dict:
 def _card_198(player, game, db, *, target_player_id=None) -> dict:
     """Einstein Recommendation — Pesca 1 AddOn dal mazzo gratis."""
     from app.models.game import PlayerAddon as _PA198
-    src = game.addon_deck_1 if game.addon_deck_1 else game.addon_deck_2
+    src = game.addon_deck if game.addon_deck else game.addon_deck
     if not src:
         return {"applied": False, "reason": "no_addon_available"}
     addon_id = src.pop(0)
@@ -735,7 +708,7 @@ def _card_199(player, game, db, *, target_player_id=None) -> dict:
     game.action_discard = (game.action_discard or []) + discarded
     drew = 0
     for _ in range(count):
-        src = game.action_deck_1 if game.action_deck_1 else game.action_deck_2
+        src = game.action_deck if game.action_deck else game.action_deck
         if src:
             db.add(_PHC199(player_id=player.id, action_card_id=src.pop(0)))
             drew += 1
@@ -763,13 +736,9 @@ def _card_200(player, game, db, *, target_player_id=None) -> dict:
 
     drew_count = 0
     for bp in beneficiaries:
-        if game.action_deck_1:
-            db.add(_PHC200(player_id=bp.id, action_card_id=game.action_deck_1.pop(0)))
+        if game.action_deck:
+            db.add(_PHC200(player_id=bp.id, action_card_id=game.action_deck.pop(0)))
             drew_count += 1
-        elif game.action_deck_2:
-            db.add(_PHC200(player_id=bp.id, action_card_id=game.action_deck_2.pop(0)))
-            drew_count += 1
-
     discarded = 0
     for lp in losers:
         hand = list(lp.hand)
@@ -856,11 +825,8 @@ def _card_232(player, game, db, *, target_player_id=None) -> dict:
     cs["hand_revealed_this_turn"] = True
     player.combat_state = cs
     drew = False
-    if game.action_deck_1:
-        db.add(_PHC232(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
-        drew = True
-    elif game.action_deck_2:
-        db.add(_PHC232(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+    if game.action_deck:
+        db.add(_PHC232(player_id=player.id, action_card_id=game.action_deck.pop(0)))
         drew = True
     return {"applied": True, "hand_revealed": True, "drew_card": drew}
 
@@ -895,7 +861,7 @@ def _card_239(player, game, db, *, target_player_id=None) -> dict:
         db.delete(hc)
         discarded.append(hc.action_card_id)
     drawn = []
-    for deck in (game.action_deck_1, game.action_deck_2) * 3:
+    for deck in (game.action_deck, game.action_deck) * 3:
         if len(drawn) >= 3:
             break
         if deck:
@@ -972,20 +938,20 @@ def _card_247(player, game, db, *, target_player_id=None) -> dict:
     from app.models.game import PlayerHandCard as _PHC247
     if player.is_in_combat:
         return {"applied": False, "reason": "in_combat"}
-    deck = list(game.action_deck_1 or []) or list(game.action_deck_2 or [])
+    deck = list(game.action_deck or []) or list(game.action_deck or [])
     taken = []
-    while len(taken) < 3 and game.action_deck_1:
-        taken.append(game.action_deck_1.pop(0))
-    if len(taken) < 3 and game.action_deck_2:
-        while len(taken) < 3 and game.action_deck_2:
-            taken.append(game.action_deck_2.pop(0))
+    while len(taken) < 3 and game.action_deck:
+        taken.append(game.action_deck.pop(0))
+    if len(taken) < 3 and game.action_deck:
+        while len(taken) < 3 and game.action_deck:
+            taken.append(game.action_deck.pop(0))
     if not taken:
         return {"applied": False, "reason": "empty_decks"}
     # Keep first → add to hand
     db.add(_PHC247(player_id=player.id, action_card_id=taken[0]))
-    # Requeue second → back on top of deck_1
+    # Requeue second → back on top of deck
     if len(taken) >= 2:
-        game.action_deck_1 = [taken[1]] + list(game.action_deck_1 or [])
+        game.action_deck = [taken[1]] + list(game.action_deck or [])
     # Discard third
     if len(taken) >= 3:
         game.action_discard = (game.action_discard or []) + [taken[2]]
@@ -996,7 +962,7 @@ def _card_248(player, game, db, *, target_player_id=None) -> dict:
     """Pipeline Promotion — Sposta la top card del mazzo boss in fondo (eviti il prossimo boss)."""
     if player.is_in_combat:
         return {"applied": False, "reason": "in_combat"}
-    deck = game.boss_deck_1 if game.boss_deck_1 else game.boss_deck_2
+    deck = game.boss_deck if game.boss_deck else game.boss_deck
     if deck and len(deck) > 1:
         top = deck.pop(0)
         deck.append(top)
@@ -1025,7 +991,7 @@ def _card_250(player, game, db, *, target_player_id=None) -> dict:
         return {"applied": False, "reason": "empty_discard"}
     card_id = discard.pop(-1)
     game.action_discard = discard
-    game.action_deck_1 = [card_id] + list(game.action_deck_1 or [])
+    game.action_deck = [card_id] + list(game.action_deck or [])
     return {"applied": True, "card_moved_to_top": card_id}
 
 
@@ -1041,10 +1007,8 @@ def _card_263(player, game, db, *, target_player_id=None) -> dict:
         is_arch = (gp.role or "") in arch_roles
         n = 2 if gp.id == player.id else (1 if is_arch else 0)
         for _ in range(n):
-            if game.action_deck_1:
-                db.add(_PHC263(player_id=gp.id, action_card_id=game.action_deck_1.pop(0)))
-            elif game.action_deck_2:
-                db.add(_PHC263(player_id=gp.id, action_card_id=game.action_deck_2.pop(0)))
+            if game.action_deck:
+                db.add(_PHC263(player_id=gp.id, action_card_id=game.action_deck.pop(0)))
             if gp.id == player.id:
                 drew_self += 1
             else:
@@ -1063,17 +1027,15 @@ def _card_264(player, game, db, *, target_player_id=None) -> dict:
         return {"applied": False, "reason": "in_combat"}
     taken = []
     for _ in range(3):
-        if game.action_deck_1:
-            taken.append(game.action_deck_1.pop(0))
-        elif game.action_deck_2:
-            taken.append(game.action_deck_2.pop(0))
+        if game.action_deck:
+            taken.append(game.action_deck.pop(0))
     if not taken:
         return {"applied": False, "reason": "empty_decks"}
-    # Keep first → hand; shuffle rest back into deck_1
+    # Keep first → hand; shuffle rest back into deck
     db.add(_PHC264(player_id=player.id, action_card_id=taken[0]))
     if len(taken) > 1:
         remaining = taken[1:]
-        game.action_deck_1 = _eng264.shuffle_deck(remaining + list(game.action_deck_1 or []))
+        game.action_deck = _eng264.shuffle_deck(remaining + list(game.action_deck or []))
     return {"applied": True, "kept_card_id": taken[0], "returned": len(taken) - 1}
 
 
@@ -1108,13 +1070,10 @@ def _card_266(player, game, db, *, target_player_id=None) -> dict:
         return {"applied": False, "reason": "in_combat"}
     drew = 0
     for _ in range(2):
-        if game.action_deck_1:
-            db.add(_PHC266(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+        if game.action_deck:
+            db.add(_PHC266(player_id=player.id, action_card_id=game.action_deck.pop(0)))
             drew += 1
-        elif game.action_deck_2:
-            db.add(_PHC266(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
-            drew += 1
-    boss_peek = (game.boss_deck_1 or game.boss_deck_2 or [])[:1]
+    boss_peek = (game.boss_deck or game.boss_deck or [])[:1]
     return {"applied": True, "drew_cards": drew, "boss_deck_top1": boss_peek}
 
 
@@ -1170,11 +1129,8 @@ def _card_282(player, game, db, *, target_player_id=None) -> dict:
     player.licenze += 5
     drew = 0
     for _ in range(2):
-        if game.action_deck_1:
-            db.add(_PHC282(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
-            drew += 1
-        elif game.action_deck_2:
-            db.add(_PHC282(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+        if game.action_deck:
+            db.add(_PHC282(player_id=player.id, action_card_id=game.action_deck.pop(0)))
             drew += 1
     boss_damage = 0
     if player.is_in_combat:
@@ -1232,11 +1188,8 @@ def _card_291(player, game, db, *, target_player_id=None) -> dict:
     from app.models.game import PlayerHandCard as _PHC291
     player.licenze += 1
     drew = 0
-    if game.action_deck_1:
-        db.add(_PHC291(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
-        drew = 1
-    elif game.action_deck_2:
-        db.add(_PHC291(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+    if game.action_deck:
+        db.add(_PHC291(player_id=player.id, action_card_id=game.action_deck.pop(0)))
         drew = 1
     return {"applied": True, "licenze_gained": 1, "drew": drew}
 
@@ -1248,11 +1201,8 @@ def _card_299(player, game, db, *, target_player_id=None) -> dict:
         return {"applied": False, "reason": "in_combat"}
     drew = 0
     for _ in range(3):
-        if game.action_deck_1:
-            db.add(_PHC299(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
-            drew += 1
-        elif game.action_deck_2:
-            db.add(_PHC299(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+        if game.action_deck:
+            db.add(_PHC299(player_id=player.id, action_card_id=game.action_deck.pop(0)))
             drew += 1
     player.licenze += 5
     player.hp = player.max_hp

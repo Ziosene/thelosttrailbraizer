@@ -129,16 +129,13 @@ export interface GameState {
   turn_number: number
   current_player_id: number | null
   max_players?: number
-  action_deck_1_count: number
-  action_deck_2_count: number
+  action_deck_count: number
   action_discard_count: number
   action_discard_top: DiscardTopAction | null
-  boss_deck_1_count: number
-  boss_deck_2_count: number
+  boss_deck_count: number
   boss_graveyard_count: number
   boss_graveyard_top: DiscardTopBoss | null
-  addon_deck_1_count: number
-  addon_deck_2_count: number
+  addon_deck_count: number
   addon_graveyard_count: number
   addon_graveyard_top: DiscardTopAddon | null
   boss_market_1: BossMarketInfo | null

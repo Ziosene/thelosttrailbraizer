@@ -153,8 +153,8 @@ export function GamePage({ gameCode }: GamePageProps) {
         bossMarket1={gameState.boss_market_1}
         bossMarket2={gameState.boss_market_2}
         onCardClick={setSelectedCard}
-        onBuyAddon={(slot) => send('buy_addon', { market_slot: slot })}
-        onStartCombat={(slot) => send('start_combat', { market_slot: slot })}
+        onBuyAddon={(slot) => send('buy_addon', { source: slot === 0 ? 'deck' : `market_${slot}` })}
+        onStartCombat={(slot) => send('start_combat', { source: slot === 0 ? 'deck' : `market_${slot}` })}
         onEndTurn={() => send('end_turn')}
       />
 
@@ -165,7 +165,7 @@ export function GamePage({ gameCode }: GamePageProps) {
         isMyTurn={isMyTurn}
         onCardClick={setSelectedCard}
         onPlayCard={(id) => send('play_card', { hand_card_id: id })}
-        onDrawCard={(deck) => send('draw_card', { deck })}
+        onDrawCard={() => send('draw_card')}
       />
 
       {logOpen && (

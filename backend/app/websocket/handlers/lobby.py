@@ -107,38 +107,34 @@ async def _handle_start_game(game: GameSession, user_id: int, db: Session):
         by_rarity.setdefault(ac.rarity, []).append(ac.id)
 
     full_action_deck = engine.build_action_deck(by_rarity)
-    game.action_deck_1, game.action_deck_2 = engine.split_deck(full_action_deck)
+    game.action_deck = full_action_deck
     game.action_discard = []
 
     full_boss_deck = engine.shuffle_deck([bc.id for bc in boss_cards])
-    game.boss_deck_1, game.boss_deck_2 = engine.split_deck(full_boss_deck)
+    game.boss_deck = full_boss_deck
     game.boss_graveyard = []
-    # Reveal first market card from each boss deck
-    game.boss_market_1 = game.boss_deck_1.pop(0) if game.boss_deck_1 else None
-    game.boss_market_2 = game.boss_deck_2.pop(0) if game.boss_deck_2 else None
+    # Reveal first 2 market cards from boss deck
+    game.boss_market_1 = game.boss_deck.pop(0) if game.boss_deck else None
+    game.boss_market_2 = game.boss_deck.pop(0) if game.boss_deck else None
 
     full_addon_deck = engine.shuffle_deck([ac.id for ac in addon_cards])
-    game.addon_deck_1, game.addon_deck_2 = engine.split_deck(full_addon_deck)
+    game.addon_deck = full_addon_deck
     game.addon_graveyard = []
-    # Reveal first market card from each addon deck
-    game.addon_market_1 = game.addon_deck_1.pop(0) if game.addon_deck_1 else None
-    game.addon_market_2 = game.addon_deck_2.pop(0) if game.addon_deck_2 else None
+    # Reveal first 2 market cards from addon deck
+    game.addon_market_1 = game.addon_deck.pop(0) if game.addon_deck else None
+    game.addon_market_2 = game.addon_deck.pop(0) if game.addon_deck else None
     game.turn_order = [p.id for p in players]
     game.status = GameStatus.in_progress
     game.current_turn_index = 0
     game.turn_number = 1
     game.current_phase = TurnPhase.draw
 
-    # Deal starting hands (alternate draws between deck_1 and deck_2 for balance)
+    # Deal starting hands from single action deck
     from app.models.game import PlayerHandCard
-    for i, player in enumerate(players):
-        for j in range(engine.STARTING_HAND_SIZE):
-            if (i + j) % 2 == 0:
-                drawn = [game.action_deck_1.pop(0)] if game.action_deck_1 else []
-            else:
-                drawn = [game.action_deck_2.pop(0)] if game.action_deck_2 else []
-            for card_id in drawn:
-                db.add(PlayerHandCard(player_id=player.id, action_card_id=card_id))
+    for player in players:
+        for _ in range(engine.STARTING_HAND_SIZE):
+            if game.action_deck:
+                db.add(PlayerHandCard(player_id=player.id, action_card_id=game.action_deck.pop(0)))
 
     db.commit()
     db.refresh(game)

@@ -45,11 +45,8 @@ def _card_22(player, game, db, *, target_player_id=None) -> dict:
     boss_id = player.current_boss_id
     source = player.current_boss_source
 
-    # Boss goes to the BOTTOM of the appropriate deck (unlike retreat which goes to top)
-    if source in ("deck_1", "market_1"):
-        game.boss_deck_1 = (game.boss_deck_1 or []) + [boss_id]
-    else:
-        game.boss_deck_2 = (game.boss_deck_2 or []) + [boss_id]
+    # Boss goes to the BOTTOM of the deck
+    game.boss_deck = (game.boss_deck or []) + [boss_id]
 
     # Reset combat state — no consequences
     player.is_in_combat = False
@@ -91,7 +88,7 @@ def _card_25(player, game, db, *, target_player_id=None) -> dict:
     player.hp = min(player.max_hp, player.hp + 1)
 
     drew = 0
-    src = game.action_deck_1 if game.action_deck_1 else game.action_deck_2
+    src = game.action_deck if game.action_deck else game.action_deck
     if src:
         db.add(PlayerHandCard(player_id=player.id, action_card_id=src.pop(0)))
         drew = 1
@@ -505,7 +502,7 @@ def _card_206(player, game, db, *, target_player_id=None) -> dict:
     """Landing Page — Pesca 3 carte, perdi 3 Licenze."""
     from app.models.game import PlayerHandCard
     drawn = []
-    for deck in (game.action_deck_1, game.action_deck_2) * 3:
+    for deck in (game.action_deck, game.action_deck) * 3:
         if len(drawn) >= 3:
             break
         if deck:
@@ -561,11 +558,8 @@ def _card_260(player, game, db, *, target_player_id=None) -> dict:
     if is_admin:
         player.hp = min(player.max_hp, player.hp + 2)
         drew = False
-        if game.action_deck_1:
-            db.add(_PHC260(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
-            drew = True
-        elif game.action_deck_2:
-            db.add(_PHC260(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+        if game.action_deck:
+            db.add(_PHC260(player_id=player.id, action_card_id=game.action_deck.pop(0)))
             drew = True
         return {"applied": True, "healed": 2, "drew_card": drew, "admin": True}
     player.hp = min(player.max_hp, player.hp + 1)

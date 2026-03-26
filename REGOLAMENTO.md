@@ -309,9 +309,7 @@ Gli AddOn **Passivi** non si tappano e non richiedono dichiarazione: il loro eff
 
 ## Morte del Giocatore
 
-Un giocatore muore quando i suoi **HP scendono a 0 durante il combattimento**.
-
-> **Nota importante:** fuori dal combattimento, le carte azione avversarie non possono uccidere un giocatore. Se un effetto porterebbe gli HP a 0 fuori dal combattimento, il giocatore scende a **1 HP minimo**.
+Un giocatore muore quando i suoi **HP scendono a 0**, indipendentemente dalla causa: un tiro di dado in combattimento, una carta avversaria, un addon, una reazione nella Pila.
 
 ### Conseguenze della morte (in ordine)
 

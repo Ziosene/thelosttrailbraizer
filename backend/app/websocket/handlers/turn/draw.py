@@ -212,14 +212,10 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
         if _cs94["release_train_turns"] >= 4:
             _cs94["release_train_turns"] = 0
             _addon_id94 = None
-            if game.addon_deck_1:
-                _addon_deck94 = list(game.addon_deck_1)
+            if game.addon_deck:
+                _addon_deck94 = list(game.addon_deck)
                 _addon_id94 = _addon_deck94.pop(0)
-                game.addon_deck_1 = _addon_deck94
-            elif game.addon_deck_2:
-                _addon_deck94b = list(game.addon_deck_2)
-                _addon_id94 = _addon_deck94b.pop(0)
-                game.addon_deck_2 = _addon_deck94b
+                game.addon_deck = _addon_deck94
             if _addon_id94:
                 from app.models.game import PlayerAddon as _PA94
                 db.add(_PA94(player_id=player.id, addon_id=_addon_id94, is_tapped=False))
@@ -232,7 +228,7 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
 
     # Addon 96 (Backlog Refinement): at start of turn, peek at next addon in deck
     if _has_addon_draw(player, 96):
-        _peek96 = (game.addon_deck_1 or [])[:1] or (game.addon_deck_2 or [])[:1]
+        _peek96 = (game.addon_deck or [])[:1] or (game.addon_deck or [])[:1]
         if _peek96:
             await manager.send_to_player(game.code, player.user_id, {
                 "type": "backlog_refinement_peek",
@@ -249,29 +245,16 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
         await _error(game.code, user_id, "Hand is full")
         return
 
-    deck_num = data.get("deck", 1)  # client sends 1 or 2
-    if deck_num not in (1, 2):
-        await _error(game.code, user_id, "Invalid deck number (must be 1 or 2)")
-        return
-
     # Track whether the deck was exhausted before this draw (for Addon 177 Stack Overflow)
-    _deck_was_exhausted_177 = not game.action_deck_1 and not game.action_deck_2
+    _deck_was_exhausted_177 = not game.action_deck
 
-    # Try to draw from the requested deck; if empty, reshuffle shared discard into both decks
-    if deck_num == 1:
-        if not game.action_deck_1 and game.action_discard:
-            new_deck = engine.shuffle_deck(game.action_discard)
-            game.action_deck_1, game.action_deck_2 = engine.split_deck(new_deck)
-            game.action_discard = []
-        drawn = [game.action_deck_1.pop(0)] if game.action_deck_1 else []
-    else:
-        if not game.action_deck_2 and game.action_discard:
-            new_deck = engine.shuffle_deck(game.action_discard)
-            game.action_deck_1, game.action_deck_2 = engine.split_deck(new_deck)
-            game.action_discard = []
-        drawn = [game.action_deck_2.pop(0)] if game.action_deck_2 else []
+    # Draw from the single action deck; reshuffle discard if needed
+    if not game.action_deck and game.action_discard:
+        game.action_deck = engine.shuffle_deck(game.action_discard)
+        game.action_discard = []
+    drawn = [game.action_deck.pop(0)] if game.action_deck else []
     if not drawn:
-        await _error(game.code, user_id, f"No cards left in deck {deck_num}")
+        await _error(game.code, user_id, "No cards left in the action deck")
         return
 
     from app.models.game import PlayerHandCard
@@ -303,7 +286,7 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
         if _watcher.id != player.id and not _watcher.is_in_combat:
             _pf = (_watcher.combat_state or {}).get("pardot_form_handler_remaining", 0)
             if _pf > 0 and len(list(_watcher.hand)) < engine.MAX_HAND_SIZE:
-                _pf_src = game.action_deck_1 if game.action_deck_1 else game.action_deck_2
+                _pf_src = game.action_deck if game.action_deck else game.action_deck
                 if _pf_src:
                     db.add(_PHC138(player_id=_watcher.id, action_card_id=_pf_src.pop(0)))
             if _pf > 0:
@@ -341,10 +324,8 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
     # Addon 177 (Stack Overflow): when action deck runs out and reshuffles, draw 1 extra card
     if _has_addon_draw(player, 177) and _deck_was_exhausted_177 and not jinxed:
         _extra177 = None
-        if game.action_deck_1:
-            _extra177 = game.action_deck_1.pop(0)
-        elif game.action_deck_2:
-            _extra177 = game.action_deck_2.pop(0)
+        if game.action_deck:
+            _extra177 = game.action_deck.pop(0)
         if _extra177:
             from app.models.game import PlayerHandCard as _PHC177
             db.add(_PHC177(player_id=player.id, action_card_id=_extra177))
@@ -354,10 +335,8 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
         _max_hand17 = 12 if (_has_addon_draw(player, 10) or _has_addon_draw(player, 100)) else engine.MAX_HAND_SIZE
         if len(list(player.hand)) < _max_hand17:
             _extra17 = None
-            if deck_num == 1 and game.action_deck_1:
-                _extra17 = game.action_deck_1.pop(0)
-            elif game.action_deck_2:
-                _extra17 = game.action_deck_2.pop(0)
+            if game.action_deck:
+                _extra17 = game.action_deck.pop(0)
             if _extra17:
                 from app.models.game import PlayerHandCard as _PHC17
                 db.add(_PHC17(player_id=player.id, action_card_id=_extra17))
@@ -382,10 +361,8 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
         player.licenze += 1
         from app.models.game import PlayerHandCard as _PHC190
         _cid190 = None
-        if game.action_deck_1:
-            _cid190 = game.action_deck_1.pop(0)
-        elif game.action_deck_2:
-            _cid190 = game.action_deck_2.pop(0)
+        if game.action_deck:
+            _cid190 = game.action_deck.pop(0)
         if _cid190:
             db.add(_PHC190(player_id=player.id, action_card_id=_cid190))
 
@@ -411,10 +388,8 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
         _hand_count78 = len(list(player.hand))
         if _hand_count78 < 5:
             _extra78 = None
-            if game.action_deck_1:
-                _extra78 = game.action_deck_1.pop(0)
-            elif game.action_deck_2:
-                _extra78 = game.action_deck_2.pop(0)
+            if game.action_deck:
+                _extra78 = game.action_deck.pop(0)
             if _extra78 is not None:
                 from app.models.game import PlayerHandCard as _PHC78
                 db.add(_PHC78(player_id=player.id, action_card_id=_extra78))

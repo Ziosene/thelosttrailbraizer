@@ -35,25 +35,18 @@ async def handle_combat_effects(addon_number, game, user_id, data, player, pa, d
             await _error(game.code, user_id, "Debug Mode can only be used during the action phase")
             pa.is_tapped = False
             return "done"
-        # Pop top boss from deck 1, fallback deck 2
-        _deck1_9 = list(game.boss_deck_1 or [])
-        _deck2_9 = list(game.boss_deck_2 or [])
-        if _deck1_9:
-            _boss_id_9 = _deck1_9[0]
-            _source_9 = "deck_1"
-            game.boss_deck_1 = _deck1_9[1:]
-        elif _deck2_9:
-            _boss_id_9 = _deck2_9[0]
-            _source_9 = "deck_2"
-            game.boss_deck_2 = _deck2_9[1:]
-        else:
-            await _error(game.code, user_id, "No boss available in any deck")
+        # Pop top boss from deck
+        _deck9 = list(game.boss_deck or [])
+        if not _deck9:
+            await _error(game.code, user_id, "No boss available in deck")
             pa.is_tapped = False
             return "done"
+        _boss_id_9 = _deck9[0]
+        game.boss_deck = _deck9[1:]
         _boss9 = db.get(BossCard, _boss_id_9)
         _cs9_new = dict(player.combat_state or {})
         _cs9_new["debug_mode_peek_boss_id"] = _boss_id_9
-        _cs9_new["debug_mode_peek_source"] = _source_9
+        _cs9_new["debug_mode_peek_source"] = "deck"
         player.combat_state = _cs9_new
         db.commit()
         db.refresh(game)
@@ -161,9 +154,9 @@ async def handle_combat_effects(addon_number, game, user_id, data, player, pa, d
         boss_id82 = player.current_boss_id
         source82 = player.current_boss_source
         if source82 and "2" in str(source82):
-            game.boss_deck_2 = (game.boss_deck_2 or []) + [boss_id82]
+            game.boss_deck = (game.boss_deck or []) + [boss_id82]
         else:
-            game.boss_deck_1 = (game.boss_deck_1 or []) + [boss_id82]
+            game.boss_deck = (game.boss_deck or []) + [boss_id82]
         player.is_in_combat = False
         player.current_boss_id = None
         player.current_boss_hp = None
@@ -189,9 +182,9 @@ async def handle_combat_effects(addon_number, game, user_id, data, player, pa, d
         boss_id85 = player.current_boss_id
         source85 = player.current_boss_source
         if source85 and "2" in str(source85):
-            game.boss_deck_2 = (game.boss_deck_2 or []) + [boss_id85]
+            game.boss_deck = (game.boss_deck or []) + [boss_id85]
         else:
-            game.boss_deck_1 = (game.boss_deck_1 or []) + [boss_id85]
+            game.boss_deck = (game.boss_deck or []) + [boss_id85]
         player.is_in_combat = False
         player.current_boss_id = None
         player.current_boss_hp = None
@@ -325,14 +318,14 @@ async def handle_combat_effects(addon_number, game, user_id, data, player, pa, d
             pa.is_tapped = False
             return "done"
         import random as _r175
-        if game.boss_deck_1:
-            _deck175_1 = list(game.boss_deck_1)
+        if game.boss_deck:
+            _deck175_1 = list(game.boss_deck)
             _r175.shuffle(_deck175_1)
-            game.boss_deck_1 = _deck175_1
-        if game.boss_deck_2:
-            _deck175_2 = list(game.boss_deck_2)
+            game.boss_deck = _deck175_1
+        if game.boss_deck:
+            _deck175_2 = list(game.boss_deck)
             _r175.shuffle(_deck175_2)
-            game.boss_deck_2 = _deck175_2
+            game.boss_deck = _deck175_2
         cs175_new = dict(cs175)
         cs175_new["boss_reshuffle_used"] = True
         player.combat_state = cs175_new

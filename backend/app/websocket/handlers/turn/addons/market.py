@@ -21,8 +21,8 @@ async def handle_market_effects(addon_number, game, user_id, data, player, pa, d
             pa.is_tapped = False
             return "done"
         choices_13 = []
-        _deck13_1 = list(game.addon_deck_1 or [])
-        _deck13_2 = list(game.addon_deck_2 or [])
+        _deck13_1 = list(game.addon_deck or [])
+        _deck13_2 = list(game.addon_deck or [])
         for _ in range(3):
             if _deck13_1:
                 choices_13.append(_deck13_1.pop(0))
@@ -32,8 +32,8 @@ async def handle_market_effects(addon_number, game, user_id, data, player, pa, d
             await _error(game.code, user_id, "No addons available in decks")
             pa.is_tapped = False
             return "done"
-        game.addon_deck_1 = _deck13_1
-        game.addon_deck_2 = _deck13_2
+        game.addon_deck = _deck13_1
+        game.addon_deck = _deck13_2
         cs13_new = dict(_cs13)
         cs13_new["appexchange_pending"] = choices_13
         cs13_new["appexchange_used"] = True
@@ -226,7 +226,7 @@ async def handle_market_effects(addon_number, game, user_id, data, player, pa, d
             pa108 = db.get(_PA108, pa_id108)
             if not pa108 or pa108.player_id != player.id or pa108.id == pa.id:
                 continue
-            game.addon_deck_1 = (game.addon_deck_1 or []) + [pa108.addon_id]
+            game.addon_deck = (game.addon_deck or []) + [pa108.addon_id]
             db.delete(pa108)
             player.licenze += 8
             returned108 += 1
@@ -256,9 +256,9 @@ async def handle_market_effects(addon_number, game, user_id, data, player, pa, d
             pa.is_tapped = False
             return "done"
         if game.addon_market_1 == target_addon_id119:
-            game.addon_market_1 = game.addon_deck_1.pop(0) if game.addon_deck_1 else (game.addon_deck_2.pop(0) if game.addon_deck_2 else None)
+            game.addon_market_1 = game.addon_deck.pop(0) if game.addon_deck else (game.addon_deck.pop(0) if game.addon_deck else None)
         elif game.addon_market_2 == target_addon_id119:
-            game.addon_market_2 = game.addon_deck_1.pop(0) if game.addon_deck_1 else (game.addon_deck_2.pop(0) if game.addon_deck_2 else None)
+            game.addon_market_2 = game.addon_deck.pop(0) if game.addon_deck else (game.addon_deck.pop(0) if game.addon_deck else None)
         from app.models.game import PlayerAddon as _PA119
         db.add(_PA119(player_id=player.id, addon_id=target_addon_id119, is_tapped=False))
         cs119_new = dict(cs119)

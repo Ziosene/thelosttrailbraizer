@@ -374,13 +374,13 @@ Client (React)
 | current_turn_index | INT | indice in `turn_order` |
 | turn_number | INT | |
 | current_phase | ENUM | draw / action / combat / end |
-| action_deck_1 / action_deck_2 | JSON | due metà del mazzo azione (player sceglie da quale pescare) |
-| action_discard | JSON | scarto condiviso — tutte le carte azione giocate; rimescolato e ridistribuito tra i due mazzi quando uno si esaurisce |
-| boss_deck_1 / boss_deck_2 | JSON | due metà del mazzo boss |
-| boss_market_1 / boss_market_2 | INT nullable | BossCard.id del boss visibile nel "mercato" |
+| action_deck | JSON | mazzo azione condiviso (unico per partita) |
+| action_discard | JSON | scarto azione — tutte le carte giocate; rimescolato nel mazzo quando si esaurisce |
+| boss_deck | JSON | mazzo boss condiviso (unico per partita) |
+| boss_market_1 / boss_market_2 | INT nullable | BossCard.id del boss visibile nel "mercato" (2 slot, tratti dallo stesso mazzo) |
 | boss_graveyard | JSON | boss sconfitti senza certificazione (boss con cert rimossi permanentemente) |
-| addon_deck_1 / addon_deck_2 | JSON | due metà del mazzo addon |
-| addon_market_1 / addon_market_2 | INT nullable | AddonCard.id dell'addon visibile nel "mercato" |
+| addon_deck | JSON | mazzo addon condiviso (unico per partita) |
+| addon_market_1 / addon_market_2 | INT nullable | AddonCard.id dell'addon visibile nel "mercato" (2 slot, tratti dallo stesso mazzo) |
 | addon_graveyard | JSON | addon persi dai giocatori alla morte o distrutti da effetti carta |
 | turn_order | JSON | lista di GamePlayer.id in ordine di turno |
 | winner_id | FK → game_players | nullable |
@@ -405,7 +405,7 @@ Client (React)
 | is_in_combat | BOOL | |
 | current_boss_id | FK → boss_cards | nullable |
 | current_boss_hp | INT | HP attuale del boss in combattimento |
-| current_boss_source | VARCHAR(10) | `market_1` / `market_2` / `deck_1` / `deck_2` — determina logica vittoria/sconfitta |
+| current_boss_source | VARCHAR(10) | `market_1` / `market_2` / `deck` — determina logica vittoria/sconfitta |
 | combat_round | INT | round corrente di combattimento |
 | combat_state | JSON nullable | stato transiente per-combat. Chiavi chiave: `resurrection_used`, `necromancer_resurrected`, `locked_addon_id`, `stolen_addon_id`, `petrified_card_ids`, `doomsayer_prediction_cap`, `loyalty_points`, `boss_ability_disabled_until_round`, `boss_threshold_reduction`, `double_damage_until_round`, `force_field_until_round`, `try_scope_until_round`, `entitlement_process_until_round`, `disaster_recovery_ready`, `on_error_continue_ready`, `fault_path_active`, `transform_element_active`, `pause_element_rounds_remaining`, `dynamic_content_reroll`, `chaos_mode_next_roll`, `einstein_sto_next_roll_bonus`, `next_roll_forced`, `critical_system_until_round`, `predictive_model_prediction`, `message_transformation_active`, `service_forecast_use_threshold`, `omni_channel_next_hit_bonus`, `queue_routing_double_damage_round`, `escalation_rule_active`, `contact_center_until_round`, `marketing_automation_turns_remaining`, `next_addon_price_half`, `addons_blocked_until_boss_defeat`, `campaign_influence_remaining`, `pardot_form_handler_remaining` — resettato a `{}` ad ogni nuovo combattimento (tranne flag cross-turn) |
 | pending_addon_cost_penalty | INT | extra costo licenze sul prossimo acquisto addon (boss 26); resettato dopo il primo acquisto |
@@ -467,11 +467,11 @@ Tutti i messaggi sono JSON. Il server autentica via JWT al momento della conness
 | `join_game` | — | Primo join o reconnect |
 | `select_character` | `{seniority, role}` | In lobby |
 | `start_game` | — | Host con ≥2 giocatori in lobby |
-| `draw_card` | `{deck: 1\|2}` | Fase `draw`, proprio turno — sceglie da quale mazzo pescare |
+| `draw_card` | — | Fase `draw`, proprio turno — pesca dal mazzo azione unico |
 | `play_card` | `{hand_card_id}` | Fase `action`, proprio turno |
-| `buy_addon` | `{source: "market_1"\|"market_2"\|"deck_1"\|"deck_2"}` | Fase `action`, proprio turno |
+| `buy_addon` | `{source: "market_1"\|"market_2"\|"deck"}` | Fase `action`, proprio turno |
 | `use_addon` | `{player_addon_id}` | Fase `action`, proprio turno (addon Attivi) |
-| `start_combat` | `{source: "market_1"\|"market_2"\|"deck_1"\|"deck_2"}` | Fase `action`, proprio turno |
+| `start_combat` | `{source: "market_1"\|"market_2"\|"deck"}` | Fase `action`, proprio turno |
 | `roll_dice` | — | Fase `combat`, proprio turno |
 | `retreat_combat` | — | Fase `combat`, proprio turno |
 | `end_turn` | — | Fase `action` o `draw`, proprio turno |
@@ -523,7 +523,7 @@ File: `app/game/engine.py`
 | `calculate_max_hp(seniority)` | Seniority | int | J=1, E=2, S=3, Ev=4 |
 | `check_victory(certificazioni)` | int | bool | True se ≥ 5 |
 | `shuffle_deck(deck)` | list | list | copia + shuffle |
-| `split_deck(deck)` | list | (list, list) | divide un mazzo shufflato in due metà bilanciate |
+| `split_deck(deck)` | list | (list, list) | *(deprecata — non più usata in produzione; unico mazzo per tipologia)* |
 | `build_action_deck(card_ids_by_rarity)` | dict | list | Comune×3, NC×2, Raro×1, Legg×1 |
 | `draw_cards(deck, discard, count)` | list, list, int | (drawn, deck, discard) | reshuffle automatico |
 | `apply_death_penalty(hand, licenze, addons)` | list, int, list | dict | perde 1 carta random, 1 licenza, 1 addon |

@@ -735,10 +735,8 @@ async def _handle_play_card(game: GameSession, user_id: int, data: dict, db: Ses
             if _ab_counts[card.card_type] == 2:
                 # Trigger bonus draw
                 from app.models.game import PlayerHandCard as _PHC242
-                if game.action_deck_1:
-                    db.add(_PHC242(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
-                elif game.action_deck_2:
-                    db.add(_PHC242(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+                if game.action_deck:
+                    db.add(_PHC242(player_id=player.id, action_card_id=game.action_deck.pop(0)))
                 _cs_ab2.pop("app_builder_active", None)
                 _cs_ab2.pop("app_builder_type_counts", None)
             player.combat_state = _cs_ab2

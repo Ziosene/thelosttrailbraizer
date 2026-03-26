@@ -80,10 +80,8 @@ async def handle_economy_effects(addon_number, game, user_id, data, player, pa, 
         else:
             from app.models.game import PlayerHandCard as _PHC134
             for _ in range(2):
-                if game.action_deck_1:
-                    cid134 = game.action_deck_1.pop(0)
-                elif game.action_deck_2:
-                    cid134 = game.action_deck_2.pop(0)
+                if game.action_deck:
+                    cid134 = game.action_deck.pop(0)
                 else:
                     break
                 db.add(_PHC134(player_id=player.id, action_card_id=cid134))

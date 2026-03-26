@@ -37,7 +37,7 @@ def resolve_reorder_boss_deck(game, player, db, ordered_ids: list, original: lis
     """
     if sorted(ordered_ids) != sorted(original):
         return {"error": "Ordine non valido — usa le stesse carte boss"}
-    game.boss_deck_1 = ordered_ids + (game.boss_deck_1 or [])[len(ordered_ids):]
+    game.boss_deck = ordered_ids + (game.boss_deck or [])[len(ordered_ids):]
     return {"ok": True, "new_order": ordered_ids}
 
 
@@ -48,12 +48,12 @@ def resolve_reorder_action_deck(game, player, db, ordered_ids: list, original: l
     """
     if sorted(ordered_ids) != sorted(original):
         return {"error": "Ordine non valido — usa le stesse carte azione"}
-    game.action_deck_1 = ordered_ids + (game.action_deck_1 or [])[len(ordered_ids):]
+    game.action_deck = ordered_ids + (game.action_deck or [])[len(ordered_ids):]
     return {"ok": True, "new_order": ordered_ids}
 
 
 def resolve_keep_one_from_drawn(game, player, db, keep_id: int, drawn: list) -> dict:
-    """Card 137 — keep one drawn card, return the rest to the top of action_deck_1.
+    """Card 137 — keep one drawn card, return the rest to the top of action_deck.
     keep_id: action_card_id to keep.
     drawn: list of action_card_ids that were drawn.
     """
@@ -69,7 +69,7 @@ def resolve_keep_one_from_drawn(game, player, db, keep_id: int, drawn: list) -> 
         if hc:
             db.delete(hc)
     db.flush()
-    game.action_deck_1 = to_return + (game.action_deck_1 or [])
+    game.action_deck = to_return + (game.action_deck or [])
     return {"ok": True, "kept": keep_id, "returned": to_return}
 
 
@@ -95,7 +95,7 @@ def resolve_recover_from_discard(game, player, db, chosen_ids: list, count: int)
 
 
 def resolve_return_card_to_deck_top(game, player, db, chosen_hc_id: int) -> dict:
-    """Card 106 — return a card from hand to the top of action_deck_1.
+    """Card 106 — return a card from hand to the top of action_deck.
     chosen_hc_id: PlayerHandCard.id of the card to return.
     """
     from app.models.game import PlayerHandCard as _PHC
@@ -105,7 +105,7 @@ def resolve_return_card_to_deck_top(game, player, db, chosen_hc_id: int) -> dict
     card_id = hc.action_card_id
     db.delete(hc)
     db.flush()
-    game.action_deck_1 = [card_id] + (game.action_deck_1 or [])
+    game.action_deck = [card_id] + (game.action_deck or [])
     return {"ok": True, "returned_card_id": card_id}
 
 
@@ -134,7 +134,7 @@ def resolve_choose_cards_to_keep(game, player, db, keep_hc_ids: list, drawn: lis
     db.flush()
     if discard_ids:
         shuffled = engine.shuffle_deck(discard_ids)
-        game.action_deck_1 = (game.action_deck_1 or []) + shuffled
+        game.action_deck = (game.action_deck or []) + shuffled
     return {"ok": True, "kept": keep_action_ids, "returned_to_deck": discard_ids}
 
 
@@ -148,7 +148,7 @@ def resolve_choose_addon_to_return(game, player, db, chosen_pa_id: int, licenze_
     if not pa or pa.player_id != player.id:
         return {"error": "Addon non valido"}
     addon_id = pa.addon_id
-    game.addon_deck_1 = [addon_id] + (game.addon_deck_1 or [])
+    game.addon_deck = [addon_id] + (game.addon_deck or [])
     db.delete(pa)
     db.flush()
     player.licenze += licenze_gained
@@ -165,7 +165,7 @@ def resolve_delete_target_addon(game, player, db, chosen_pa_id: int, target_play
     if not pa or pa.player_id != target_player_id:
         return {"error": "Addon non valido o non appartiene al bersaglio"}
     addon_id = pa.addon_id
-    game.addon_deck_1 = (game.addon_deck_1 or []) + [addon_id]
+    game.addon_deck = (game.addon_deck or []) + [addon_id]
     game.addon_graveyard = (game.addon_graveyard or []) + [addon_id]
     db.delete(pa)
     db.flush()
@@ -179,16 +179,16 @@ def resolve_choose_boss_to_front(game, player, db, chosen_boss_id: int, choices:
     """
     if chosen_boss_id not in choices:
         return {"error": "Boss non valido — scegli tra quelli mostrati"}
-    deck = game.boss_deck_1 if game.boss_deck_1 else game.boss_deck_2
+    deck = game.boss_deck if game.boss_deck else game.boss_deck
     if not deck:
         return {"error": "Mazzo boss vuoto"}
     rest = deck[len(choices):]
     not_chosen = [bid for bid in choices if bid != chosen_boss_id]
     reordered = [chosen_boss_id] + not_chosen + rest
-    if game.boss_deck_1:
-        game.boss_deck_1 = reordered
+    if game.boss_deck:
+        game.boss_deck = reordered
     else:
-        game.boss_deck_2 = reordered
+        game.boss_deck = reordered
     return {"ok": True, "chosen_boss_id": chosen_boss_id}
 
 
@@ -203,12 +203,12 @@ def resolve_sell_addon_for_licenze(game, player, db, chosen_pa_id: int) -> dict:
         return {"error": "Addon non valido"}
     addon = db.get(_ADC, pa.addon_id)
     licenze_gained = (addon.cost or 0) // 2
-    game.addon_deck_1 = [pa.addon_id] + (game.addon_deck_1 or [])
+    game.addon_deck = [pa.addon_id] + (game.addon_deck or [])
     db.delete(pa)
     db.flush()
     player.licenze += licenze_gained
     drew = False
-    src = game.action_deck_1 if game.action_deck_1 else game.action_deck_2
+    src = game.action_deck if game.action_deck else game.action_deck
     if src:
         db.add(_PHC(player_id=player.id, action_card_id=src.pop(0)))
         drew = True

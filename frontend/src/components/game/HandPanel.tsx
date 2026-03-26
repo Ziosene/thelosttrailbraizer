@@ -13,7 +13,7 @@ interface HandPanelProps {
   isMyTurn: boolean
   onCardClick: (c: CardInfo) => void
   onPlayCard: (handCardId: number) => void
-  onDrawCard: (deck: 1 | 2) => void
+  onDrawCard: () => void
 }
 
 export function HandPanel({ hand, gameState, isMyTurn, onCardClick, onPlayCard, onDrawCard }: HandPanelProps) {
@@ -72,7 +72,7 @@ export function HandPanel({ hand, gameState, isMyTurn, onCardClick, onPlayCard, 
         <DeckButton
           icon="⚡"
           label="Azioni"
-          count={gameState.action_deck_1_count + gameState.action_deck_2_count}
+          count={gameState.action_deck_count}
           highlight={mustDraw}
           color="violet"
           onClick={() => setOpenDeck('action')}
@@ -80,7 +80,7 @@ export function HandPanel({ hand, gameState, isMyTurn, onCardClick, onPlayCard, 
         <DeckButton
           icon="🔧"
           label="Addon"
-          count={gameState.addon_deck_1_count + gameState.addon_deck_2_count}
+          count={gameState.addon_deck_count}
           highlight={false}
           color="emerald"
           onClick={() => setOpenDeck('addon')}
@@ -88,7 +88,7 @@ export function HandPanel({ hand, gameState, isMyTurn, onCardClick, onPlayCard, 
         <DeckButton
           icon="👾"
           label="Boss"
-          count={gameState.boss_deck_1_count + gameState.boss_deck_2_count}
+          count={gameState.boss_deck_count}
           highlight={false}
           color="orange"
           onClick={() => setOpenDeck('boss')}
@@ -101,8 +101,7 @@ export function HandPanel({ hand, gameState, isMyTurn, onCardClick, onPlayCard, 
           type={openDeck}
           gameState={gameState}
           mustDraw={mustDraw}
-          onDrawDeck1={() => { onDrawCard(1); setOpenDeck(null) }}
-          onDrawDeck2={() => { onDrawCard(2); setOpenDeck(null) }}
+          onDraw={() => { onDrawCard(); setOpenDeck(null) }}
           onClose={() => setOpenDeck(null)}
         />
       )}

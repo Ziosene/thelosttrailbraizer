@@ -55,8 +55,8 @@ async def handle_hand_effects(addon_number, game, user_id, data, player, pa, db)
 
     # Addon 49 (Metadata API): look at top 3 cards of action deck and reorder them
     elif addon_number == 49:
-        _deck49 = game.action_deck_1 or game.action_deck_2
-        _choices49 = (game.action_deck_1 or [])[:3]
+        _deck49 = game.action_deck or game.action_deck
+        _choices49 = (game.action_deck or [])[:3]
         if not _choices49:
             await _error(game.code, user_id, "No cards in deck")
             pa.is_tapped = False
@@ -116,10 +116,8 @@ async def handle_hand_effects(addon_number, game, user_id, data, player, pa, db)
             game.action_discard = (game.action_discard or []) + [_hc51.action_card_id]
             db.delete(_hc51)
         for _ in range(_count51):
-            if game.action_deck_1:
-                _new_card51 = game.action_deck_1.pop(0)
-            elif game.action_deck_2:
-                _new_card51 = game.action_deck_2.pop(0)
+            if game.action_deck:
+                _new_card51 = game.action_deck.pop(0)
             else:
                 break
             db.add(_PHC51(player_id=player.id, action_card_id=_new_card51))
@@ -157,10 +155,8 @@ async def handle_hand_effects(addon_number, game, user_id, data, player, pa, db)
         from app.models.game import PlayerHandCard as _PHC55
         _drawn55 = 0
         for _ in range(5):
-            if game.action_deck_1:
-                _cid55 = game.action_deck_1.pop(0)
-            elif game.action_deck_2:
-                _cid55 = game.action_deck_2.pop(0)
+            if game.action_deck:
+                _cid55 = game.action_deck.pop(0)
             else:
                 break
             db.add(_PHC55(player_id=player.id, action_card_id=_cid55))
@@ -185,10 +181,8 @@ async def handle_hand_effects(addon_number, game, user_id, data, player, pa, db)
         game.action_discard = (game.action_discard or []) + [hc74.action_card_id]
         db.delete(hc74)
         _new74 = None
-        if game.action_deck_1:
-            _new74 = game.action_deck_1.pop(0)
-        elif game.action_deck_2:
-            _new74 = game.action_deck_2.pop(0)
+        if game.action_deck:
+            _new74 = game.action_deck.pop(0)
         if _new74 is not None:
             db.add(_PHC74(player_id=player.id, action_card_id=_new74))
 
@@ -201,10 +195,8 @@ async def handle_hand_effects(addon_number, game, user_id, data, player, pa, db)
             return "done"
         from app.models.game import PlayerHandCard as _PHC104
         for _ in range(3):
-            if game.action_deck_1:
-                cid104 = game.action_deck_1.pop(0)
-            elif game.action_deck_2:
-                cid104 = game.action_deck_2.pop(0)
+            if game.action_deck:
+                cid104 = game.action_deck.pop(0)
             else:
                 break
             db.add(_PHC104(player_id=player.id, action_card_id=cid104))
@@ -227,14 +219,14 @@ async def handle_hand_effects(addon_number, game, user_id, data, player, pa, db)
     # Addon 172 (Deck Shuffle): shuffle the shared action deck (once per turn)
     elif addon_number == 172:
         import random as _r172
-        if game.action_deck_1:
-            _deck172_1 = list(game.action_deck_1)
+        if game.action_deck:
+            _deck172_1 = list(game.action_deck)
             _r172.shuffle(_deck172_1)
-            game.action_deck_1 = _deck172_1
-        if game.action_deck_2:
-            _deck172_2 = list(game.action_deck_2)
+            game.action_deck = _deck172_1
+        if game.action_deck:
+            _deck172_2 = list(game.action_deck)
             _r172.shuffle(_deck172_2)
-            game.action_deck_2 = _deck172_2
+            game.action_deck = _deck172_2
 
     # Addon 173 (Card Graveyard): passive — allow manual peek at action discard pile
     elif addon_number == 173:
@@ -263,10 +255,10 @@ async def handle_hand_effects(addon_number, game, user_id, data, player, pa, db)
                 pa.is_tapped = False
                 return "done"
             discard174.remove(cid174)
-            if game.action_deck_1 is not None:
-                game.action_deck_1 = game.action_deck_1 + [cid174]
+            if game.action_deck is not None:
+                game.action_deck = game.action_deck + [cid174]
             else:
-                game.action_deck_2 = (game.action_deck_2 or []) + [cid174]
+                game.action_deck = (game.action_deck or []) + [cid174]
         game.action_discard = discard174
 
     # Addon 179 (Hot Reload): discard entire hand, draw same number of cards
@@ -282,10 +274,8 @@ async def handle_hand_effects(addon_number, game, user_id, data, player, pa, db)
             game.action_discard = (game.action_discard or []) + [hc179.action_card_id]
             db.delete(hc179)
         for _ in range(_count179):
-            if game.action_deck_1:
-                _cid179 = game.action_deck_1.pop(0)
-            elif game.action_deck_2:
-                _cid179 = game.action_deck_2.pop(0)
+            if game.action_deck:
+                _cid179 = game.action_deck.pop(0)
             else:
                 break
             db.add(_PHC179(player_id=player.id, action_card_id=_cid179))
@@ -300,10 +290,8 @@ async def handle_hand_effects(addon_number, game, user_id, data, player, pa, db)
         from app.models.game import PlayerHandCard as _PHC193
         for _ in range(4):
             _cid193 = None
-            if game.action_deck_1:
-                _cid193 = game.action_deck_1.pop(0)
-            elif game.action_deck_2:
-                _cid193 = game.action_deck_2.pop(0)
+            if game.action_deck:
+                _cid193 = game.action_deck.pop(0)
             if _cid193:
                 db.add(_PHC193(player_id=player.id, action_card_id=_cid193))
             else:

@@ -6,8 +6,7 @@ interface DeckModalProps {
   type: DeckType
   gameState: GameState
   mustDraw: boolean
-  onDrawDeck1: () => void
-  onDrawDeck2: () => void
+  onDraw: () => void
   onClose: () => void
 }
 
@@ -126,16 +125,12 @@ function DiscardPile({
   )
 }
 
-export function DeckModal({ type, gameState: gs, mustDraw, onDrawDeck1, onDrawDeck2, onClose }: DeckModalProps) {
+export function DeckModal({ type, gameState: gs, mustDraw, onDraw, onClose }: DeckModalProps) {
   const cfg = CONFIG[type]
 
-  const deck1Count = type === 'action' ? gs.action_deck_1_count
-    : type === 'addon' ? gs.addon_deck_1_count
-    : gs.boss_deck_1_count
-
-  const deck2Count = type === 'action' ? gs.action_deck_2_count
-    : type === 'addon' ? gs.addon_deck_2_count
-    : gs.boss_deck_2_count
+  const deckCount = type === 'action' ? gs.action_deck_count
+    : type === 'addon' ? gs.addon_deck_count
+    : gs.boss_deck_count
 
   const discardCount = type === 'action' ? gs.action_discard_count
     : type === 'addon' ? gs.addon_graveyard_count
@@ -177,18 +172,11 @@ export function DeckModal({ type, gameState: gs, mustDraw, onDrawDeck1, onDrawDe
         {/* Mazzi + scarti */}
         <div className="flex items-start gap-6 justify-center">
           <MiniDeck
-            label="Mazzo 1"
-            count={deck1Count}
+            label="Mazzo"
+            count={deckCount}
             accent={cfg.deckBorder}
             canDraw={canDraw}
-            onDraw={onDrawDeck1}
-          />
-          <MiniDeck
-            label="Mazzo 2"
-            count={deck2Count}
-            accent={cfg.deckBorder}
-            canDraw={canDraw}
-            onDraw={onDrawDeck2}
+            onDraw={onDraw}
           />
 
           <div className="w-px bg-slate-800 self-stretch" />
@@ -204,7 +192,7 @@ export function DeckModal({ type, gameState: gs, mustDraw, onDrawDeck1, onDrawDe
 
         {canDraw && (
           <p className="text-center text-amber-400 text-[11px] font-semibold animate-pulse">
-            È il tuo turno — pesca da uno dei mazzi
+            È il tuo turno — pesca dal mazzo
           </p>
         )}
       </div>

@@ -31,10 +31,10 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
         await _error(game.code, user_id, "Not your turn")
         return
 
-    # source: "market_1" | "market_2" | "deck_1" | "deck_2"
+    # source: "market_1" | "market_2" | "deck"
     source = data.get("source", "market_1")
-    if source not in ("market_1", "market_2", "deck_1", "deck_2"):
-        await _error(game.code, user_id, "Invalid source (market_1/market_2/deck_1/deck_2)")
+    if source not in ("market_1", "market_2", "deck"):
+        await _error(game.code, user_id, "Invalid source (market_1/market_2/deck)")
         return
 
     if source == "market_1":
@@ -47,16 +47,11 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
             await _error(game.code, user_id, "No addon in market slot 2")
             return
         addon_id = game.addon_market_2
-    elif source == "deck_1":
-        if not game.addon_deck_1:
-            await _error(game.code, user_id, "Addon deck 1 is empty")
+    else:  # deck
+        if not game.addon_deck:
+            await _error(game.code, user_id, "Addon deck is empty")
             return
-        addon_id = game.addon_deck_1.pop(0)
-    else:  # deck_2
-        if not game.addon_deck_2:
-            await _error(game.code, user_id, "Addon deck 2 is empty")
-            return
-        addon_id = game.addon_deck_2.pop(0)
+        addon_id = game.addon_deck.pop(0)
 
     addon = db.get(AddonCard, addon_id)
     if not addon:
@@ -181,10 +176,10 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
 
     # Bought addons are tracked as owned by player; market slot gets refilled
     if source == "market_1":
-        game.addon_market_1 = game.addon_deck_1.pop(0) if game.addon_deck_1 else None
+        game.addon_market_1 = game.addon_deck.pop(0) if game.addon_deck else None
     elif source == "market_2":
-        game.addon_market_2 = game.addon_deck_2.pop(0) if game.addon_deck_2 else None
-    # deck_1 / deck_2: card already popped above, nothing else to do
+        game.addon_market_2 = game.addon_deck.pop(0) if game.addon_deck else None
+    # deck: card already popped above, nothing else to do
 
     from app.models.game import PlayerAddon
     db.add(PlayerAddon(player_id=player.id, addon_id=addon_id))

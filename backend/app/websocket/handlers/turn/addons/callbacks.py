@@ -47,10 +47,10 @@ async def _handle_appexchange_pick(game, user_id: int, data: dict, db):
         return
     from app.models.game import PlayerAddon as _PAex
     db.add(_PAex(player_id=player.id, addon_id=chosen_id))
-    # Return unchosen addons to front of deck_1
+    # Return unchosen addons to front of deck
     for aid in pending:
         if aid != chosen_id:
-            game.addon_deck_1 = [aid] + (game.addon_deck_1 or [])
+            game.addon_deck = [aid] + (game.addon_deck or [])
     cs_new = dict(cs)
     cs_new.pop("appexchange_pending", None)
     player.combat_state = cs_new
@@ -113,11 +113,9 @@ async def _handle_metadata_api_reorder(game, user_id: int, data: dict, db):
         await _error(game.code, user_id, "card_ids must be a permutation of the peeked cards")
         return
     n49 = len(reordered)
-    # Replace first N cards in action_deck_1 with reordered list
-    if game.action_deck_1 and len(game.action_deck_1) >= n49:
-        game.action_deck_1 = list(reordered) + game.action_deck_1[n49:]
-    elif game.action_deck_1:
-        game.action_deck_1 = list(reordered) + game.action_deck_1[len(game.action_deck_1):]
+    # Replace first N cards in action_deck with reordered list
+    if game.action_deck and len(game.action_deck) >= n49:
+        game.action_deck = list(reordered) + game.action_deck[n49:]
     cs_new = dict(cs)
     cs_new.pop("metadata_api_pending", None)
     player.combat_state = cs_new
@@ -145,19 +143,13 @@ async def _handle_debug_mode_choice(game, user_id: int, data: dict, db):
     player.combat_state = cs_new
     if decision == "fight":
         # Boss is NOT in deck anymore (we popped it) — put it back at top then let start_combat pop it
-        if _peek_source == "deck_1":
-            game.boss_deck_1 = [_peek_boss] + list(game.boss_deck_1 or [])
-        else:
-            game.boss_deck_2 = [_peek_boss] + list(game.boss_deck_2 or [])
+        game.boss_deck = [_peek_boss] + list(game.boss_deck or [])
         db.commit()
         db.refresh(game)
-        await _handle_start_combat(game, user_id, {"source": _peek_source}, db)
+        await _handle_start_combat(game, user_id, {"source": "deck"}, db)
     else:
-        # send_back: push boss to BOTTOM of its deck
-        if _peek_source == "deck_1":
-            game.boss_deck_1 = list(game.boss_deck_1 or []) + [_peek_boss]
-        else:
-            game.boss_deck_2 = list(game.boss_deck_2 or []) + [_peek_boss]
+        # send_back: push boss to BOTTOM of the deck
+        game.boss_deck = list(game.boss_deck or []) + [_peek_boss]
         db.commit()
         db.refresh(game)
         await _broadcast_state(game, db)
@@ -236,19 +228,15 @@ async def _handle_beta_feature_reject(game, user_id: int, data: dict, db):
     from app.models.game import PlayerAddon as _PA92r
     pa92 = db.get(_PA92r, pending_pa_id)
     if pa92 and pa92.player_id == player.id:
-        # Return rejected addon to top of deck_1
-        game.addon_deck_1 = [pending_addon_id] + (game.addon_deck_1 or [])
+        # Return rejected addon to top of deck
+        game.addon_deck = [pending_addon_id] + (game.addon_deck or [])
         db.delete(pa92)
     # Draw next addon from deck as replacement
     next_addon_id = None
-    if game.addon_deck_1:
-        addon_deck92 = list(game.addon_deck_1)
+    if game.addon_deck:
+        addon_deck92 = list(game.addon_deck)
         next_addon_id = addon_deck92.pop(0)
-        game.addon_deck_1 = addon_deck92
-    elif game.addon_deck_2:
-        addon_deck92b = list(game.addon_deck_2)
-        next_addon_id = addon_deck92b.pop(0)
-        game.addon_deck_2 = addon_deck92b
+        game.addon_deck = addon_deck92
     if next_addon_id:
         from app.models.game import PlayerAddon as _PA92n
         db.add(_PA92n(player_id=player.id, addon_id=next_addon_id, is_tapped=False))
@@ -327,10 +315,8 @@ async def _handle_acceptance_criteria_choose(game, user_id: int, data: dict, db)
         # Draw 2 action cards
         from app.models.game import PlayerHandCard as _PHC98
         for _ in range(2):
-            if game.action_deck_1:
-                db.add(_PHC98(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
-            elif game.action_deck_2:
-                db.add(_PHC98(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+            if game.action_deck:
+                db.add(_PHC98(player_id=player.id, action_card_id=game.action_deck.pop(0)))
     player.combat_state = cs_new
     db.commit()
     db.refresh(game)

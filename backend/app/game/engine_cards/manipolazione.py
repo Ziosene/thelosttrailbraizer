@@ -146,7 +146,7 @@ def _card_62(player, game, db, *, target_player_id=None) -> dict:
 def _card_101(player, game, db, *, target_player_id=None) -> dict:
     """Next Best Offer — Pesca 3 carte (tieni 1, le altre 2 tornano in cima) + +1 al prossimo tiro.
 
-    Draws 3, player chooses which to keep; the other 2 return to top of action_deck_1.
+    Draws 3, player chooses which to keep; the other 2 return to top of action_deck.
     Also grants +1 to next roll.
     """
     if not player.is_in_combat:
@@ -154,10 +154,8 @@ def _card_101(player, game, db, *, target_player_id=None) -> dict:
     from app.models.game import PlayerHandCard as _PHC101
     drawn_ids = []
     for _ in range(3):
-        if game.action_deck_1:
-            drawn_ids.append(game.action_deck_1.pop(0))
-        elif game.action_deck_2:
-            drawn_ids.append(game.action_deck_2.pop(0))
+        if game.action_deck:
+            drawn_ids.append(game.action_deck.pop(0))
     if not drawn_ids:
         return {"applied": False, "reason": "action_deck_empty"}
     # Add all drawn cards to hand temporarily; player picks 1 to keep
@@ -274,8 +272,8 @@ def _card_170(player, game, db, *, target_player_id=None) -> dict:
     if not player.is_in_combat:
         return {"applied": False, "reason": "not_in_combat"}
     player.current_boss_hp = max(0, player.current_boss_hp - 1)
-    next_boss_id = (game.boss_deck_1 or game.boss_deck_2 or [None])[0]
-    next_action_id = (game.action_deck_1 or game.action_deck_2 or [None])[0]
+    next_boss_id = (game.boss_deck or game.boss_deck or [None])[0]
+    next_action_id = (game.action_deck or game.action_deck or [None])[0]
     return {
         "applied": True,
         "boss_damage": 1,
@@ -345,10 +343,10 @@ def _card_218(player, game, db, *, target_player_id=None) -> dict:
 def _card_219(player, game, db, *, target_player_id=None) -> dict:
     """Vector Database — Pesca 1 carta, perdi 2 Licenze."""
     from app.models.game import PlayerHandCard as _PHC219
-    deck = game.action_deck_1 or game.action_deck_2
+    deck = game.action_deck or game.action_deck
     if not deck:
         return {"applied": False, "reason": "deck_empty"}
-    card_id = (game.action_deck_1 or game.action_deck_2).pop(0)
+    card_id = (game.action_deck or game.action_deck).pop(0)
     db.add(_PHC219(player_id=player.id, action_card_id=card_id))
     player.licenze = max(0, player.licenze - 2)
     return {"applied": True, "licenze_lost": 2}

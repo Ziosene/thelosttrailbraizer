@@ -62,13 +62,9 @@ def _card_40(player, game, db, *, target_player_id=None) -> dict:
 
     # Caster draws 1 card
     drawn = 0
-    if game.action_deck_1:
-        db.add(PlayerHandCard(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
+    if game.action_deck:
+        db.add(PlayerHandCard(player_id=player.id, action_card_id=game.action_deck.pop(0)))
         drawn = 1
-    elif game.action_deck_2:
-        db.add(PlayerHandCard(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
-        drawn = 1
-
     return {
         "applied": True,
         "licenze_to_all": 3,
@@ -144,7 +140,7 @@ def _card_74(player, game, db, *, target_player_id=None) -> dict:
     target = get_target(game, player, target_player_id)
     if not target:
         return {"applied": False, "reason": "no_target"}
-    boss_id = (game.boss_deck_1 or [None])[0] or (game.boss_deck_2 or [None])[0]
+    boss_id = (game.boss_deck or [None])[0] or (game.boss_deck or [None])[0]
     cs = dict(target.combat_state or {})
     cs["routing_assigned"] = True
     if boss_id:

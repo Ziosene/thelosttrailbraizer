@@ -32,11 +32,9 @@ async def _handle_retreat(game: GameSession, user_id: int, db: Session):
 
     boss_id = player.current_boss_id
     source = player.current_boss_source
-    # Boss goes back to its origin: deck → top of that deck; market → back to its market slot
-    if source == "deck_1":
-        game.boss_deck_1 = [boss_id] + (game.boss_deck_1 or [])
-    elif source == "deck_2":
-        game.boss_deck_2 = [boss_id] + (game.boss_deck_2 or [])
+    # Boss goes back to its origin: deck → top of deck; market → back to its market slot
+    if source == "deck":
+        game.boss_deck = [boss_id] + (game.boss_deck or [])
     elif source == "market_1":
         game.boss_market_1 = boss_id
     elif source == "market_2":

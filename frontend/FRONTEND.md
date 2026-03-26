@@ -60,7 +60,7 @@ frontend/
 │   │       ├── PlayerCell.tsx   HP, Certs, Corner type, PlayerCell
 │   │       ├── PlayArea.tsx     LeftSidebar, BossSidebar, PlayArea, CellData type
 │   │       ├── HandPanel.tsx    mano + 3 pulsanti mazzi (Azioni/Addon/Boss) → DeckModal
-│   │       ├── DeckModal.tsx    modale mazzi: Mazzo 1, Mazzo 2, Scarti (ultima carta visibile)
+│   │       ├── DeckModal.tsx    modale mazzi: Mazzo (unico), Scarti (ultima carta visibile)
 │   │       ├── LogPanel.tsx     pannello log partita (LogPanel)
 │   │       ├── ToastLayer.tsx   toast errori backend (fixed top-right, auto-dismiss 4s)
 │   │       ├── GameModals.tsx   ReactionWindowModal, CardChoiceModal, ComplyOrRefuseModal

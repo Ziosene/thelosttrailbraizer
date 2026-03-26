@@ -152,10 +152,8 @@ async def handle_role_effects(addon_number, game, user_id, data, player, pa, db)
         from app.models.game import PlayerHandCard as _PHC199
         for _ in range(2):
             _cid199 = None
-            if game.action_deck_1:
-                _cid199 = game.action_deck_1.pop(0)
-            elif game.action_deck_2:
-                _cid199 = game.action_deck_2.pop(0)
+            if game.action_deck:
+                _cid199 = game.action_deck.pop(0)
             if _cid199:
                 db.add(_PHC199(player_id=player.id, action_card_id=_cid199))
             else:

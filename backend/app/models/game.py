@@ -45,22 +45,19 @@ class GameSession(Base):
     current_turn_index: Mapped[int] = mapped_column(Integer, default=0)  # index in turn_order
     turn_number: Mapped[int] = mapped_column(Integer, default=0)
     current_phase: Mapped[TurnPhase] = mapped_column(Enum(TurnPhase), default=TurnPhase.draw)
-    # JSON arrays of card IDs — dual decks for each type
-    # Action decks (2 decks, player chooses which to draw from)
-    action_deck_1: Mapped[list] = mapped_column(JSON, default=list)
-    action_deck_2: Mapped[list] = mapped_column(JSON, default=list)
-    # Shared action discard — all played cards end here; reshuffled & split when both decks run low
+    # JSON arrays of card IDs — one deck per type
+    # Action deck (single shared deck; reshuffled from discard when empty)
+    action_deck: Mapped[list] = mapped_column(JSON, default=list)
+    # Shared action discard — all played cards end here; reshuffled when deck runs out
     action_discard: Mapped[list] = mapped_column(JSON, default=list)
-    # Boss decks (2 decks + 1 face-up market card each)
-    boss_deck_1: Mapped[list] = mapped_column(JSON, default=list)
-    boss_deck_2: Mapped[list] = mapped_column(JSON, default=list)
+    # Boss deck (single shared deck + 2 face-up market slots)
+    boss_deck: Mapped[list] = mapped_column(JSON, default=list)
     boss_market_1: Mapped[int | None] = mapped_column(Integer, nullable=True)  # BossCard.id visible in market
     boss_market_2: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # Boss graveyard — only non-cert bosses (cert bosses are permanently removed from game)
     boss_graveyard: Mapped[list] = mapped_column(JSON, default=list)
-    # AddOn decks (2 decks + 1 face-up market card each)
-    addon_deck_1: Mapped[list] = mapped_column(JSON, default=list)
-    addon_deck_2: Mapped[list] = mapped_column(JSON, default=list)
+    # AddOn deck (single shared deck + 2 face-up market slots)
+    addon_deck: Mapped[list] = mapped_column(JSON, default=list)
     addon_market_1: Mapped[int | None] = mapped_column(Integer, nullable=True)  # AddonCard.id visible in market
     addon_market_2: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # Addon graveyard — addons lost by players on death or destroyed by card effects
@@ -111,7 +108,7 @@ class GamePlayer(Base):
     is_eliminated: Mapped[bool] = mapped_column(Boolean, default=False)
     current_boss_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("boss_cards.id"), nullable=True)
     current_boss_hp: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    # "market_1" | "market_2" | "deck_1" | "deck_2" — determines what happens on win/loss
+    # "market_1" | "market_2" | "deck" — determines what happens on win/loss
     current_boss_source: Mapped[str | None] = mapped_column(String(10), nullable=True)
     combat_round: Mapped[int] = mapped_column(Integer, default=0)
 

@@ -143,10 +143,8 @@ async def _player_death_sequence(player, game, db, boss) -> bool:
     player.combat_round = 0
 
     # Boss returns to top of its deck (market bosses stay in market)
-    if _source_death == "deck_1":
-        game.boss_deck_1 = [boss.id] + (game.boss_deck_1 or [])
-    elif _source_death == "deck_2":
-        game.boss_deck_2 = [boss.id] + (game.boss_deck_2 or [])
+    if _source_death == "deck":
+        game.boss_deck = [boss.id] + (game.boss_deck or [])
 
     game.current_phase = TurnPhase.action
 

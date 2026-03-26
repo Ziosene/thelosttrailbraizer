@@ -171,7 +171,7 @@ def _card_44(player, game, db, *, target_player_id=None) -> dict:
     from app.models.game import PlayerHandCard
     drawn_ids = []
     for _ in range(3):
-        src = game.action_deck_1 if game.action_deck_1 else game.action_deck_2
+        src = game.action_deck if game.action_deck else game.action_deck
         if src:
             cid = src.pop(0)
             hc = PlayerHandCard(player_id=player.id, action_card_id=cid)
@@ -324,10 +324,8 @@ def _card_88(player, game, db, *, target_player_id=None) -> dict:
     others = [p for p in game.players if p.id != player.id]
     if others:
         poorest = min(others, key=lambda p: p.licenze)
-        if game.action_deck_1:
-            db.add(_PHC88(player_id=poorest.id, action_card_id=game.action_deck_1.pop(0)))
-        elif game.action_deck_2:
-            db.add(_PHC88(player_id=poorest.id, action_card_id=game.action_deck_2.pop(0)))
+        if game.action_deck:
+            db.add(_PHC88(player_id=poorest.id, action_card_id=game.action_deck.pop(0)))
     return {"applied": True, "licenze_gained": 3, "poorest_player_drew": bool(others)}
 
 
@@ -495,11 +493,8 @@ def _card_167(player, game, db, *, target_player_id=None) -> dict:
     target.licenze += donated
     player.licenze += 3
     drew = False
-    if game.action_deck_1:
-        db.add(_PHC167(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
-        drew = True
-    elif game.action_deck_2:
-        db.add(_PHC167(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+    if game.action_deck:
+        db.add(_PHC167(player_id=player.id, action_card_id=game.action_deck.pop(0)))
         drew = True
     return {"applied": True, "licenze_donated": donated, "licenze_gained": 3, "drew_card": drew}
 
@@ -614,11 +609,8 @@ def _card_235(player, game, db, *, target_player_id=None) -> dict:
         return {"applied": False, "reason": "in_combat"}
     player.licenze += 2
     drawn = False
-    if game.action_deck_1:
-        db.add(_PHC235(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
-        drawn = True
-    elif game.action_deck_2:
-        db.add(_PHC235(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+    if game.action_deck:
+        db.add(_PHC235(player_id=player.id, action_card_id=game.action_deck.pop(0)))
         drawn = True
     return {"applied": True, "licenze_gained": 2, "drawn": drawn}
 
@@ -672,11 +664,8 @@ def _card_253(player, game, db, *, target_player_id=None) -> dict:
         return {"applied": False, "reason": "in_combat"}
     player.licenze += 3
     drew = False
-    if game.action_deck_1:
-        db.add(_PHC253(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
-        drew = True
-    elif game.action_deck_2:
-        db.add(_PHC253(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+    if game.action_deck:
+        db.add(_PHC253(player_id=player.id, action_card_id=game.action_deck.pop(0)))
         drew = True
     return {"applied": True, "licenze_gained": 3, "drew_card": drew}
 
@@ -726,10 +715,8 @@ def _card_257(player, game, db, *, target_player_id=None) -> dict:
     for bp in beneficiaries:
         n = 2 if bp.id == player.id else 1
         for _ in range(n):
-            if game.action_deck_1:
-                db.add(_PHC257(player_id=bp.id, action_card_id=game.action_deck_1.pop(0)))
-            elif game.action_deck_2:
-                db.add(_PHC257(player_id=bp.id, action_card_id=game.action_deck_2.pop(0)))
+            if game.action_deck:
+                db.add(_PHC257(player_id=bp.id, action_card_id=game.action_deck.pop(0)))
             if bp.id == player.id:
                 drew_self += 1
             else:
@@ -832,11 +819,8 @@ def _card_292(player, game, db, *, target_player_id=None) -> dict:
         player.licenze += 5
         drew = 0
         for _ in range(2):
-            if game.action_deck_1:
-                db.add(_PHC292(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
-                drew += 1
-            elif game.action_deck_2:
-                db.add(_PHC292(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+            if game.action_deck:
+                db.add(_PHC292(player_id=player.id, action_card_id=game.action_deck.pop(0)))
                 drew += 1
         return {"applied": True, "licenze_gained": 5, "drew": drew}
     player.licenze += 2
@@ -882,11 +866,8 @@ def _card_298(player, game, db, *, target_player_id=None) -> dict:
         return {"applied": False, "reason": "in_combat"}
     drew = 0
     for _ in range(2):
-        if game.action_deck_1:
-            db.add(_PHC298(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
-            drew += 1
-        elif game.action_deck_2:
-            db.add(_PHC298(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+        if game.action_deck:
+            db.add(_PHC298(player_id=player.id, action_card_id=game.action_deck.pop(0)))
             drew += 1
     player.licenze += 2
     return {"applied": True, "drew": drew, "licenze_gained": 2}

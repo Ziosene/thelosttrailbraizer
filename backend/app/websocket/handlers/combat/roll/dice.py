@@ -948,10 +948,8 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
             # Card 133 (Contact Center Integration): on HP loss, draw 1 card
             if (player.combat_state or {}).get("contact_center_until_round", 0) >= current_round:
                 from app.models.game import PlayerHandCard as _PHC133
-                if game.action_deck_1:
-                    db.add(_PHC133(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
-                elif game.action_deck_2:
-                    db.add(_PHC133(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+                if game.action_deck:
+                    db.add(_PHC133(player_id=player.id, action_card_id=game.action_deck.pop(0)))
             # Card 92 (Case Escalation): track boss hits for escalation bonus
             cs92 = dict(player.combat_state or {})
             cs92["combat_boss_hits_received"] = cs92.get("combat_boss_hits_received", 0) + 1
@@ -1142,11 +1140,8 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         if opponents_draw:
             target_draw = random.choice(opponents_draw)
             from app.models.game import PlayerHandCard as PHC_draw
-            if game.action_deck_1:
-                db.add(PHC_draw(player_id=target_draw.id, action_card_id=game.action_deck_1.pop(0)))
-            elif game.action_deck_2:
-                db.add(PHC_draw(player_id=target_draw.id, action_card_id=game.action_deck_2.pop(0)))
-
+            if game.action_deck:
+                db.add(PHC_draw(player_id=target_draw.id, action_card_id=game.action_deck.pop(0)))
     # Card 23 (Disaster Recovery): survive fatal blow with 1 HP — played proactively before this roll
     if player.hp <= 0 and (player.combat_state or {}).get("disaster_recovery_ready"):
         player.hp = 1

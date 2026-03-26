@@ -315,7 +315,7 @@ def _card_93(player, game, db, *, target_player_id=None) -> dict:
 
 def _card_94(player, game, db, *, target_player_id=None) -> dict:
     """Territory Assignment Rule — Guarda i primi 3 boss di uno dei due mazzi e scegline 1 da mettere in cima."""
-    src = game.boss_deck_1 if game.boss_deck_1 else game.boss_deck_2
+    src = game.boss_deck if game.boss_deck else game.boss_deck
     if not src:
         return {"applied": False, "reason": "no_boss_deck"}
     choices = src[:3]
@@ -642,11 +642,8 @@ def _card_231(player, game, db, *, target_player_id=None) -> dict:
         return {"applied": False, "reason": "not_in_combat"}
     player.current_boss_hp = max(0, player.current_boss_hp - 1)
     drew = False
-    if game.action_deck_1:
-        db.add(_PHC231(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
-        drew = True
-    elif game.action_deck_2:
-        db.add(_PHC231(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+    if game.action_deck:
+        db.add(_PHC231(player_id=player.id, action_card_id=game.action_deck.pop(0)))
         drew = True
     return {"applied": True, "boss_damage": 1, "drew_card": drew}
 

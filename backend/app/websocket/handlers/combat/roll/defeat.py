@@ -52,10 +52,7 @@ async def _boss_defeat_sequence(player, game, db, boss) -> bool:
         if not cs.get("necromancer_resurrected", False):
             cs["necromancer_resurrected"] = True
             player.combat_state = cs
-            if player.current_boss_source in ("deck_1", "market_1"):
-                game.boss_deck_1 = (game.boss_deck_1 or []) + [boss.id]
-            else:
-                game.boss_deck_2 = (game.boss_deck_2 or []) + [boss.id]
+            game.boss_deck = (game.boss_deck or []) + [boss.id]
             player.is_in_combat = False
             player.current_boss_id = None
             player.current_boss_hp = None
@@ -439,12 +436,8 @@ async def _boss_defeat_sequence(player, game, db, boss) -> bool:
     if _role_boss_reward["extra_cards"]:
         from app.models.game import PlayerHandCard as _PHC_role_b2c
         for _ in range(_role_boss_reward["extra_cards"]):
-            if game.action_deck_1:
-                _extra_role_card_id = game.action_deck_1.pop(0)
-                db.add(_PHC_role_b2c(player_id=player.id, action_card_id=_extra_role_card_id))
-            elif game.action_deck_2:
-                _extra_role_card_id = game.action_deck_2.pop(0)
-                db.add(_PHC_role_b2c(player_id=player.id, action_card_id=_extra_role_card_id))
+            if game.action_deck:
+                db.add(_PHC_role_b2c(player_id=player.id, action_card_id=game.action_deck.pop(0)))
     # Pardot Consultant: other players watching gain 1L
     for _other_pardot in game.players:
         if _other_pardot.id != player.id:
@@ -534,9 +527,9 @@ async def _boss_defeat_sequence(player, game, db, boss) -> bool:
 
     # Step 7: Refill market slot if boss was taken from market
     if source == "market_1":
-        game.boss_market_1 = game.boss_deck_1.pop(0) if game.boss_deck_1 else None
+        game.boss_market_1 = game.boss_deck.pop(0) if game.boss_deck else None
     elif source == "market_2":
-        game.boss_market_2 = game.boss_deck_2.pop(0) if game.boss_deck_2 else None
+        game.boss_market_2 = game.boss_deck.pop(0) if game.boss_deck else None
 
     player.is_in_combat = False
     player.current_boss_id = None

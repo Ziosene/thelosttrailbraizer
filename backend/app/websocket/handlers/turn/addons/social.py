@@ -247,10 +247,8 @@ async def handle_social_effects(addon_number, game, user_id, data, player, pa, d
             game.action_discard = (game.action_discard or []) + [hc176.action_card_id]
             db.delete(hc176)
         for _ in range(_count176):
-            if game.action_deck_1:
-                _cid176 = game.action_deck_1.pop(0)
-            elif game.action_deck_2:
-                _cid176 = game.action_deck_2.pop(0)
+            if game.action_deck:
+                _cid176 = game.action_deck.pop(0)
             else:
                 break
             db.add(_PHC176(player_id=target176.id, action_card_id=_cid176))
@@ -269,10 +267,8 @@ async def handle_social_effects(addon_number, game, user_id, data, player, pa, d
         for _p186 in game.players:
             _p186.licenze += 3
             _cid186 = None
-            if game.action_deck_1:
-                _cid186 = game.action_deck_1.pop(0)
-            elif game.action_deck_2:
-                _cid186 = game.action_deck_2.pop(0)
+            if game.action_deck:
+                _cid186 = game.action_deck.pop(0)
             if _cid186:
                 db.add(_PHC186(player_id=_p186.id, action_card_id=_cid186))
         cs186_new = dict(cs186)

@@ -61,15 +61,11 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
         if not boss:
             await _error(game.code, user_id, "Routed boss not found in DB")
             return
-        # Remove from whatever deck it's still in (or market)
-        _found_in_deck = False
-        for _deck_attr in ("boss_deck_1", "boss_deck_2"):
-            _deck = list(getattr(game, _deck_attr) or [])
-            if _routing_boss_id in _deck:
-                _deck.remove(_routing_boss_id)
-                setattr(game, _deck_attr, _deck)
-                _found_in_deck = True
-                break
+        # Remove from deck if still there
+        _deck = list(game.boss_deck or [])
+        if _routing_boss_id in _deck:
+            _deck.remove(_routing_boss_id)
+            game.boss_deck = _deck
         # Mark routing as consumed
         _cs_routing_new = dict(_cs_routing)
         _cs_routing_new.pop("routing_assigned_boss_id", None)
@@ -78,7 +74,7 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
         player.is_in_combat = True
         player.current_boss_id = _routing_boss_id
         player.current_boss_hp = boss.hp
-        player.current_boss_source = data.get("source", "deck_1")
+        player.current_boss_source = data.get("source", "deck")
         db.commit()
         db.refresh(game)
         from app.websocket.connection_manager import manager as _mgr_routing
@@ -92,10 +88,10 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
         })
         return
 
-    # source: "market_1" | "market_2" | "deck_1" | "deck_2"
+    # source: "market_1" | "market_2" | "deck"
     source = data.get("source", "market_1")
-    if source not in ("market_1", "market_2", "deck_1", "deck_2"):
-        await _error(game.code, user_id, "Invalid source (market_1/market_2/deck_1/deck_2)")
+    if source not in ("market_1", "market_2", "deck"):
+        await _error(game.code, user_id, "Invalid source (market_1/market_2/deck)")
         return
 
     if source == "market_1":
@@ -108,16 +104,11 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
             await _error(game.code, user_id, "No boss in market slot 2")
             return
         boss_id = game.boss_market_2
-    elif source == "deck_1":
-        if not game.boss_deck_1:
-            await _error(game.code, user_id, "Boss deck 1 is empty")
+    else:  # deck
+        if not game.boss_deck:
+            await _error(game.code, user_id, "Boss deck is empty")
             return
-        boss_id = game.boss_deck_1.pop(0)
-    else:  # deck_2
-        if not game.boss_deck_2:
-            await _error(game.code, user_id, "Boss deck 2 is empty")
-            return
-        boss_id = game.boss_deck_2.pop(0)
+        boss_id = game.boss_deck.pop(0)
 
     boss = db.get(BossCard, boss_id)
     if not boss:
@@ -125,9 +116,7 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
         return
 
     # Addon 83 (Sandbox Preview): peek dice threshold of next boss before drawing
-    if _has_addon_start(player, 83) and source in ("deck_1", "deck_2"):
-        _peek_deck83 = (game.boss_deck_1 if source == "deck_1" else game.boss_deck_2) or []
-        # Note: boss_id already popped above for deck sources; peek at current boss_id
+    if _has_addon_start(player, 83) and source == "deck":
         from app.models.card import BossCard as _Boss83
         _peek_boss83 = db.get(_Boss83, boss_id)
         if _peek_boss83:
@@ -138,17 +127,13 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
             })
 
     # Addon 60 (Release Notes): if boss drawn from deck, peek stats before deciding to fight
-    _boss_drawn_from_deck60 = source in ("deck_1", "deck_2")
-    if _has_addon_start(player, 60) and _boss_drawn_from_deck60:
+    if _has_addon_start(player, 60) and source == "deck":
         cs60 = dict(player.combat_state or {})
         cs60["release_notes_pending_boss_id"] = boss_id
         cs60["release_notes_pending_source"] = source
         player.combat_state = cs60
-        # Return boss to top of its deck
-        if source == "deck_1":
-            game.boss_deck_1 = [boss_id] + (game.boss_deck_1 or [])
-        else:
-            game.boss_deck_2 = [boss_id] + (game.boss_deck_2 or [])
+        # Return boss to top of the deck
+        game.boss_deck = [boss_id] + (game.boss_deck or [])
         player.is_in_combat = False
         player.current_boss_id = None
         game.current_phase = TurnPhase.action
@@ -275,10 +260,10 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
     # Corrupted cards use negative boss_id as sentinel (e.g. -54); handler checks on draw
     if start_effect["corrupt_deck_cards"] > 0:
         sentinels = [-boss_id] * start_effect["corrupt_deck_cards"]
-        if game.action_deck_1:
-            insert_pos = random.randint(0, len(game.action_deck_1))
+        if game.action_deck:
             for s in sentinels:
-                game.action_deck_1.insert(random.randint(0, len(game.action_deck_1)), s)
+                game.action_deck = list(game.action_deck)
+                game.action_deck.insert(random.randint(0, len(game.action_deck)), s)
 
     # Boss 62 (Education Cloud Inquisitor): roll d10 pre-combat — ≥7 +1HP, ≤3 -1HP
     if start_effect["exam_roll"]:
@@ -305,10 +290,8 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
         db.flush()
         from app.models.game import PlayerHandCard
         for _ in range(start_effect["refresh_hand"]):
-            if game.action_deck_1:
-                db.add(PlayerHandCard(player_id=player.id, action_card_id=game.action_deck_1.pop(0)))
-            elif game.action_deck_2:
-                db.add(PlayerHandCard(player_id=player.id, action_card_id=game.action_deck_2.pop(0)))
+            if game.action_deck:
+                db.add(PlayerHandCard(player_id=player.id, action_card_id=game.action_deck.pop(0)))
 
     # Boss 80 (Certification Exam Executioner): roll 5 × d10; ≥8 → +1HP +2L; ≤4 → -1HP
     if start_effect["certification_exam_rolls"] > 0:
@@ -322,7 +305,7 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
 
     # Boss 88 (Report Builder Omen): reveal next 3 boss cards to all players
     if start_effect["reveal_next_bosses"] > 0:
-        preview_ids = (game.boss_deck_1 or [])[:start_effect["reveal_next_bosses"]]
+        preview_ids = (game.boss_deck or [])[:start_effect["reveal_next_bosses"]]
         preview_cards = []
         for bid in preview_ids:
             bc = db.get(BossCard, bid)
@@ -339,9 +322,8 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
         from app.models.game import PlayerHandCard as PHC_seraph
         hp_cost_per_draw = engine.boss_draw_costs_hp(boss_id)
         for _ in range(start_effect["draw_bonus_cards"]):
-            src = game.action_deck_1 if game.action_deck_1 else game.action_deck_2
-            if src:
-                db.add(PHC_seraph(player_id=player.id, action_card_id=src.pop(0)))
+            if game.action_deck:
+                db.add(PHC_seraph(player_id=player.id, action_card_id=game.action_deck.pop(0)))
                 if hp_cost_per_draw > 0:
                     player.hp = max(0, player.hp - hp_cost_per_draw)
 
@@ -486,25 +468,14 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
     # Addon 52 (Scratch Org): draw 1 extra action card at start of each combat
     if _has_addon_start(player, 52):
         from app.models.game import PlayerHandCard as _PHC52
-        _extra52 = None
-        if game.action_deck_1:
-            _extra52 = game.action_deck_1.pop(0)
-        elif game.action_deck_2:
-            _extra52 = game.action_deck_2.pop(0)
-        if _extra52 is not None:
-            db.add(_PHC52(player_id=player.id, action_card_id=_extra52))
+        if game.action_deck:
+            db.add(_PHC52(player_id=player.id, action_card_id=game.action_deck.pop(0)))
 
     # Addon 114 (Event Bus): when any player draws a boss, all players with addon 114 draw 1 action card
     from app.models.game import PlayerHandCard as _PHC114
     for _p114 in game.players:
-        if _has_addon_start(_p114, 114):
-            _cid114 = None
-            if game.action_deck_1:
-                _cid114 = game.action_deck_1.pop(0)
-            elif game.action_deck_2:
-                _cid114 = game.action_deck_2.pop(0)
-            if _cid114:
-                db.add(_PHC114(player_id=_p114.id, action_card_id=_cid114))
+        if _has_addon_start(_p114, 114) and game.action_deck:
+            db.add(_PHC114(player_id=_p114.id, action_card_id=game.action_deck.pop(0)))
 
     db.commit()
     db.refresh(game)
