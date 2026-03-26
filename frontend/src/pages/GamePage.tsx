@@ -26,6 +26,7 @@ import { CombatOverlay } from '../components/game/CombatOverlay'
 import { DeathPenaltyModal } from '../components/game/DeathPenaltyModal'
 import { PilaModal } from '../components/game/PilaModal'
 import { GameOverOverlay } from '../components/game/GameOverOverlay'
+import { BossPeekModal, DrawPeekModal, EinsteinPredictModal } from '../components/game/RolePassiveModals'
 
 interface GamePageProps {
   gameCode: string
@@ -36,7 +37,8 @@ export function GamePage({ gameCode, onGoHome }: GamePageProps) {
   const { user } = useAuthStore()
   const {
     gameState, hand, myAddons, pendingChoice, reactionWindow, complyOrRefuse, debugModePeek,
-    deathPenalty, log, lastDiceRoll, pilaState, gameOver, connect, disconnect, send, clearPendingChoice,
+    deathPenalty, log, lastDiceRoll, pilaState, gameOver, bossPeekChoice, drawPeekChoice, einsteinPrediction,
+    connect, disconnect, send, clearPendingChoice,
   } = useGameStore()
   const [logOpen, setLogOpen] = useState(false)
   const [selectedCard, setSelectedCard] = useState<CardInfo | null>(null)
@@ -268,6 +270,25 @@ export function GamePage({ gameCode, onGoHome }: GamePageProps) {
           hand={hand}
           onPass={() => send('stack_pass')}
           onPlayCard={(id) => send('stack_play_card', { hand_card_id: id })}
+        />
+      )}
+
+      {bossPeekChoice && (
+        <BossPeekModal
+          peek={bossPeekChoice}
+          onChoose={(id) => send('boss_peek_choice', { boss_card_id: id })}
+        />
+      )}
+      {drawPeekChoice && (
+        <DrawPeekModal
+          peek={drawPeekChoice}
+          onChoose={(id) => send('draw_peek_choice', { card_id: id })}
+        />
+      )}
+      {einsteinPrediction && (
+        <EinsteinPredictModal
+          onPredict={(v) => { send('role_predict_roll', { prediction: v }); useGameStore.setState({ einsteinPrediction: null }) }}
+          onSkip={() => useGameStore.setState({ einsteinPrediction: null })}
         />
       )}
 

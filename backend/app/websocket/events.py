@@ -22,6 +22,13 @@ class ClientAction:
     PASS_REACTION = "pass_reaction"         # out-of-turn: pass the reaction window
     STACK_PASS = "stack_pass"
     STACK_PLAY_CARD = "stack_play_card"
+    # Role passive actions
+    ROLE_DISCARD_DRAW = "role_discard_draw"              # Administrator / Advanced Admin
+    ROLE_RECOVER_FROM_DISCARD = "role_recover_from_discard"  # Integration Architect
+    ROLE_SKIP_DRAW = "role_skip_draw"                    # Marketing Cloud Administrator
+    ROLE_PREDICT_ROLL = "role_predict_roll"              # Einstein Analytics Consultant
+    BOSS_PEEK_CHOICE = "boss_peek_choice"                # Data Architect
+    DRAW_PEEK_CHOICE = "draw_peek_choice"                # Data Cloud Consultant
 
 
 class ServerEvent:
@@ -52,3 +59,11 @@ class ServerEvent:
     STACK_UPDATED = "stack_updated"
     STACK_PASSED = "stack_passed"
     STACK_RESOLVED = "stack_resolved"
+    # Role passive server events
+    BOSS_PEEK_CHOICE_REQUIRED = "boss_peek_choice_required"    # private to Data Architect
+    DRAW_PEEK_CHOICE_REQUIRED = "draw_peek_choice_required"    # private to Data Cloud Consultant
+    EINSTEIN_PREDICTION_CORRECT = "einstein_prediction_correct"
+    ROLE_PREDICT_ROLL_ANNOUNCED = "role_predict_roll_announced"
+    ROLE_DISCARD_DRAW = "role_discard_draw"
+    ROLE_RECOVER_FROM_DISCARD = "role_recover_from_discard"
+    ROLE_SKIP_DRAW = "role_skip_draw"

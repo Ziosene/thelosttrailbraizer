@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ROLES, SENIORITY_HP, type Role, type Seniority } from '../../types/game'
+import { ROLES, SENIORITY_HP, ROLE_DESCRIPTIONS, type Role, type Seniority } from '../../types/game'
 import { Button } from '../ui/Button'
 
 const SENIORITIES: Seniority[] = ['Junior', 'Experienced', 'Senior', 'Evangelist']
@@ -53,6 +53,11 @@ export function CharacterSelect({ onConfirm, disabled, confirmed }: Props) {
             <option key={r} value={r}>{r}</option>
           ))}
         </select>
+        {ROLE_DESCRIPTIONS[role] && (
+          <p className="mt-2 text-xs text-violet-300 bg-violet-950/40 border border-violet-800/40 rounded-lg px-3 py-2">
+            {ROLE_DESCRIPTIONS[role]}
+          </p>
+        )}
       </div>
 
       {confirmed ? (

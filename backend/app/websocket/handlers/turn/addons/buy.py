@@ -18,9 +18,12 @@ async def _handle_buy_addon(game: GameSession, user_id: int, data: dict, db: Ses
     if game.status != GameStatus.in_progress:
         await _error(game.code, user_id, "Cannot buy addon now")
         return
-    # Addon 111 (Quick Deploy): allow buying addons during combat phase too
+    # Addon 111 (Quick Deploy) / Role: OmniStudio Consultant: allow buying addons during combat phase too
     _player_111 = _get_player(game, user_id)
     _allow_combat_buy = _player_111 and _has_addon_addon(_player_111, 111)
+    if not _allow_combat_buy and _player_111:
+        from app.game.engine_role import can_buy_addon_during_combat as _can_buy_during_combat
+        _allow_combat_buy = _can_buy_during_combat(_player_111)
     if game.current_phase not in (TurnPhase.action,) and not (game.current_phase == TurnPhase.combat and _allow_combat_buy):
         await _error(game.code, user_id, "Cannot buy addon now")
         return

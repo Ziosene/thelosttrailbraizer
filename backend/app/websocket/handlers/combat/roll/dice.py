@@ -716,6 +716,23 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
     # Card 61 (Predictive Model): exact prediction on hit → at least 2HP damage
     if _predictive_bonus and _hit_damage < 2:
         _hit_damage = 2
+    # Role passive: Einstein Analytics Consultant — correct dice prediction doubles hit damage
+    _einstein_pred = (player.combat_state or {}).get("einstein_prediction")
+    _einstein_pred_correct = False
+    if _einstein_pred is not None:
+        _einstein_pred_correct = (_einstein_pred == roll) and (result == "hit")
+        _cs_ein = dict(player.combat_state or {})
+        _cs_ein.pop("einstein_prediction", None)  # consume regardless of correctness
+        player.combat_state = _cs_ein
+    if _einstein_pred_correct:
+        _hit_damage *= 2
+        await manager.broadcast(game.code, {
+            "type": "einstein_prediction_correct",
+            "player_id": player.id,
+            "prediction": _einstein_pred,
+            "roll": roll,
+            "hit_damage": _hit_damage,
+        })
     # Card 28 (Critical System): roll of exactly 10 deals 3 HP to boss (overrides all other modifiers)
     if (player.combat_state or {}).get("critical_system_until_round", 0) >= current_round and roll == 10:
         _hit_damage = 3

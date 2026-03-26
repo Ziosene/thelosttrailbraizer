@@ -37,6 +37,34 @@ export const ROLES = [
 
 export type Role = typeof ROLES[number]
 
+export const ROLE_DESCRIPTIONS: Record<string, string> = {
+  'Administrator': 'Una volta per turno: scarta 1 carta e pescane 1 nuova.',
+  'Advanced Administrator': 'Una volta per turno: scarta fino a 2 carte e ripescale.',
+  'Platform Developer I': 'Se esci 10 sul d10, il boss subisce 2 HP invece di 1.',
+  'Platform Developer II': 'Critical hit: 10 → 3 HP al boss, 9 → 2 HP al boss.',
+  'JavaScript Developer I': 'Puoi giocare 3 carte azione per turno invece di 2.',
+  'Integration Architect': 'Una volta per turno: recupera la carta in cima al mazzo degli scarti.',
+  'Data Architect': 'Prima di pescare un boss blind, guarda le prime 2 carte e scegli.',
+  'Sharing & Visibility Architect': 'Quando un avversario ti gioca una carta, tira d10: 1–3 → la carta fallisce.',
+  'Identity & Access Management Architect': 'Sei immune al furto di Licenze.',
+  'Development Lifecycle Architect': 'Gli AddOn costano 8 Licenze invece di 10.',
+  'System Architect': 'Puoi vedere l\'abilità del boss prima di decidere se combatterlo.',
+  'Application Architect': 'Puoi vedere l\'abilità del boss prima di decidere se combatterlo.',
+  'Technical Architect (CTA)': 'Combina abilità ridotte di Platform Dev II, Dev Lifecycle e Sales Cloud.',
+  'Sales Cloud Consultant': 'Guadagni 1 Licenza bonus ogni volta che sconfiggi un boss.',
+  'Service Cloud Consultant': 'Recuperi 1 HP dal round 3 in poi (una volta per combattimento).',
+  'Field Service Consultant': 'I bonus degli AddOn si applicano anche fuori dal tuo turno.',
+  'Experience Cloud Consultant': 'Una volta per turno: copia l\'abilità di un AddOn di un altro giocatore.',
+  'Marketing Cloud Consultant': 'Puoi mettere 1 carta dalla tua mano in cima al mazzo azioni.',
+  'Marketing Cloud Administrator': 'All\'inizio del turno puoi scegliere di NON pescare la carta obbligatoria.',
+  'Marketing Cloud Developer': 'Le tue carte azione offensive fanno +1 danno agli avversari.',
+  'Pardot Consultant': 'Guadagni 1 Licenza ogni volta che un altro giocatore sconfigge un boss.',
+  'Data Cloud Consultant': 'Quando peschi, guarda le prime 3 carte del mazzo e scegli quale prendere.',
+  'Einstein Analytics Consultant': 'Prima di tirare il dado, puoi dichiarare il risultato: se indovini, danno doppio.',
+  'B2B Commerce Developer': 'Puoi scambiare 1 carta con un altro giocatore (consenso reciproco).',
+  'B2C Commerce Developer': 'Ottieni 1 carta azione bonus ogni volta che sconfiggi un boss.',
+}
+
 export interface HandCard {
   hand_card_id: number
   card_id: number

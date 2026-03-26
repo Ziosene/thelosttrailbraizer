@@ -108,6 +108,29 @@ async def _handle_start_combat(game: GameSession, user_id: int, data: dict, db: 
         if not game.boss_deck:
             await _error(game.code, user_id, "Boss deck is empty")
             return
+        # Role passive: Data Architect — peek top 2 boss cards and choose which to draw
+        from app.game.engine_role import ROLE_DATA_ARCH as _ROLE_DATA_ARCH
+        if player.role == _ROLE_DATA_ARCH and len(game.boss_deck) >= 2:
+            from app.websocket.peek_manager import open_peek_window as _open_peek_window
+            _peek_ids = list(game.boss_deck[:2])
+            _peek_bosses = []
+            for _pid in _peek_ids:
+                _pb = db.get(BossCard, _pid)
+                if _pb:
+                    _peek_bosses.append({"id": _pb.id, "name": _pb.name, "hp": _pb.hp, "threshold": _pb.dice_threshold})
+            await manager.send_to_player(game.code, player.user_id, {
+                "type": "boss_peek_choice_required",
+                "player_id": player.id,
+                "choices": _peek_bosses,
+                "timeout_ms": 30000,
+            })
+            _chosen_id = await _open_peek_window(game.code, player.id, _peek_ids, timeout=30.0)
+            if _chosen_id and _chosen_id in _peek_ids and _chosen_id != _peek_ids[0]:
+                # Swap chosen boss to front of deck
+                _deck_list = list(game.boss_deck)
+                _deck_list.remove(_chosen_id)
+                _deck_list.insert(0, _chosen_id)
+                game.boss_deck = _deck_list
         boss_id = game.boss_deck.pop(0)
 
     boss = db.get(BossCard, boss_id)

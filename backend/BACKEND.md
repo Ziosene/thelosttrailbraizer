@@ -483,6 +483,12 @@ Tutti i messaggi sono JSON. Il server autentica via JWT al momento della conness
 | `pass_reaction` | — | Fuori dal proprio turno — rinuncia alla finestra di reazione |
 | `card_choice` | `{choice_type, ...}` | Risposta a `card_choice_required` — il giocatore invia la propria scelta per completare l'effetto di una carta |
 | `choose_death_penalty` | `{hand_card_id: int\|null, player_addon_id: int\|null}` | Risposta a `death_penalty_choice_required` — il giocatore sceglie quale carta e addon perdere dopo la morte |
+| `role_discard_draw` | `{hand_card_id: int}` | Role passive: Administrator (1/turn) o Advanced Administrator (2/turn) — scarta 1 carta e pesca 1 nuova |
+| `role_recover_from_discard` | — | Role passive: Integration Architect (1/turn) — recupera la carta in cima allo scarto azione |
+| `role_skip_draw` | — | Role passive: Marketing Cloud Administrator (1/turn, fase draw) — salta la pesca; avanza direttamente alla fase action |
+| `role_predict_roll` | `{prediction: int 1-10}` | Role passive: Einstein Analytics Consultant — predice il dado prima di tirarlo; se indovina il danno è doppio |
+| `boss_peek_choice` | `{boss_card_id: int}` | Role passive: Data Architect — risposta a `boss_peek_choice_required`; sceglie quale boss pescare tra i 2 in cima |
+| `draw_peek_choice` | `{card_id: int}` | Role passive: Data Cloud Consultant — risposta a `draw_peek_choice_required`; sceglie quale carta azione pescare tra le 3 in cima |
 
 ### Server → Client (eventi)
 
@@ -515,6 +521,13 @@ Tutti i messaggi sono JSON. Il server autentica via JWT al momento della conness
 | `stack_updated` | `{stack, priority_player_id, consecutive_passes, timeout_ms}` | broadcast — carta aggiunta alla Pila, priorità resettata all'active player |
 | `stack_passed` | `{player_id, auto, consecutive_passes, priority_player_id}` | broadcast — un giocatore ha passato (o è scaduto il timeout) |
 | `stack_resolved` | `{stack, final_roll, final_result}` | broadcast — Pila risolta, danni calcolati |
+| `boss_peek_choice_required` | `{choices: [{id, name, hp, threshold}]}` | privato al Data Architect — scegli quale boss pescare (timeout 30 s) |
+| `draw_peek_choice_required` | `{choices: [{id, number, name}]}` | privato al Data Cloud Consultant — scegli quale carta azione pescare (timeout 30 s) |
+| `einstein_prediction_correct` | `{player_id, prediction, roll, hit_damage}` | broadcast — Einstein Analytics ha indovinato, danno raddoppiato |
+| `role_predict_roll_announced` | `{player_id}` | broadcast — Einstein Analytics ha impostato una previsione (senza rivelare il numero) |
+| `role_discard_draw` | `{player_id, role}` | broadcast — Administrator/Advanced Admin ha usato il passive |
+| `role_recover_from_discard` | `{player_id}` | broadcast — Integration Architect ha recuperato una carta dallo scarto |
+| `role_skip_draw` | `{player_id}` | broadcast — Marketing Cloud Administrator ha saltato la pesca |
 
 ### Azioni client — La Pila
 
@@ -720,3 +733,42 @@ _Nessun TODO aperto._
 - **Frontend** — React + Tailwind (separato, quando il backend è stabile e testato).
 - **Bilanciamento carte** — prima revisione completa effettuata (carte azione 1–300 e addon 1–200). Ulteriore ribilanciamento previsto dopo le prime partite di test.
 - **Rate limiting WS** — protezione contro spam di messaggi WebSocket.
+
+---
+
+## 11. Ruoli — Sistema passive abilities
+
+File: `app/game/engine_role.py` — funzioni pure per i passive role.
+File: `app/websocket/handlers/turn/role_passive.py` — handler WS per le azioni attive dei ruoli.
+File: `app/websocket/peek_manager.py` — finestre peek async (Data Architect, Data Cloud Consultant).
+
+### Passive implementate
+
+| Ruolo | Tipo | Dove | Nota |
+|---|---|---|---|
+| Platform Developer I | automatico | `dice.py` | Roll 10 → +1 danno extra boss |
+| Platform Developer II | automatico | `dice.py` | Roll 10 → +2, roll 9 → +1 |
+| JavaScript Developer I | automatico | `card_play.py` | 3 carte/turno invece di 2 |
+| Identity & Access Management Architect | automatico | `card_play.py` | Immune al furto di licenze |
+| Development Lifecycle Architect | automatico | `buy.py` | Addon base-10 costano 8L |
+| Service Cloud Consultant | automatico | `dice.py` | Recupera 1 HP dopo round 3 (una volta per combattimento) |
+| Sales Cloud Consultant | automatico | `defeat.py` | +1L al defeat boss |
+| B2C Commerce Developer | automatico | `defeat.py` | +1 carta al defeat boss |
+| Pardot Consultant | automatico | `defeat.py` | +1L quando un avversario sconfigge un boss |
+| Marketing Cloud Developer | automatico | `card_play.py` | +1 danno sulle carte offensive |
+| Technical Architect (CTA) | automatico | `dice.py` / `defeat.py` | Combina Platform Dev II (ogni due turni) + Sales Cloud (+L su defeat, alternato) |
+| OmniStudio Consultant | automatico | `buy.py` | Può acquistare addon anche durante il combattimento |
+| Administrator | attivo | `role_passive.py` | 1 volta/turno: scarta 1 carta → pesca 1 nuova (`role_discard_draw`) |
+| Advanced Administrator | attivo | `role_passive.py` | Fino a 2 volte/turno: scarta 1 → pesca 1 (`role_discard_draw`) |
+| Integration Architect | attivo | `role_passive.py` | 1 volta/turno: recupera carta cima scarto azione (`role_recover_from_discard`) |
+| Marketing Cloud Administrator | attivo | `role_passive.py` | 1 volta/turno, fase draw: salta la pesca (`role_skip_draw`) |
+| Einstein Analytics Consultant | attivo | `role_passive.py` + `dice.py` | Prima del dado: predici il risultato, se corretto il danno è doppio (`role_predict_roll`) |
+| Data Architect | attivo | `start.py` + `role_passive.py` | Prima di pescare un boss dal mazzo: guarda le prime 2 e scegli (`boss_peek_choice`) |
+| Data Cloud Consultant | attivo | `draw.py` + `role_passive.py` | Al draw: guarda le prime 3 carte azione e scegli quale pescare (`draw_peek_choice`) |
+
+### TODO: passive troppo complesse (non implementate)
+
+- **Sharing & Visibility Architect** — richiede toccare 200+ effetti carte
+- **Experience Cloud Consultant** — richiede clonazione effetti addon
+- **Marketing Cloud Consultant** — effetto di gioco ambiguo
+- **Field Service Consultant** — logica attivazione addon complessa

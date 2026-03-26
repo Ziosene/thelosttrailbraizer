@@ -104,6 +104,20 @@ export interface PilaState {
   opened_at: number
 }
 
+export interface BossPeekChoice {
+  choices: Array<{ id: number; name: string; hp: number; threshold: number; difficulty: string; ability: string }>
+  timeout_ms: number
+}
+
+export interface DrawPeekChoice {
+  choices: Array<{ id: number; name: string; card_type: string; rarity: string; effect: string }>
+  timeout_ms: number
+}
+
+export interface EinsteinPrediction {
+  timeout_ms: number
+}
+
 let _toastSeq = 0
 
 let _logSeq = 0
@@ -130,6 +144,9 @@ interface GameStore {
   deathPenalty: DeathPenaltyChoice | null
   pilaState: PilaState | null
   gameOver: GameOver | null
+  bossPeekChoice: BossPeekChoice | null
+  drawPeekChoice: DrawPeekChoice | null
+  einsteinPrediction: EinsteinPrediction | null
   connect: (gameCode: string, userId: number) => void
   disconnect: () => void
   send: (action: string, data?: Record<string, unknown>) => void
@@ -170,6 +187,9 @@ export const useGameStore = create<GameStore>((set, get) => {
     deathPenalty: null,
     pilaState: null,
     gameOver: null,
+    bossPeekChoice: null,
+    drawPeekChoice: null,
+    einsteinPrediction: null,
 
     connect(gameCode, userId) {
       set({ gameCode, myUserId: userId })
@@ -338,6 +358,26 @@ export const useGameStore = create<GameStore>((set, get) => {
         const hit = msg.final_result === 'hit'
         addLog(`🃏 Pila risolta: ${msg.final_roll} → ${hit ? 'COLPITO!' : 'mancato'}`, hit ? 'text-green-400' : 'text-red-400')
       })
+
+      // Role passive events
+      bus.on('boss_peek_choice_required', (msg: any) => {
+        set({ bossPeekChoice: { choices: msg.choices, timeout_ms: msg.timeout_ms ?? 30000 } })
+        addLog('🔍 Data Architect: scegli quale boss affrontare', 'text-cyan-400')
+      })
+      bus.on('boss_peek_choice_resolved', () => set({ bossPeekChoice: null }))
+      bus.on('draw_peek_choice_required', (msg: any) => {
+        set({ drawPeekChoice: { choices: msg.choices, timeout_ms: msg.timeout_ms ?? 30000 } })
+        addLog('🔍 Data Cloud Consultant: scegli quale carta pescare', 'text-cyan-400')
+      })
+      bus.on('draw_peek_choice_resolved', () => set({ drawPeekChoice: null }))
+      bus.on('role_predict_roll_required', (msg: any) => {
+        set({ einsteinPrediction: { timeout_ms: msg.timeout_ms ?? 15000 } })
+        addLog('🎯 Einstein Analytics: dichiara il risultato del dado', 'text-yellow-400')
+      })
+      bus.on('role_predict_roll_resolved', () => set({ einsteinPrediction: null }))
+      bus.on('role_passive_used', (msg: any) => {
+        addLog(`✨ ${pName(msg.player_id)} usa la passiva: ${msg.role}`, 'text-violet-400')
+      })
     },
 
     disconnect() {
@@ -345,7 +385,7 @@ export const useGameStore = create<GameStore>((set, get) => {
       disconnectSocket()
       set({
         gameCode: null, gameState: null, hand: [], myAddons: [],
-        combatActive: false, lastDiceRoll: null, pendingChoice: null, reactionWindow: null, complyOrRefuse: null, log: [], toasts: [], debugModePeek: null, deathPenalty: null, pilaState: null, gameOver: null,
+        combatActive: false, lastDiceRoll: null, pendingChoice: null, reactionWindow: null, complyOrRefuse: null, log: [], toasts: [], debugModePeek: null, deathPenalty: null, pilaState: null, gameOver: null, bossPeekChoice: null, drawPeekChoice: null, einsteinPrediction: null,
       })
     },
 

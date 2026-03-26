@@ -23,6 +23,14 @@ from app.websocket.handlers.combat import (
 )
 from app.websocket.handlers.reaction import _handle_play_reaction, _handle_pass_reaction, _handle_card115_refuse
 from app.websocket.handlers.combat.stack_action import _handle_stack_pass, _handle_stack_play_card
+from app.websocket.handlers.turn.role_passive import (
+    _handle_role_discard_draw,
+    _handle_role_recover_from_discard,
+    _handle_role_skip_draw,
+    _handle_role_predict_roll,
+    _handle_boss_peek_choice,
+    _handle_draw_peek_choice,
+)
 
 
 async def handle_message(
@@ -115,6 +123,18 @@ async def handle_message(
         await _handle_stack_pass(game, user_id, data, db)
     elif action == "stack_play_card":
         await _handle_stack_play_card(game, user_id, data, db)
+    elif action == "role_discard_draw":
+        await _handle_role_discard_draw(game, user_id, data, db)
+    elif action == "role_recover_from_discard":
+        await _handle_role_recover_from_discard(game, user_id, data, db)
+    elif action == "role_skip_draw":
+        await _handle_role_skip_draw(game, user_id, data, db)
+    elif action == "role_predict_roll":
+        await _handle_role_predict_roll(game, user_id, data, db)
+    elif action == "boss_peek_choice":
+        await _handle_boss_peek_choice(game, user_id, data, db)
+    elif action == "draw_peek_choice":
+        await _handle_draw_peek_choice(game, user_id, data, db)
     else:
         await _error(game_code, user_id, f"Unknown action: {action}")
 

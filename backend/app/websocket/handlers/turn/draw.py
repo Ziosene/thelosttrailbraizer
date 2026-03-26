@@ -113,6 +113,11 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
     _cs_init.pop("fought_this_turn", None)
     # Card 70 (Suppression List): skip draw this turn if suppressed
     _suppressed = _cs_init.pop("suppressed_draw", False)
+    # Role passive: Marketing Cloud Administrator — clear skip flag (used by role_skip_draw action, not here)
+    _cs_init.pop("role_skip_draw_used", None)
+    # Role passive: Administrator / Advanced Administrator — clear per-turn passive usage counters
+    _cs_init.pop("role_passive_used_this_turn", None)
+    _cs_init.pop("role_passive_count_this_turn", None)
     # Card 71 (Anypoint MQ): deliver forced queued card before normal draw
     _forced_queue_id = _cs_init.pop("forced_queue_card_id", None)
     player.combat_state = _cs_init or {}
@@ -252,6 +257,34 @@ async def _handle_draw_card(game: GameSession, user_id: int, data: dict, db: Ses
     if not game.action_deck and game.action_discard:
         game.action_deck = engine.shuffle_deck(game.action_discard)
         game.action_discard = []
+
+    # Role passive: Data Cloud Consultant — peek top 3 action cards and choose which to draw
+    from app.game.engine_role import ROLE_DATA_CLOUD_CONSULTANT as _ROLE_DCC
+    if player.role == _ROLE_DCC and game.action_deck:
+        _peek_count_dcc = min(3, len(game.action_deck))
+        if _peek_count_dcc >= 2:
+            from app.websocket.peek_manager import open_peek_window as _open_peek_window_dcc
+            from app.models.card import ActionCard as _AC_dcc
+            _peek_ids_dcc = list(game.action_deck[:_peek_count_dcc])
+            _peek_cards_dcc = []
+            for _pcid in _peek_ids_dcc:
+                _pc = db.get(_AC_dcc, _pcid)
+                if _pc:
+                    _peek_cards_dcc.append({"id": _pc.id, "number": _pc.number, "name": _pc.name})
+            await manager.send_to_player(game.code, player.user_id, {
+                "type": "draw_peek_choice_required",
+                "player_id": player.id,
+                "choices": _peek_cards_dcc,
+                "timeout_ms": 30000,
+            })
+            _chosen_dcc = await _open_peek_window_dcc(game.code, player.id, _peek_ids_dcc, timeout=30.0)
+            if _chosen_dcc and _chosen_dcc in _peek_ids_dcc and _chosen_dcc != _peek_ids_dcc[0]:
+                # Reorder deck so chosen card is first
+                _deck_dcc = list(game.action_deck)
+                _deck_dcc.remove(_chosen_dcc)
+                _deck_dcc.insert(0, _chosen_dcc)
+                game.action_deck = _deck_dcc
+
     drawn = [game.action_deck.pop(0)] if game.action_deck else []
     if not drawn:
         await _error(game.code, user_id, "No cards left in the action deck")
