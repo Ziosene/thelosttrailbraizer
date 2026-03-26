@@ -78,6 +78,28 @@ export interface LastDiceRoll {
   player_hp: number
 }
 
+export interface PilaStackItem {
+  kind: 'dice_result' | 'card'
+  roll?: number
+  result?: string
+  threshold?: number
+  player_id?: number
+  card_id?: number
+  card_name?: string
+  played_by?: number
+  roll_modifier?: number
+  force_reroll?: boolean
+}
+
+export interface PilaState {
+  stack: PilaStackItem[]
+  player_order: number[]
+  priority_player_id: number
+  consecutive_passes: number
+  timeout_ms: number
+  opened_at: number
+}
+
 let _toastSeq = 0
 
 let _logSeq = 0
@@ -102,6 +124,7 @@ interface GameStore {
   toasts: Toast[]
   debugModePeek: DebugModePeek | null
   deathPenalty: DeathPenaltyChoice | null
+  pilaState: PilaState | null
   connect: (gameCode: string, userId: number) => void
   disconnect: () => void
   send: (action: string, data?: Record<string, unknown>) => void
@@ -140,6 +163,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     toasts: [],
     debugModePeek: null,
     deathPenalty: null,
+    pilaState: null,
 
     connect(gameCode, userId) {
       set({ gameCode, myUserId: userId })
@@ -267,6 +291,46 @@ export const useGameStore = create<GameStore>((set, get) => {
           'text-amber-400',
         )
       })
+
+      bus.on('stack_opened', (msg: any) => {
+        set({ pilaState: {
+          stack: msg.stack,
+          player_order: msg.player_order,
+          priority_player_id: msg.priority_player_id,
+          consecutive_passes: 0,
+          timeout_ms: msg.timeout_ms,
+          opened_at: Date.now(),
+        }})
+        addLog(`🃏 La Pila aperta — priorità a ${pName(msg.priority_player_id)}`, 'text-violet-400')
+      })
+      bus.on('stack_priority', (msg: any) => {
+        set(s => s.pilaState ? { pilaState: {
+          ...s.pilaState,
+          priority_player_id: msg.priority_player_id,
+          consecutive_passes: msg.consecutive_passes,
+          timeout_ms: msg.timeout_ms,
+          opened_at: Date.now(),
+        }} : {})
+      })
+      bus.on('stack_updated', (msg: any) => {
+        set(s => s.pilaState ? { pilaState: {
+          ...s.pilaState,
+          stack: msg.stack,
+          priority_player_id: msg.priority_player_id,
+          consecutive_passes: msg.consecutive_passes,
+          timeout_ms: msg.timeout_ms,
+          opened_at: Date.now(),
+        }} : {})
+        addLog(`🃏 Carta aggiunta alla Pila`, 'text-violet-300')
+      })
+      bus.on('stack_passed', (msg: any) => {
+        if (msg.player_id) addLog(`🃏 ${pName(msg.player_id)} passa la Pila${msg.auto ? ' (timeout)' : ''}`, 'text-slate-500')
+      })
+      bus.on('stack_resolved', (msg: any) => {
+        set({ pilaState: null })
+        const hit = msg.final_result === 'hit'
+        addLog(`🃏 Pila risolta: ${msg.final_roll} → ${hit ? 'COLPITO!' : 'mancato'}`, hit ? 'text-green-400' : 'text-red-400')
+      })
     },
 
     disconnect() {
@@ -274,7 +338,7 @@ export const useGameStore = create<GameStore>((set, get) => {
       disconnectSocket()
       set({
         gameCode: null, gameState: null, hand: [], myAddons: [],
-        combatActive: false, lastDiceRoll: null, pendingChoice: null, reactionWindow: null, complyOrRefuse: null, log: [], toasts: [], debugModePeek: null, deathPenalty: null,
+        combatActive: false, lastDiceRoll: null, pendingChoice: null, reactionWindow: null, complyOrRefuse: null, log: [], toasts: [], debugModePeek: null, deathPenalty: null, pilaState: null,
       })
     },
 

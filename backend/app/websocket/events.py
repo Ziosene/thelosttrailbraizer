@@ -20,6 +20,8 @@ class ClientAction:
     DECLARE_CARD_TYPE = "declare_card_type" # boss 86 — declare Offensiva/Difensiva at combat start
     PLAY_REACTION = "play_reaction"         # out-of-turn: {hand_card_id: int}
     PASS_REACTION = "pass_reaction"         # out-of-turn: pass the reaction window
+    STACK_PASS = "stack_pass"
+    STACK_PLAY_CARD = "stack_play_card"
 
 
 class ServerEvent:
@@ -45,3 +47,8 @@ class ServerEvent:
     REACTION_WINDOW_CLOSED = "reaction_window_closed" # privato al target: finestra chiusa
     REACTION_RESOLVED = "reaction_resolved"           # broadcast: come è andata la reazione
     LUCKY_ROLL_USED = "lucky_roll_used"               # broadcast: combatant ha usato Lucky Roll
+    STACK_OPENED = "stack_opened"
+    STACK_PRIORITY = "stack_priority"
+    STACK_UPDATED = "stack_updated"
+    STACK_PASSED = "stack_passed"
+    STACK_RESOLVED = "stack_resolved"

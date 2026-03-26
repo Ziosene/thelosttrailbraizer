@@ -5,6 +5,30 @@
 
 ---
 
+## Sessione 11 — La Pila (stack di reazione multi-giocatore)
+
+### Nuovi componenti
+- **`PilaModal.tsx`**: modale La Pila che appare dopo ogni tiro di dado in combattimento
+  - Mostra lo stack LIFO: dado in basso, carte giocate sopra
+  - Countdown timer 8 s per il giocatore con priorità (diventa rosso/pulsante sotto 3 s)
+  - Se è il tuo turno: pulsante "Passa →" + bottoni per carte Difensiva o Lucky Roll in mano
+  - Se è il turno di un altro: messaggio "In attesa del giocatore #N..."
+  - `StackItemRow`: riga base dado (colore verde/rosso) oppure riga carta (viola, con badge reroll o modificatore)
+
+### Modifiche store (`gameStore.ts`)
+- Aggiunti tipi `PilaStackItem`, `PilaState` (esportati)
+- Aggiunto campo `pilaState: PilaState | null` nello store
+- Gestori eventi: `stack_opened`, `stack_priority`, `stack_updated`, `stack_passed`, `stack_resolved`
+- Reset di `pilaState: null` nella `disconnect`
+
+### Modifiche `GamePage.tsx`
+- Importa `PilaModal`
+- Aggiunto `pilaState` nella destrutturazione dello store
+- Mostra `<PilaModal>` quando `pilaState` è non-null e `myPlayer` esiste
+- `onPass` → `send('stack_pass')`, `onPlayCard` → `send('stack_play_card', { hand_card_id })`
+
+---
+
 ## Sessione 10 — Meccanica morte (penalità con scelta)
 
 ### Nuovi componenti

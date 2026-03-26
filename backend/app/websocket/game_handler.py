@@ -22,6 +22,7 @@ from app.websocket.handlers.combat import (
     _handle_declare_card, _handle_declare_card_type, _handle_choose_death_penalty,
 )
 from app.websocket.handlers.reaction import _handle_play_reaction, _handle_pass_reaction, _handle_card115_refuse
+from app.websocket.handlers.combat.stack_action import _handle_stack_pass, _handle_stack_play_card
 
 
 async def handle_message(
@@ -110,6 +111,10 @@ async def handle_message(
         await _handle_skill_transfer_choice(game, user_id, data, db)
     elif action == "choose_death_penalty":
         await _handle_choose_death_penalty(game, user_id, data, db)
+    elif action == "stack_pass":
+        await _handle_stack_pass(game, user_id, data, db)
+    elif action == "stack_play_card":
+        await _handle_stack_play_card(game, user_id, data, db)
     else:
         await _error(game_code, user_id, f"Unknown action: {action}")
 

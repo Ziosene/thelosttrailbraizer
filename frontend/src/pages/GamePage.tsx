@@ -24,6 +24,7 @@ import { ReactionWindowModal, CardChoiceModal, ComplyOrRefuseModal, DebugModeMod
 import { ToastLayer } from '../components/game/ToastLayer'
 import { CombatOverlay } from '../components/game/CombatOverlay'
 import { DeathPenaltyModal } from '../components/game/DeathPenaltyModal'
+import { PilaModal } from '../components/game/PilaModal'
 
 interface GamePageProps {
   gameCode: string
@@ -33,7 +34,7 @@ export function GamePage({ gameCode }: GamePageProps) {
   const { user } = useAuthStore()
   const {
     gameState, hand, myAddons, pendingChoice, reactionWindow, complyOrRefuse, debugModePeek,
-    deathPenalty, log, lastDiceRoll, connect, disconnect, send, clearPendingChoice,
+    deathPenalty, log, lastDiceRoll, pilaState, connect, disconnect, send, clearPendingChoice,
   } = useGameStore()
   const [logOpen, setLogOpen] = useState(false)
   const [selectedCard, setSelectedCard] = useState<CardInfo | null>(null)
@@ -255,6 +256,16 @@ export function GamePage({ gameCode }: GamePageProps) {
             })
             useGameStore.setState({ deathPenalty: null })
           }}
+        />
+      )}
+
+      {pilaState && myPlayer && (
+        <PilaModal
+          pila={pilaState}
+          myPlayerId={myPlayer.id}
+          hand={hand}
+          onPass={() => send('stack_pass')}
+          onPlayCard={(id) => send('stack_play_card', { hand_card_id: id })}
         />
       )}
     </div>

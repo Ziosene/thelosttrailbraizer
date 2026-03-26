@@ -45,7 +45,7 @@ frontend/
 │   │   └── socket.ts        WebSocket singleton + event bus mitt
 │   ├── store/
 │   │   ├── authStore.ts     stato autenticazione (Zustand): user, token, login, logout
-│   │   └── gameStore.ts     stato partita (Zustand): gameState, hand, myAddons, log, toasts, connect, disconnect, send
+│   │   └── gameStore.ts     stato partita (Zustand): gameState, hand, myAddons, log, toasts, pilaState, connect, disconnect, send
 │   ├── types/
 │   │   └── game.ts          tipi TypeScript: PlayerState, GameState, HandCard, HandAddon, PublicAddon, BossMarketInfo, AddonMarketInfo, Seniority, Role
 │   ├── components/
@@ -65,7 +65,8 @@ frontend/
 │   │       ├── ToastLayer.tsx   toast errori backend (fixed top-right, auto-dismiss 4s)
 │   │       ├── GameModals.tsx   ReactionWindowModal, CardChoiceModal, ComplyOrRefuseModal
 │   │       ├── CombatOverlay.tsx overlay combattimento (boss, dado animato, addons, carte in mano)
-│   │       └── DeathPenaltyModal.tsx modale scelta penalità morte (carta + addon da perdere)
+│   │       ├── DeathPenaltyModal.tsx modale scelta penalità morte (carta + addon da perdere)
+│   │       └── PilaModal.tsx    modale La Pila — stack LIFO multi-giocatore post-tiro dado
 │   ├── pages/
 │   │   ├── LoginPage.tsx        login + registrazione (tab switch)
 │   │   ├── HomePage.tsx         crea partita, unisciti con codice, lista partite aperte
@@ -212,6 +213,7 @@ Tutti gli endpoint passano per `api` in `http.ts`:
 - [x] **GamePage refactor** — suddivisa in componenti: CardVisual, PlayerCell, PlayArea, HandPanel, LogPanel
 - [x] **Sezione mazzi** — 3 pulsanti (Azioni/Addon/Boss) + DeckModal con Mazzo 1/2 + Scarti
 - [x] **Toast errori** — ToastLayer: errori backend come toast rosso top-right, auto-dismiss 4s
+- [x] **La Pila** — PilaModal: finestra reazione multi-giocatore LIFO dopo ogni tiro dado (stack_opened/priority/updated/passed/resolved)
 - [ ] **Abilità passiva ruolo** — mostrare descrizione ruolo nella lobby in CharacterSelect
-- [ ] **Modal combattimento** — tiro dado, dichiarazione carta per boss 33/86
+- [ ] **Modal combattimento** — tiro dado, dichiarazione carta per boss 33/86 (parzialmente fatto: CombatOverlay)
 - [ ] **Game over screen** — schermata finale con vincitore + statistiche

@@ -616,59 +616,6 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         cs.pop("service_forecast_use_threshold", None)
         player.combat_state = cs
 
-    # ── Card 27 (Lucky Roll): post-roll reaction window ───────────────────────
-    # The player sees the roll result before deciding. Open a window only if:
-    #   1. Card 27 is in hand, AND
-    #   2. Player still has card budget (cards_played_this_turn < max).
-    # Card 26 (Dice Optimizer) already fixed the roll — Lucky Roll cannot override a forced roll.
-    if _forced_roll is None:
-        _max_cards_lr = (
-            engine.boss_max_cards_per_turn(player.current_boss_id, engine.MAX_CARDS_PER_TURN)
-            if player.current_boss_id else engine.MAX_CARDS_PER_TURN
-        )
-        _has_budget = player.cards_played_this_turn < _max_cards_lr
-        if _has_budget:
-            # Check if player has Lucky Roll (card 27) in hand
-            from app.models.card import ActionCard as _AC27
-            _lucky_roll_hc = next(
-                (hc for hc in player.hand if db.get(_AC27, hc.action_card_id) and
-                 db.get(_AC27, hc.action_card_id).number == 27),
-                None,
-            )
-            if _lucky_roll_hc:
-                _preview_result = engine.resolve_combat_round(roll, threshold)
-                await manager.send_to_player(game.code, user_id, {
-                    "type": ServerEvent.REACTION_WINDOW_OPEN,
-                    "reason": "lucky_roll",
-                    "pending_roll": roll,
-                    "pending_result": _preview_result,
-                    "threshold": threshold,
-                    "timeout_ms": 8000,
-                })
-                _lr_response = await open_reaction_window(game.code, player.id, timeout=8.0)
-                await manager.send_to_player(game.code, user_id, {
-                    "type": ServerEvent.REACTION_WINDOW_CLOSED,
-                })
-                if _lr_response and _lr_response.get("action") == "play":
-                    _lr_rhc_id = _lr_response.get("hand_card_id")
-                    from app.models.game import PlayerHandCard as _LRPHC
-                    _lr_hc = db.get(_LRPHC, _lr_rhc_id)
-                    if _lr_hc and _lr_hc.player_id == player.id:
-                        _lr_card = db.get(ActionCard, _lr_hc.action_card_id)
-                        if _lr_card and _lr_card.number == 27:
-                            # Consume Lucky Roll card
-                            game.action_discard = (game.action_discard or []) + [_lr_hc.action_card_id]
-                            db.delete(_lr_hc)
-                            player.cards_played_this_turn += 1
-                            # Re-roll: take the new result regardless of whether it's better
-                            roll = engine.roll_d10()
-                            round_nullified = engine.boss_nullifies_round_on_low_roll(boss.id) and roll <= 2
-                            await manager.broadcast(game.code, {
-                                "type": ServerEvent.LUCKY_ROLL_USED,
-                                "player_id": player.id,
-                                "new_roll": roll,
-                            })
-
     # Card 98 (Pause Element): round_nullified override — consumes 1 round of the flag
     if (player.combat_state or {}).get("pause_element_rounds_remaining", 0) > 0:
         cs = dict(player.combat_state)
@@ -749,6 +696,18 @@ async def _handle_roll_dice(game: GameSession, user_id: int, db: Session):
         _scc_cs = dict(player.combat_state or {})
         _scc_cs["service_cloud_hp_recovered"] = True
         player.combat_state = _scc_cs
+
+    # ── La Pila: reazione multi-giocatore dopo il tiro ─────────────────────
+    _pila_order = [p.id for p in game.players]
+    _ap_idx = next((i for i, p in enumerate(game.players) if p.id == player.id), 0)
+    _pila_order = _pila_order[_ap_idx:] + _pila_order[:_ap_idx]
+    from app.websocket.stack_manager import open_stack as _open_stack
+    roll, result = await _open_stack(
+        game.code, _pila_order, roll, result, threshold, timeout=8.0
+    )
+    # Re-compute round_nullified in case force_reroll happened
+    round_nullified = engine.boss_nullifies_round_on_low_roll(boss.id) and roll <= 2
+    # ────────────────────────────────────────────────────────────────────────
 
     player_took_damage = False
 

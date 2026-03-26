@@ -222,7 +222,8 @@ backend/
 │   │   ├── events.py             ✅ ClientAction / ServerEvent (classi con costanti)
 │   │   ├── manager.py            ✅ ConnectionManager (rooms per game_code)
 │   │   ├── game_helpers.py       ✅ helper condivisi (_build_game_state, _error, _broadcast_state, _apply_elo, …)
-│   │   ├── game_handler.py       ✅ thin router WS (65 righe) — importa da handlers/
+│   │   ├── game_handler.py       ✅ thin router WS — importa da handlers/
+│   │   ├── stack_manager.py      ✅ La Pila: StackSession, StackItem, open_stack, pass_priority, push_card_to_stack
 │   │   └── handlers/
 │   │       ├── __init__.py       ✅
 │   │       ├── lobby.py          ✅ _handle_join, _handle_select_character, _handle_start_game
@@ -245,10 +246,11 @@ backend/
 │   │       └── combat/
 │   │           ├── start.py      ✅ _handle_start_combat
 │   │           ├── declare.py    ✅ _handle_declare_card, _handle_declare_card_type
+│   │           ├── stack_action.py ✅ _handle_stack_pass, _handle_stack_play_card (La Pila)
 │   │           └── roll/
 │   │               ├── defeat.py ✅ _boss_defeat_sequence (561 righe)
 │   │               ├── death.py  ✅ _player_death_sequence (245 righe)
-│   │               └── dice.py   ✅ _handle_roll_dice (1238 righe)
+│   │               └── dice.py   ✅ _handle_roll_dice — ora apre La Pila dopo ogni tiro
 │   └── game/
 │       ├── __init__.py           ✅
 │       ├── engine.py             ✅ funzioni pure core (~165 righe): roll, combat, deck, death, ELO + re-export engine_boss
@@ -508,6 +510,18 @@ Tutti i messaggi sono JSON. Il server autentica via JWT al momento della conness
 | `reaction_window_closed` | — | privato al target — finestra chiusa (timeout o risposta ricevuta) |
 | `reaction_resolved` | `{reactor_player_id, original_cancelled, reaction_effect}` | broadcast — come è stata risolta la reazione |
 | `card_choice_required` | `{choice_type, card_number, options, ...}` | privato al giocatore — la carta richiede una scelta prima di completare il suo effetto |
+| `stack_opened` | `{stack, player_order, priority_player_id, timeout_ms}` | broadcast — La Pila aperta dopo un tiro di dado |
+| `stack_priority` | `{priority_player_id, consecutive_passes, timeout_ms}` | broadcast — turno di priorità nella Pila |
+| `stack_updated` | `{stack, priority_player_id, consecutive_passes, timeout_ms}` | broadcast — carta aggiunta alla Pila, priorità resettata all'active player |
+| `stack_passed` | `{player_id, auto, consecutive_passes, priority_player_id}` | broadcast — un giocatore ha passato (o è scaduto il timeout) |
+| `stack_resolved` | `{stack, final_roll, final_result}` | broadcast — Pila risolta, danni calcolati |
+
+### Azioni client — La Pila
+
+| Azione | Payload | Descrizione |
+|--------|---------|-------------|
+| `stack_pass` | — | Passa la priorità nella Pila |
+| `stack_play_card` | `{hand_card_id: int}` | Gioca una carta nella Pila (Difensiva o Lucky Roll #27) |
 
 ---
 
