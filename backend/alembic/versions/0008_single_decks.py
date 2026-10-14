@@ -8,7 +8,7 @@ from alembic import op
 import sqlalchemy as sa
 
 revision = "0008"
-down_revision = "0007"
+down_revision = "0007_is_eliminated"
 branch_labels = None
 depends_on = None
 
@@ -23,9 +23,9 @@ def upgrade():
     op.execute("""
         UPDATE game_sessions
         SET
-            action_deck = COALESCE(action_deck_1, '[]'::json) || COALESCE(action_deck_2, '[]'::json),
-            boss_deck   = COALESCE(boss_deck_1,   '[]'::json) || COALESCE(boss_deck_2,   '[]'::json),
-            addon_deck  = COALESCE(addon_deck_1,  '[]'::json) || COALESCE(addon_deck_2,  '[]'::json)
+            action_deck = (COALESCE(action_deck_1::jsonb, '[]'::jsonb) || COALESCE(action_deck_2::jsonb, '[]'::jsonb))::json,
+            boss_deck   = (COALESCE(boss_deck_1::jsonb,   '[]'::jsonb) || COALESCE(boss_deck_2::jsonb,   '[]'::jsonb))::json,
+            addon_deck  = (COALESCE(addon_deck_1::jsonb,  '[]'::jsonb) || COALESCE(addon_deck_2::jsonb,  '[]'::jsonb))::json
     """)
 
     # Update current_boss_source: deck_1/deck_2 → deck

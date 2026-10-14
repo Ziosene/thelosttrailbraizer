@@ -706,6 +706,7 @@ MORTE DEL GIOCATORE
 - ✅ Carta 189 (Delete Records): flusso `pending_choice` con `delete_target_addon` per scelta addon target
 - ✅ `applied=False` in `card_play.py` → toast di errore con testo in italiano (mappatura reason)
 - ✅ Carta 235 (Anypoint Exchange): semplificata → +2L + pesca 1 carta azione
+- ✅ Fix migration `0008_single_decks`: `down_revision` corretto in `0007_is_eliminated`; merge mazzi via `jsonb ||` (Postgres non supporta `json || json`)
 
 ### ⬜ Da fare
 
@@ -720,7 +721,7 @@ MORTE DEL GIOCATORE
 _Nessun TODO critico aperto._
 
 Con `docker compose up --build` il server parte correttamente:
-- migration `0001–0006` applicate automaticamente
+- migration `0001–0008` applicate automaticamente
 - seed carte eseguito automaticamente
 - FK circolare `winner_id` gestita con `use_alter=True`
 
